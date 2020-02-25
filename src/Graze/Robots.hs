@@ -8,8 +8,6 @@ import Graze.Http (HttpUrl(..))
 import Graze.Robots.Parser (parse)
 import Graze.Robots.Trie
 
--- $setup
--- >>> :set -XOverloadedStrings 
 
 type Chunks = [TL.Text]
 
@@ -19,6 +17,7 @@ type Rules = Trie TL.Text
 --
 -- ==== __Examples__
 --
+-- >>> :set -XOverloadedStrings
 -- >>> chunk "a"
 -- ["a"]
 -- >>> chunk "a/"

@@ -59,7 +59,6 @@ instance Show HttpUrl where
 folder :: HttpUrl -> TL.Text
 folder = TL.dropWhileEnd (/= '/') . path
 
-
 reqPage :: HttpUrl -> IO BL.ByteString
 reqPage = fmap getResponseBody
     . httpLBS

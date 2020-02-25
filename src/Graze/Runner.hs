@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 
-module Graze.Runner where
+module Graze.Runner (Config(..), run) where
 
 import Control.Concurrent (forkIO)
 import Control.Concurrent.STM (atomically)
@@ -42,6 +42,6 @@ run Config {..} = do
     _  <- forkIO $ evalCrawler (crawl jobChan resChan outChan) cs
 
     createDirectoryIfMissing True cFolder
-    BL.writeFile (cFolder </> cDatabase) "id,parent,location\r\n"
+    BL.writeFile (cFolder </> cDatabase) "id,parent,url\r\n"
 
     evalWriter (write outChan) $ WriterState 0 cFolder cDatabase

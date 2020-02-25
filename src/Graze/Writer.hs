@@ -1,5 +1,6 @@
 {-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards   #-}
 
 module Graze.Writer (evalWriter, write, WriterState(..)) where
 
@@ -26,26 +27,22 @@ evalWriter :: Writer a -> WriterState -> IO a
 evalWriter = evalStateT
 
 encRecord :: Int -> PageRecord -> BL.ByteString
-encRecord counter record =
-    show' counter           <> ","    <>
-    show' (prParent record) <> ","    <>
-    show' (prUrl record)    <> "\r\n"
+encRecord counter PageRecord {..} =
+    show' counter  <> ","    <>
+    show' prParent <> ","    <>
+    show' prUrl    <> "\r\n"
   where
     show' :: Show a => a -> BL.ByteString
     show' = BL.pack . show
 
-addRecord :: PageRecord -> Writer ()
-addRecord record = do
+writeRecord :: PageRecord -> Writer ()
+writeRecord record = do
     counter  <- gets wsCounter
     folder   <- gets wsFolder
     database <- gets wsDatabase
-    liftIO $ BL.appendFile (folder </> database) (encRecord counter record)
-
-writeRecord :: PageRecord -> Writer ()
-writeRecord record = do
-    counter <- gets wsCounter
-    folder  <- gets wsFolder
-    liftIO $ BL.writeFile (folder </> show counter) (prContent record)
+    liftIO $ do
+        BL.appendFile (folder </> database) (encRecord counter record)
+        BL.writeFile (folder </> show counter) (prContent record)
 
 incrCounter :: Writer ()
 incrCounter = modify $ \s ->
@@ -54,10 +51,9 @@ incrCounter = modify $ \s ->
 write :: TChan (Either Done PageRecord) -> Writer ()
 write outChan = loop
   where
-    loop = (liftIO . atomically) (readTChan outChan) >>= \case
+    loop = (liftIO . atomically . readTChan) outChan >>= \case
         Left _       -> liftIO . traceIO $ "Done"
         Right record -> do
-            addRecord record
             writeRecord record
             incrCounter
             loop

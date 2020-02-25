@@ -90,7 +90,7 @@ crawl jobChan resChan outChan = loop
             Success page -> if jHops <= 0
                 then return ()
                 else do
-                    liftIO . atomically $
+                    liftIO . atomically .
                         writeTChan outChan . Right $ PageRecord jParent jUrl page
                     ls <- filterM newUrl (links jUrl page)
                     sendJobs jobChan (jHops - 1) jUrl ls
@@ -98,4 +98,4 @@ crawl jobChan resChan outChan = loop
         n <- gets csActive
         if n > 0
             then loop
-            else liftIO $ atomically . writeTChan outChan . Left $ Done
+            else liftIO . atomically . writeTChan outChan . Left $ Done

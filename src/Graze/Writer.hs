@@ -7,7 +7,7 @@ module Graze.Writer (evalWriter, write, WriterState(..)) where
 import Control.Concurrent.STM (atomically)
 import Control.Concurrent.STM.TChan (readTChan, TChan)
 import Control.Monad.IO.Class (liftIO)
-import Control.Monad.Trans.State.Lazy (evalStateT, gets, modify, StateT)
+import Control.Monad.Trans.State.Lazy (evalStateT, get, modify, StateT)
 import qualified Data.ByteString.Lazy.Char8 as BL
 import Debug.Trace (traceIO)
 import System.FilePath ((</>))
@@ -37,16 +37,14 @@ encRecord counter PageRecord {..} =
 
 writeRecord :: PageRecord -> Writer ()
 writeRecord record = do
-    counter  <- gets wsCounter
-    folder   <- gets wsFolder
-    database <- gets wsDatabase
+    WriterState {..} <- get
     liftIO $ do
-        BL.appendFile (folder </> database) (encRecord counter record)
-        BL.writeFile (folder </> show counter) (prContent record)
+        BL.appendFile (wsFolder </> wsDatabase) (encRecord wsCounter record)
+        BL.writeFile (wsFolder </> show wsCounter) (prContent record)
 
-incrCounter :: Writer ()
-incrCounter = modify $ \s ->
-    s { wsCounter = wsCounter s + 1 }
+mapCounter :: (Int -> Int) -> Writer ()
+mapCounter f = modify $ \s ->
+    s { wsCounter = f (wsCounter s) }
 
 write :: TChan (Either Done PageRecord) -> Writer ()
 write outChan = loop
@@ -55,5 +53,5 @@ write outChan = loop
         Left _       -> liftIO . traceIO $ "Done"
         Right record -> do
             writeRecord record
-            incrCounter
+            mapCounter (+ 1)
             loop

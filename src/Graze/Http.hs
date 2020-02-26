@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards   #-}
 
 module Graze.Http (HttpUrl(..), folder, reqPage) where
 
@@ -19,8 +20,6 @@ data HttpUrl = HttpUrl
     , path   :: TL.Text
     }
 
--- ==== __Examples__
---
 -- >>> x = HttpUrl "http" "x" "/y"
 -- >>> y = HttpUrl "https" "x" "/y"
 -- >>> x == y
@@ -28,8 +27,6 @@ data HttpUrl = HttpUrl
 instance Eq HttpUrl where
     x == y = (domain x, path x) == (domain y, path y)
 
--- ==== __Examples__
---
 -- >>> x = HttpUrl "https" "x" "/"
 -- >>> y = HttpUrl "http" "x" "/y"
 -- >>> x < y
@@ -37,12 +34,10 @@ instance Eq HttpUrl where
 instance Ord HttpUrl where
     x <= y = (domain x, path x) <= (domain y, path y)
 
--- ==== __Examples__
---
 -- >>> HttpUrl "http" "x" "/y"
 -- http://x/y
 instance Show HttpUrl where
-    show url = TL.unpack $ scheme url <> "://" <> domain url <> path url
+    show HttpUrl {..} = TL.unpack $ scheme <> "://" <> domain <> path
 
 -- | Map an 'HttpUrl' to the folder components of its path.
 --

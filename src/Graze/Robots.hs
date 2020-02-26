@@ -1,5 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 module Graze.Robots (disallowedBy, empty, rules, Rules) where
 
 import qualified Data.Text.Lazy as TL

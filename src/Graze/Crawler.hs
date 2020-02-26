@@ -8,7 +8,7 @@ import Control.Concurrent.STM.TChan (readTChan, TChan, writeTChan)
 import Control.Exception (try)
 import Control.Monad (filterM)
 import Control.Monad.IO.Class (liftIO)
-import Control.Monad.Trans.State.Lazy (evalStateT, gets, modify, StateT)
+import Control.Monad.Trans.State.Lazy (evalStateT, get, gets, modify, StateT)
 import Data.Foldable (traverse_)
 import qualified Data.Set as S (Set, insert, member, singleton)
 import qualified Data.Text.Lazy.Encoding as TL (decodeUtf8)
@@ -52,12 +52,10 @@ addSeen url = modify $ \s ->
 
 newUrl :: HttpUrl -> Crawler Bool
 newUrl url = do
-    base   <- gets csBase
-    robots <- gets csRobots
-    seen   <- gets csSeen
-    if domain url /= domain base
-        || url `disallowedBy` robots
-        || url `S.member` seen
+    CrawlerState {..} <- get
+    if domain url /= domain csBase
+        || url `disallowedBy` csRobots
+        || url `S.member` csSeen
         then return False
         else addSeen url >> return True
 

@@ -1,10 +1,10 @@
-module Graze.Robots (disallowedBy, empty, rules, Rules) where
+module Graze.Robots (disallowedBy, rules, Rules) where
 
 import qualified Data.Text.Lazy as TL
 
 import Graze.Http (HttpUrl(..))
 import Graze.Robots.Parser (parse)
-import Graze.Robots.Trie
+import Graze.Robots.Trie (fromList, member, Trie)
 
 
 type Chunks = [TL.Text]

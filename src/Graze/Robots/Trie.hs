@@ -1,4 +1,4 @@
-module Graze.Robots.Trie (empty, fromList, member, Trie) where
+module Graze.Robots.Trie (fromList, member, Trie) where
 
 import           Data.Hashable       (Hashable)
 import qualified Data.HashMap.Strict as HM

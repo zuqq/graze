@@ -18,7 +18,7 @@ import Network.HTTP.Conduit (HttpException)
 import Graze.Http (HttpUrl(..), reqPage)
 import Graze.Links (links)
 import Graze.Messages
-import Graze.Robots (disallowedBy, empty, rules, Rules)
+import Graze.Robots (disallowedBy, rules, Rules)
 
 
 reqRobots :: HttpUrl -> IO Rules
@@ -40,7 +40,7 @@ evalCrawler = evalStateT
 
 initCrawler :: HttpUrl -> IO CrawlerState
 initCrawler base = do
-    let s = CrawlerState base empty (S.singleton base) 1
+    let s = CrawlerState base (rules "") (S.singleton base) 1
     resp <- try (reqRobots base) :: IO (Either HttpException Rules)
     case resp of
         Left _  -> return s

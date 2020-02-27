@@ -3,26 +3,26 @@
 
 module Graze.Crawler (crawl, initCrawler, evalCrawler) where
 
-import Control.Concurrent.STM (atomically)
-import Control.Concurrent.STM.TChan (readTChan, TChan, writeTChan)
-import Control.Exception (try)
-import Control.Monad (filterM)
-import Control.Monad.IO.Class (liftIO)
-import Control.Monad.Trans.State.Lazy (evalStateT, get, gets, modify, StateT)
-import Data.Foldable (traverse_)
-import qualified Data.Set as S (Set, insert, member, singleton)
-import qualified Data.Text.Lazy.Encoding as TL (decodeUtf8)
+import Control.Concurrent.STM           (atomically)
+import Control.Concurrent.STM.TChan     (readTChan, TChan, writeTChan)
+import Control.Exception                (try)
+import Control.Monad                    (filterM)
+import Control.Monad.IO.Class           (liftIO)
+import Control.Monad.Trans.State.Strict (evalStateT, get, gets, modify, StateT)
+import Data.Foldable                    (traverse_)
+import qualified Data.Set           as S (Set, insert, member, singleton)
+import qualified Data.Text.Encoding as T (decodeUtf8)
 
 import Network.HTTP.Conduit (HttpException)
 
-import Graze.Http (HttpUrl(..), reqPage)
-import Graze.Links (links)
+import Graze.Http     (HttpUrl(..), reqPage)
+import Graze.Links    (links)
 import Graze.Messages
-import Graze.Robots (disallowedBy, rules, Rules)
+import Graze.Robots   (disallowedBy, rules, Rules)
 
 
 reqRobots :: HttpUrl -> IO Rules
-reqRobots url = fmap (rules . TL.decodeUtf8) . reqPage $ robotsUrl
+reqRobots url = fmap (rules . T.decodeUtf8) . reqPage $ robotsUrl
   where
     robotsUrl = url { path = "/robots.txt" }
 

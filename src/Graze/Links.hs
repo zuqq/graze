@@ -2,11 +2,11 @@
 
 module Graze.Links (links) where
 
-import           Control.Monad              ((<=<))
-import qualified Data.ByteString.Lazy.Char8 as BL (ByteString)
-import qualified Data.Text.Lazy             as TL
+import           Control.Monad         ((<=<))
+import qualified Data.ByteString.Char8 as B (ByteString)
+import qualified Data.Text             as T
 
-import Text.HTML.DOM (parseLBS)
+import Text.HTML.DOM   (parseBSChunks)
 import Text.XML.Cursor (attribute, Cursor, descendant, element, fromDocument)
 
 import Graze.Http (HttpUrl(..), folder)
@@ -15,8 +15,8 @@ import Graze.Http (HttpUrl(..), folder)
 -- >>> :set -XOverloadedStrings 
 
 
-rawLinks :: Cursor -> [TL.Text]
-rawLinks = fmap TL.fromStrict . (attribute "href" <=< element "a" <=< descendant)
+rawLinks :: Cursor -> [T.Text]
+rawLinks = attribute "href" <=< element "a" <=< descendant
 
 -- | Convert paths with relative components ".." and "." to absolute paths
 -- and replace every occurency of "//" by "/".
@@ -41,8 +41,8 @@ rawLinks = fmap TL.fromStrict . (attribute "href" <=< element "a" <=< descendant
 -- "/"
 -- >>> normalize "/a//b"
 -- "/a/b"
-normalize :: TL.Text -> TL.Text
-normalize = TL.replace "//" "/" . TL.intercalate "/" . go . TL.split (== '/')
+normalize :: T.Text -> T.Text
+normalize = T.replace "//" "/" . T.intercalate "/" . go . T.split (== '/')
   where
     go ("" : ".." : xs) = "" : go xs  -- For the special case "/.." -> "/".
     go (_ : ".." : xs)  = go xs       -- For the generic case "a/.." -> "a".
@@ -58,8 +58,8 @@ normalize = TL.replace "//" "/" . TL.intercalate "/" . go . TL.split (== '/')
 -- "http://a.b/c"
 -- >>> stripFragment "http://a.b/c?d=e#f"
 -- "http://a.b/c?d=e"
-stripFragment :: TL.Text -> TL.Text
-stripFragment = fst . TL.breakOn "#"
+stripFragment :: T.Text -> T.Text
+stripFragment = fst . T.breakOn "#"
 
 -- | Given an 'HttpUrl' @url@ and a link @l@, return the 'HttpUrl' that @l@
 -- would correspond to if it were found on an HTML page at @url@. Note that this
@@ -81,17 +81,17 @@ stripFragment = fst . TL.breakOn "#"
 -- >>> let url = HttpUrl "https" "x" "/y/"
 -- >>> absolute url "a/b"
 -- https://x/y/a/b
-absolute :: HttpUrl -> TL.Text -> HttpUrl
+absolute :: HttpUrl -> T.Text -> HttpUrl
 absolute url l = HttpUrl s d (normalize . stripFragment $ p)
   where
     (s, (d, p))
-        | Just l' <- TL.stripPrefix "//" l       = (scheme url, TL.breakOn "/" l')
-        | Just l' <- TL.stripPrefix "http://" l  = ("http", TL.breakOn "/" l')
-        | Just l' <- TL.stripPrefix "https://" l = ("https", TL.breakOn "/" l')
-        | "/" `TL.isPrefixOf` l                  = (scheme url, (domain url, l))
+        | Just l' <- T.stripPrefix "//" l       = (scheme url, T.breakOn "/" l')
+        | Just l' <- T.stripPrefix "http://" l  = ("http", T.breakOn "/" l')
+        | Just l' <- T.stripPrefix "https://" l = ("https", T.breakOn "/" l')
+        | "/" `T.isPrefixOf` l                  = (scheme url, (domain url, l))
         | otherwise = (scheme url, (domain url, folder url <> l))
 
--- | Given an 'HttpUrl' @url@ and a 'BL.ByteString' @bs@ representing an HTML
+-- | Given an 'HttpUrl' @url@ and a 'B.ByteString' @bs@ representing an HTML
 -- document, map @absolute url@ over the links in @bs@ and return the result.
-links :: HttpUrl -> BL.ByteString -> [HttpUrl]
-links url = fmap (absolute url) . rawLinks . fromDocument . parseLBS
+links :: HttpUrl -> B.ByteString -> [HttpUrl]
+links url = fmap (absolute url) . rawLinks . fromDocument . parseBSChunks . return

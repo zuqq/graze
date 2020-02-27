@@ -3,21 +3,21 @@
 
 module Graze.Http (HttpUrl(..), folder, reqPage) where
 
-import           Control.Monad              ((<=<))
-import qualified Data.ByteString.Lazy.Char8 as BL (ByteString)
-import qualified Data.Text.Lazy             as TL (dropWhileEnd, Text, unpack)
+import           Control.Monad         ((<=<))
+import qualified Data.ByteString.Char8 as B (ByteString)
+import qualified Data.Text             as T (dropWhileEnd, Text, unpack)
 
 import Network.HTTP.Conduit (parseUrlThrow, redirectCount)
-import Network.HTTP.Simple  (getResponseBody, httpLBS)
+import Network.HTTP.Simple  (getResponseBody, httpBS)
 
 -- $setup
 -- >>> :set -XOverloadedStrings
 
 
 data HttpUrl = HttpUrl
-    { scheme :: TL.Text
-    , domain :: TL.Text
-    , path   :: TL.Text
+    { scheme :: !T.Text
+    , domain :: !T.Text
+    , path   :: !T.Text
     }
 
 -- >>> x = HttpUrl "http" "x" "/y"
@@ -37,7 +37,7 @@ instance Ord HttpUrl where
 -- >>> HttpUrl "http" "x" "/y"
 -- http://x/y
 instance Show HttpUrl where
-    show HttpUrl {..} = TL.unpack $ scheme <> "://" <> domain <> path
+    show HttpUrl {..} = T.unpack $ scheme <> "://" <> domain <> path
 
 -- | Map an 'HttpUrl' to the folder components of its path.
 --
@@ -51,12 +51,12 @@ instance Show HttpUrl where
 -- "/"
 -- >>> folder $ HttpUrl "http" "x" "/y/z"
 -- "/y/"
-folder :: HttpUrl -> TL.Text
-folder = TL.dropWhileEnd (/= '/') . path
+folder :: HttpUrl -> T.Text
+folder = T.dropWhileEnd (/= '/') . path
 
-reqPage :: HttpUrl -> IO BL.ByteString
+reqPage :: HttpUrl -> IO B.ByteString
 reqPage = fmap getResponseBody
-    . httpLBS
+    . httpBS
     <=< fmap noFollow
     . parseUrlThrow
     . show

@@ -1,15 +1,15 @@
 module Graze.Robots (disallowedBy, rules, Rules) where
 
-import qualified Data.Text.Lazy as TL
+import qualified Data.Text as T
 
-import Graze.Http (HttpUrl(..))
+import Graze.Http          (HttpUrl(..))
 import Graze.Robots.Parser (parse)
-import Graze.Robots.Trie (fromList, member, Trie)
+import Graze.Robots.Trie   (fromList, member, Trie)
 
 
-type Chunks = [TL.Text]
+type Chunks = [T.Text]
 
-type Rules = Trie TL.Text
+type Rules = Trie T.Text
 
 -- | Split at @'/'@, dropping any empty substrings.
 --
@@ -22,10 +22,10 @@ type Rules = Trie TL.Text
 -- ["a"]
 -- >>> chunk "a/b"
 -- ["a","b"]
-chunk :: TL.Text -> Chunks
-chunk = filter (not . TL.null) . TL.split (== '/')
+chunk :: T.Text -> Chunks
+chunk = filter (not . T.null) . T.split (== '/')
 
-rules :: TL.Text -> Rules
+rules :: T.Text -> Rules
 rules = fromList . fmap chunk . parse
 
 disallowedBy :: HttpUrl -> Rules -> Bool

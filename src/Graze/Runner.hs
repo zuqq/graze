@@ -7,7 +7,7 @@ import Control.Concurrent (forkIO)
 import Control.Concurrent.STM (atomically)
 import Control.Concurrent.STM.TChan (newTChanIO, writeTChan)
 import Control.Monad (replicateM_)
-import qualified Data.ByteString.Lazy.Char8 as BL (writeFile)
+import qualified Data.ByteString.Char8 as B (writeFile)
 import Debug.Trace (traceIO)
 import System.Directory (createDirectoryIfMissing)
 import System.FilePath ((</>))
@@ -20,11 +20,11 @@ import Graze.Writer (evalWriter, write, WriterState(..))
 
 
 data Config = Config
-    { cWorkers  :: Int       -- ^ Number of worker threads.
-    , cDepth    :: Int       -- ^ Depth of the search.
-    , cBase     :: HttpUrl   -- ^ URL for the crawler to start at.
-    , cFolder   :: FilePath  -- ^ Folder to save the pages in.
-    , cDatabase :: FilePath  -- ^ Name of the resulting CSV.
+    { cWorkers  :: !Int       -- ^ Number of worker threads.
+    , cDepth    :: !Int       -- ^ Depth of the search.
+    , cBase     :: !HttpUrl   -- ^ URL for the crawler to start at.
+    , cFolder   :: !FilePath  -- ^ Folder to save the pages in.
+    , cDatabase :: !FilePath  -- ^ Name of the resulting CSV.
     }
 
 run :: Config -> IO ()
@@ -42,6 +42,6 @@ run Config {..} = do
     _  <- forkIO $ evalCrawler (crawl jobChan resChan outChan) cs
 
     createDirectoryIfMissing True cFolder
-    BL.writeFile (cFolder </> cDatabase) "id,parent,url\r\n"
+    B.writeFile (cFolder </> cDatabase) "id,parent,url\r\n"
 
     evalWriter (write outChan) $ WriterState 0 cFolder cDatabase

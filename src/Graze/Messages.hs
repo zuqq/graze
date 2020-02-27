@@ -2,7 +2,7 @@
 
 module Graze.Messages where
 
-import qualified Data.ByteString.Lazy.Char8 as BL (ByteString)
+import qualified Data.ByteString.Char8 as B (ByteString)
 
 import Graze.Http (HttpUrl)
 
@@ -13,7 +13,7 @@ data Job = Job
     , jUrl    :: !HttpUrl
     }
 
-data Result = Fail | Success !BL.ByteString
+data Result = Fail | Success !B.ByteString
 
 data FetchResponse = FetchResponse
     { frJob    :: !Job
@@ -25,5 +25,5 @@ data Done = Done
 data PageRecord = PageRecord
     { prParent  :: !HttpUrl
     , prUrl     :: !HttpUrl
-    , prContent :: !BL.ByteString
+    , prContent :: !B.ByteString
     }

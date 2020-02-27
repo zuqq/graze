@@ -2,14 +2,14 @@
 
 module Graze.Robots.Parser (parse) where
 
-import           Data.Either    (isRight, rights)
-import           Data.Maybe     (mapMaybe)
-import qualified Data.Text.Lazy as TL
+import           Data.Either (isRight, rights)
+import           Data.Maybe  (mapMaybe)
+import qualified Data.Text   as T
 
 
-type UserAgent = TL.Text
+type UserAgent = T.Text
 
-type Disallow = TL.Text
+type Disallow = T.Text
 
 type RobotsLine = Either UserAgent Disallow
 
@@ -18,13 +18,13 @@ data Record = Record
     , disallows :: ![Disallow]
     }
 
-parseLine :: TL.Text -> Maybe RobotsLine
-parseLine l = case takeWhile noComment (TL.words l) of
+parseLine :: T.Text -> Maybe RobotsLine
+parseLine l = case takeWhile noComment (T.words l) of
     ["User-agent:", ua] -> Just (Left ua)
     ["Disallow:", d]    -> Just (Right d)
     _                   -> Nothing
   where
-    noComment = (/= '#') . TL.head
+    noComment = (/= '#') . T.head
 
 toRecords :: [RobotsLine] -> [Record]
 toRecords rls = case rls of
@@ -36,5 +36,5 @@ toRecords rls = case rls of
 disallowsFor :: UserAgent -> [Record] -> [Disallow]
 disallowsFor ua rs = [ d | r <- rs, userAgent r == ua, d <- disallows r ]
 
-parse :: TL.Text -> [Disallow]
-parse = disallowsFor "*" . toRecords . mapMaybe parseLine . TL.lines
+parse :: T.Text -> [Disallow]
+parse = disallowsFor "*" . toRecords . mapMaybe parseLine . T.lines

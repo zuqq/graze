@@ -1,16 +1,27 @@
+{-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Main (main) where
 
-import Graze.HttpUrl (HttpUrl (HttpUrl))
-import Graze.Runners (Config (..), run)
+import qualified Data.Text          as T (pack)
+import           System.Environment (getArgs)
+
+import Graze.HttpUrl        (HttpUrl (HttpUrl))
+import Graze.HttpUrl.Parser (parse)
+import Graze.Runners        (Config (..), run)
 
 
 main :: IO ()
-main = run Config
-    { cWorkers  = 10
-    , cDepth    = 3
-    , cBase     = HttpUrl "http:" "//blog.fefe.de" "/"
-    , cFolder   = "download"
-    , cDatabase = "db.csv"
-    }
+main = getArgs >>= \case
+    [s] -> case (parse . T.pack) s of
+        Left _     -> putStrLn "malformed URL" >> usage
+        Right base -> run Config
+            { cWorkers  = 10
+            , cDepth    = 3
+            , cBase     = base
+            , cFolder   = "download"
+            , cDatabase = "db.csv"
+            }
+    _   -> usage
+  where
+    usage = putStrLn "usage: graze URL"

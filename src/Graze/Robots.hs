@@ -29,4 +29,4 @@ rules :: T.Text -> Rules
 rules = fromList . fmap chunk . parse
 
 disallowedBy :: HttpUrl -> Rules -> Bool
-disallowedBy = member . chunk . path
+disallowedBy = member . chunk . huPath

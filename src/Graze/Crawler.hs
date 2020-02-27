@@ -25,7 +25,7 @@ import Graze.Robots   (disallowedBy, rules, Rules)
 reqRobots :: HttpUrl -> IO Rules
 reqRobots url = fmap (rules . T.decodeUtf8) . reqPage $ robotsUrl
   where
-    robotsUrl = url { path = "/robots.txt" }
+    robotsUrl = url { huPath = "/robots.txt" }
 
 data CrawlerState = CrawlerState
     { csBase   :: !HttpUrl          -- ^ Page that the crawler started at.
@@ -54,7 +54,7 @@ addSeen url = modify $ \s ->
 newUrl :: HttpUrl -> Crawler Bool
 newUrl url = do
     CrawlerState {..} <- get
-    if domain url /= domain csBase
+    if huDomain url /= huDomain csBase
         || url `disallowedBy` csRobots
         || url `S.member` csSeen
         then return False

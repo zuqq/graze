@@ -3,20 +3,20 @@
 
 module Graze.Runner (Config(..), run) where
 
-import Control.Concurrent (forkIO)
-import Control.Concurrent.STM (atomically)
-import Control.Concurrent.STM.TChan (newTChanIO, writeTChan)
-import Control.Monad (replicateM_)
-import qualified Data.ByteString.Char8 as B (writeFile)
-import Debug.Trace (traceIO)
-import System.Directory (createDirectoryIfMissing)
-import System.FilePath ((</>))
+import           Control.Concurrent           (forkIO)
+import           Control.Concurrent.STM       (atomically)
+import           Control.Concurrent.STM.TChan (newTChanIO, writeTChan)
+import           Control.Monad                (replicateM_)
+import qualified Data.ByteString.Char8        as B (writeFile)
+import           Debug.Trace                  (traceIO)
+import           System.Directory             (createDirectoryIfMissing)
+import           System.FilePath              ((</>))
 
-import Graze.Crawler (crawl, evalCrawler, initCrawler)
-import Graze.Http (HttpUrl(..))
+import Graze.Crawler  (crawl, evalCrawler, initCrawler)
+import Graze.HttpUrl (HttpUrl(..))
 import Graze.Messages (Job(..))
-import Graze.Worker (fetch)
-import Graze.Writer (evalWriter, write, WriterState(..))
+import Graze.Worker   (fetch)
+import Graze.Writer   (evalWriter, write, WriterState(..))
 
 
 data Config = Config

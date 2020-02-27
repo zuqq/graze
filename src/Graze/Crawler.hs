@@ -15,7 +15,8 @@ import qualified Data.Text.Encoding as T (decodeUtf8)
 
 import Network.HTTP.Conduit (HttpException)
 
-import Graze.Http     (HttpUrl(..), reqPage)
+import Graze.Http     (reqPage)
+import Graze.HttpUrl  (HttpUrl(..))
 import Graze.Links    (links)
 import Graze.Messages
 import Graze.Robots   (disallowedBy, rules, Rules)

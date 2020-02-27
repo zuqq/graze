@@ -9,7 +9,7 @@ import qualified Data.Text             as T
 import Text.HTML.DOM   (parseBSChunks)
 import Text.XML.Cursor (attribute, Cursor, descendant, element, fromDocument)
 
-import Graze.Http (HttpUrl(..), folder)
+import Graze.HttpUrl (HttpUrl(..), folder)
 
 -- $setup
 -- >>> :set -XOverloadedStrings 

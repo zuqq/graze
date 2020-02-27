@@ -4,7 +4,7 @@ module Graze.Messages where
 
 import qualified Data.ByteString.Char8 as B (ByteString)
 
-import Graze.Http (HttpUrl)
+import Graze.HttpUrl (HttpUrl)
 
 
 data Job = Job

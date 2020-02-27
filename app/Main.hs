@@ -2,7 +2,7 @@
 
 module Main (main) where
 
-import Graze.Http (HttpUrl(..))
+import Graze.HttpUrl (HttpUrl(..))
 import Graze.Runner
 
 

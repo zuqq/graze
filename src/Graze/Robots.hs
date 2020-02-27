@@ -2,7 +2,7 @@ module Graze.Robots (disallowedBy, rules, Rules) where
 
 import qualified Data.Text as T
 
-import Graze.Http          (HttpUrl(..))
+import Graze.HttpUrl      (HttpUrl(..))
 import Graze.Robots.Parser (parse)
 import Graze.Robots.Trie   (fromList, member, Trie)
 

@@ -1,5 +1,3 @@
-{-# OPTIONS_GHC -Wall -Werror #-}
-
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 

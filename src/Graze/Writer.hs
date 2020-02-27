@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 
-module Graze.Writer (evalWriter, write, WriterState(..)) where
+module Graze.Writer (evalWriter, write, WriterState (..)) where
 
 import           Control.Concurrent.STM         (atomically)
 import           Control.Concurrent.STM.TChan   (readTChan, TChan)
@@ -12,7 +12,7 @@ import qualified Data.ByteString.Char8          as B
 import           Debug.Trace                    (traceIO)
 import           System.FilePath                ((</>))
 
-import Graze.Messages (Done, PageRecord(..))
+import Graze.Messages (Done, PageRecord (..))
 
 
 data WriterState = WriterState

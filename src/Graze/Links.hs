@@ -10,7 +10,7 @@ import qualified Data.Text             as T
 import Text.HTML.DOM   (parseBSChunks)
 import Text.XML.Cursor (attribute, Cursor, descendant, element, fromDocument)
 
-import Graze.HttpUrl        (HttpUrl(..))
+import Graze.HttpUrl        (HttpUrl (..))
 import Graze.HttpUrl.Parser (parseRel)
 
 -- $setup

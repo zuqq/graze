@@ -9,7 +9,7 @@ import           Debug.Trace                  (traceIO)
 import Network.HTTP.Conduit (HttpException)
 
 import Graze.Http     (reqPage)
-import Graze.Messages (Result(..), FetchResponse(..), Job(..))
+import Graze.Messages (FetchResponse (..), Job (..), Result (..))
 
 
 fetch

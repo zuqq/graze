@@ -1,6 +1,12 @@
 {-# OPTIONS_GHC -Wall -Werror #-}
 
-module Graze.Messages where
+module Graze.Messages
+    ( Done (..)
+    , FetchResponse (..)
+    , Job (..)
+    , PageRecord (..)
+    , Result (..)
+    ) where
 
 import qualified Data.ByteString.Char8 as B (ByteString)
 

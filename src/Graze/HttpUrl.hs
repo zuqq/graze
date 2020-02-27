@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 
-module Graze.HttpUrl (HttpUrl(..)) where
+module Graze.HttpUrl (HttpUrl (..)) where
 
 import qualified Data.Text as T (Text, unpack)
 

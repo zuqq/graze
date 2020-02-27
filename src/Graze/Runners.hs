@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 
-module Graze.Runners (Config(..), run) where
+module Graze.Runners (Config (..), run) where
 
 import           Control.Concurrent           (forkIO)
 import           Control.Concurrent.STM       (atomically)
@@ -13,10 +13,10 @@ import           System.Directory             (createDirectoryIfMissing)
 import           System.FilePath              ((</>))
 
 import Graze.Crawler  (crawl, evalCrawler, initCrawler)
-import Graze.HttpUrl (HttpUrl(..))
-import Graze.Messages (Job(..))
+import Graze.HttpUrl  (HttpUrl (..))
+import Graze.Messages (Job (..))
 import Graze.Worker   (fetch)
-import Graze.Writer   (evalWriter, write, WriterState(..))
+import Graze.Writer   (evalWriter, write, WriterState (..))
 
 
 data Config = Config

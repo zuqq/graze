@@ -7,7 +7,7 @@ import           Control.Applicative  ((<|>), liftA2, liftA3)
 import qualified Data.Attoparsec.Text as A
 import qualified Data.Text            as T
 
-import Graze.HttpUrl (HttpUrl(..))
+import Graze.HttpUrl (HttpUrl (..))
 
 
 scheme :: A.Parser T.Text
@@ -35,4 +35,4 @@ parse :: T.Text -> Either String HttpUrl
 parse = A.parseOnly url
 
 parseRel :: HttpUrl -> T.Text -> Either String HttpUrl
-parseRel base = A.parseOnly (relUrl base)
+parseRel = A.parseOnly . relUrl

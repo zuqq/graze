@@ -29,25 +29,28 @@ stripFragment :: T.Text -> T.Text
 stripFragment = fst . T.breakOn "#"
 
 -- |
+-- >>> straighten "a"
+-- "a"
+-- >>> straighten "//"
+-- "/"
+-- >>> straighten "/a/b/./"
+-- "/a/b/"
 -- >>> straighten "/../"
 -- "/"
 -- >>> straighten "/a/b/../"
 -- "/a/"
--- >>> straighten "/a/b/./"
--- "/a/b/"
--- >>> straighten "//"
+-- >>> straighten "/a/b/../../"
 -- "/"
--- >>> straighten "a"
--- "a"
+-- >>> straighten "/a/../../c"
+-- "/c"
 straighten :: T.Text -> T.Text
-straighten = T.intercalate "/" . go . T.split (== '/') . T.replace "//" "/"
+straighten = T.intercalate "/" . go [] . T.split (== '/') . T.replace "//" "/"
   where
-    go ("." : xs)       = go xs
-    go (".." : xs)      = go xs
-    go ("" : ".." : xs) = "" : go xs  -- For the special case "/../" -> "/".
-    go (_ : ".." : xs)  = go xs
-    go (x : xs)         = x : go xs
-    go xs               = xs
+    go xs       ("." : ys)  = go xs       ys
+    go [""]     (".." : ys) = go [""]     ys  -- If the input starts with "/../"
+    go (x : xs) (".." : ys) = go xs       ys
+    go xs       (y : ys)    = go (y : xs) ys
+    go xs       []          = reverse xs      -- Base case
 
 clean :: HttpUrl -> HttpUrl
 clean url = url { huPath = straighten . stripFragment . huPath $ url }

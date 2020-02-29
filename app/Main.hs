@@ -3,24 +3,42 @@
 
 module Main (main) where
 
-import qualified Data.Text          as T (pack)
-import           System.Environment (getArgs)
+import qualified Data.Text as T (pack)
+
+import Options.Applicative
 
 import Graze.HttpUrl.Parser (parse)
-import Graze.Runners        (Config (..), run)
+import Graze.Runners        (Config (Config), run)
 
+
+confParser :: Parser Config
+confParser = Config
+    <$> option auto
+        (long "workers"
+        <> metavar "n"
+        <> value 10
+        <> help "Number of worker threads")
+    <*> option auto
+        (long "depth"
+        <> metavar "d"
+        <> value 3
+        <> help "Depth of the search")
+    <*> option auto
+        (long "folder"
+        <> metavar "f"
+        <> value "download"
+        <> help "Folder to save the pages in")
+    <*> option auto
+        (long "database"
+        <> metavar "db"
+        <> value "db.csv"
+        <> help "Name of the resulting CSV")
+    <*> argument (eitherReader $ parse . T.pack)
+        (metavar "base"
+        <> help "URL for the crawler to start at")
+
+confInfo :: ParserInfo Config
+confInfo = info (confParser <**> helper) fullDesc
 
 main :: IO ()
-main = getArgs >>= \case
-    [s] -> case (parse . T.pack) s of
-        Left _     -> putStrLn "malformed URL" >> usage
-        Right base -> run Config
-            { cWorkers  = 10
-            , cDepth    = 3
-            , cBase     = base
-            , cFolder   = "download"
-            , cDatabase = "db.csv"
-            }
-    _   -> usage
-  where
-    usage = putStrLn "usage: graze URL"
+main = execParser confInfo >>= run

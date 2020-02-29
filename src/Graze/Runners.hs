@@ -22,9 +22,9 @@ import Graze.Writer   (evalWriter, write, WriterState (..))
 data Config = Config
     { cWorkers  :: !Int       -- ^ Number of worker threads.
     , cDepth    :: !Int       -- ^ Depth of the search.
-    , cBase     :: !HttpUrl   -- ^ URL for the crawler to start at.
     , cFolder   :: !FilePath  -- ^ Folder to save the pages in.
     , cDatabase :: !FilePath  -- ^ Name of the resulting CSV.
+    , cBase     :: !HttpUrl   -- ^ URL for the crawler to start at.
     }
 
 run :: Config -> IO ()

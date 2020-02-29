@@ -20,7 +20,7 @@ fetch jobChan resChan = loop
   where
     loop = do
         job <- atomically (readTChan jobChan)
-        traceIO $ "[" <> show (jHops job) <> "] " <> "GET " <> show (jUrl job)
+        traceIO $ "[" <> show (jDepth job) <> "] " <> "GET " <> show (jUrl job)
         resp <- try (reqPage . jUrl $ job)
                 :: IO (Either HttpException B.ByteString)
         atomically . writeTChan resChan . FetchResponse job $

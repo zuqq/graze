@@ -12,7 +12,7 @@ import Graze.HttpUrl (HttpUrl)
 
 
 data Job = Job
-    { jHops   :: !Int      -- ^ Remaining depth of the search.
+    { jDepth  :: !Int      -- ^ Remaining depth of the search.
     , jParent :: !HttpUrl
     , jUrl    :: !HttpUrl
     }

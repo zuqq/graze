@@ -66,12 +66,12 @@ mapActive f = modify $ \s ->
 
 sendJobs
     :: TChan Job
-    -> Int        -- ^ Hops
+    -> Int        -- ^ Depth
     -> HttpUrl    -- ^ Parent
     -> [HttpUrl]  -- ^ URLs
     -> Crawler ()
-sendJobs chan hops parent = liftIO . atomically .
-    traverse_ (writeTChan chan . Job hops parent)
+sendJobs chan depth parent = liftIO . atomically .
+    traverse_ (writeTChan chan . Job depth parent)
 
 crawl
     :: TChan Job
@@ -86,13 +86,13 @@ crawl jobChan resChan outChan = loop
         let Job {..} = frJob response
         case frResult response of
             Fail         -> return ()
-            Success page -> if jHops <= 0
+            Success page -> if jDepth <= 0
                 then return ()
                 else do
                     liftIO . atomically .
                         writeTChan outChan . Right $ PageRecord jParent jUrl page
                     ls <- filterM newUrl (links jUrl page)
-                    sendJobs jobChan (jHops - 1) jUrl ls
+                    sendJobs jobChan (jDepth - 1) jUrl ls
                     mapActive (+ length ls)
         n <- gets csActive
         if n > 0

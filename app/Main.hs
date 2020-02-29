@@ -6,7 +6,6 @@ module Main (main) where
 import qualified Data.Text          as T (pack)
 import           System.Environment (getArgs)
 
-import Graze.HttpUrl        (HttpUrl (HttpUrl))
 import Graze.HttpUrl.Parser (parse)
 import Graze.Runners        (Config (..), run)
 

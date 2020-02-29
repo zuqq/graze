@@ -4,7 +4,7 @@ import qualified Data.Text as T
 
 import Graze.HttpUrl       (HttpUrl (..))
 import Graze.Robots.Parser (parse)
-import Graze.Robots.Trie   (fromList, member, Trie)
+import Graze.Robots.Trie   (completes, fromList, Trie)
 
 
 type Chunks = [T.Text]
@@ -29,4 +29,4 @@ rules :: T.Text -> Rules
 rules = fromList . fmap chunk . parse
 
 disallowedBy :: HttpUrl -> Rules -> Bool
-disallowedBy = member . chunk . huPath
+disallowedBy = completes . chunk . huPath

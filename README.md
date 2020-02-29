@@ -1,9 +1,11 @@
 # graze
 
-A concurrent web crawler. Please note that, while Graze respects the target's
-`robots.txt`, it does not employ any kind of rate limiting.
+Graze is a concurrent web crawler leveraging GHC's lightweight threads. Please
+note that, although it respects disallow rules in the target's `robots.txt`,
+Graze does not employ any kind of rate limiting.
 
-## Installation
+
+## Installation
 
 Follow the usual [stack](https://www.haskellstack.org) workflow.
 

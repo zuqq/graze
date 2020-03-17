@@ -1,9 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 
-module Graze.HttpUrl (HttpUrl (..)) where
+module Graze.HttpUrl (HttpUrl (..), serialize) where
 
-import qualified Data.Text as T (Text, unpack)
+import qualified Data.Text as T (Text)
 
 -- $setup
 -- >>> :set -XOverloadedStrings
@@ -31,8 +31,5 @@ instance Eq HttpUrl where
 instance Ord HttpUrl where
     x <= y = (huDomain x, huPath x) <= (huDomain y, huPath y)
 
--- |
--- >>> HttpUrl "http:" "//x" "/y"
--- http://x/y
-instance Show HttpUrl where
-    show HttpUrl {..} = T.unpack $ huScheme <> huDomain <> huPath
+serialize :: HttpUrl -> T.Text
+serialize HttpUrl {..} = huScheme <> huDomain <> huPath

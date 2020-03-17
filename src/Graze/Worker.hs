@@ -1,3 +1,5 @@
+{-# LANGUAGE RecordWildCards #-}
+
 module Graze.Worker (fetch) where
 
 import           Control.Concurrent.STM       (atomically)
@@ -9,6 +11,7 @@ import           Debug.Trace                  (traceIO)
 import Network.HTTP.Conduit (HttpException)
 
 import Graze.Http     (reqPage)
+import Graze.HttpUrl  (serialize)
 import Graze.Messages (FetchResponse (..), Job (..), Result (..))
 
 
@@ -19,9 +22,10 @@ fetch
 fetch jobChan resChan = loop
   where
     loop = do
-        job <- atomically (readTChan jobChan)
-        traceIO $ "[" <> show (jDepth job) <> "] " <> "GET " <> show (jUrl job)
-        resp <- try (reqPage . jUrl $ job)
+        job@Job {..} <- atomically (readTChan jobChan)
+        traceIO $
+            "[" <> show jDepth <> "] " <> "GET " <> (show . serialize) jUrl
+        resp <- try (reqPage jUrl)
                 :: IO (Either HttpException B.ByteString)
         atomically . writeTChan resChan . FetchResponse job $
             case resp of

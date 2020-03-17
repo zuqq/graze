@@ -9,9 +9,11 @@ import           Control.Concurrent.STM.TChan   (readTChan, TChan)
 import           Control.Monad.IO.Class         (liftIO)
 import           Control.Monad.Trans.State.Lazy (evalStateT, get, modify, StateT)
 import qualified Data.ByteString.Char8          as B
+import qualified Data.Text.Encoding             as T (encodeUtf8)
 import           Debug.Trace                    (traceIO)
 import           System.FilePath                ((</>))
 
+import Graze.HttpUrl  (serialize)
 import Graze.Messages (Done, PageRecord (..))
 
 
@@ -28,12 +30,12 @@ evalWriter = evalStateT
 
 encRecord :: Int -> PageRecord -> B.ByteString
 encRecord counter PageRecord {..} =
-    show' counter  <> ","    <>
-    show' prParent <> ","    <>
-    show' prUrl    <> "\r\n"
+    show' counter       <> ","    <>
+    serialize' prParent <> ","    <>
+    serialize' prUrl    <> "\r\n"
   where
-    show' :: Show a => a -> B.ByteString
-    show' = B.pack . show
+    show'      = B.pack . show
+    serialize' = T.encodeUtf8 . serialize
 
 writeRecord :: PageRecord -> Writer ()
 writeRecord record = do

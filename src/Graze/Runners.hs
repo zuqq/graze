@@ -13,7 +13,7 @@ import           System.Directory             (createDirectoryIfMissing)
 import           System.FilePath              ((</>))
 
 import Graze.Crawler  (crawl, evalCrawler, initCrawler)
-import Graze.HttpUrl  (HttpUrl (..))
+import Graze.HttpUrl  (HttpUrl (..), serialize)
 import Graze.Messages (Job (..))
 import Graze.Worker   (fetch)
 import Graze.Writer   (evalWriter, write, WriterState (..))
@@ -29,7 +29,7 @@ data Config = Config
 
 run :: Config -> IO ()
 run Config {..} = do
-    traceIO $ "Crawling " <> show cBase
+    traceIO $ "Crawling " <> (show . serialize) cBase
 
     jobChan <- newTChanIO
     resChan <- newTChanIO

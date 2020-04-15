@@ -81,10 +81,10 @@ crawl
 crawl jobChan resChan outChan = loop
   where
     loop = do
-        response <- liftIO . atomically . readTChan $ resChan
+        FetchResponse {..} <- liftIO . atomically . readTChan $ resChan
         mapActive (+ (-1))
-        let Job {..} = frJob response
-        case frResult response of
+        let Job {..} = frJob
+        case frResult of
             Fail         -> return ()
             Success page -> if jDepth <= 0
                 then return ()

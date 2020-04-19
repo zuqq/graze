@@ -27,11 +27,11 @@ parseLine l = case takeWhile noComment (T.words l) of
     noComment = (/= '#') . T.head
 
 toRecords :: [RobotsLine] -> [Record]
-toRecords rls = case rls of
-    []               -> []
-    (Right _ : _)    -> toRecords $ dropWhile isRight rls
-    (Left ua : rest) -> let (ds, rest') = span isRight rest in
-                        Record ua (rights ds) : toRecords rest'
+toRecords []               = []
+toRecords (Right _ : rest) = toRecords rest
+toRecords (Left ua : rest) = Record ua (rights ds) : toRecords rest'
+  where
+    (ds, rest') = span isRight rest
 
 disallowsFor :: UserAgent -> [Record] -> [Disallow]
 disallowsFor ua rs = [ d | r <- rs, userAgent r == ua, d <- disallows r ]

@@ -4,6 +4,7 @@ module Graze.Links (links) where
 
 import           Control.Monad   ((<=<))
 import qualified Data.ByteString as B (ByteString)
+import           Data.Char       (isSpace)
 import           Data.Either     (rights)
 import qualified Data.Text       as T
 
@@ -17,8 +18,15 @@ import Graze.HttpUrl.Parser (parseRel)
 -- >>> :set -XOverloadedStrings 
 
 
-rawLinks :: Cursor -> [T.Text]
-rawLinks = attribute "href" <=< element "a" <=< descendant
+stripSpaces :: T.Text -> T.Text
+stripSpaces = T.filter (not . isSpace)
+
+rawLinks :: B.ByteString -> [T.Text]
+rawLinks = fmap stripSpaces
+    . (attribute "href" <=< element "a" <=< descendant)
+    . fromDocument
+    . parseBSChunks
+    . return
 
 -- |
 -- >>> stripFragment "http://a.b/c#d"
@@ -52,14 +60,11 @@ straighten = T.intercalate "/" . go [] . T.split (== '/') . T.replace "//" "/"
     go xs (y : ys)          = go (y : xs) ys
     go xs []                = reverse xs      -- Base case
 
-clean :: HttpUrl -> HttpUrl
-clean url = url { huPath = straighten . stripFragment . huPath $ url }
+normalize :: HttpUrl -> HttpUrl
+normalize url = url { huPath = straighten . stripFragment . huPath $ url }
 
 links :: HttpUrl -> B.ByteString -> [HttpUrl]
-links base = fmap clean
+links base = fmap normalize
     . rights
     . fmap (parseRel base)
     . rawLinks
-    . fromDocument
-    . parseBSChunks
-    . return

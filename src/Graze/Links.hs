@@ -11,8 +11,7 @@ import qualified Data.Text       as T
 import Text.HTML.DOM   (parseBSChunks)
 import Text.XML.Cursor (attribute, descendant, element, fromDocument)
 
-import Graze.HttpUrl        (HttpUrl (..))
-import Graze.HttpUrl.Parser (parseRel)
+import Graze.HttpUrl (HttpUrl (..), parseRel)
 
 -- $setup
 -- >>> :set -XOverloadedStrings 

@@ -6,8 +6,8 @@ import qualified Data.Text as T (pack)
 
 import Options.Applicative
 
-import Graze.HttpUrl.Parser (parse)
-import Graze.Runners        (Config (Config), run)
+import Graze.HttpUrl (parse)
+import Graze.Runners (Config (Config), run)
 
 
 confParser :: Parser Config

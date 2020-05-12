@@ -32,11 +32,11 @@ evalWriter :: Writer a -> WriterState -> IO a
 evalWriter = evalStateT
 
 writeRecord :: PageRecord -> Writer ()
-writeRecord record = do
+writeRecord record@PageRecord {..} = do
     WriterState {..} <- get
     liftIO $ do
         B.appendFile (wsFolder </> wsDatabase) (toSExpr' record)
-        B.writeFile (wsFolder </> hash (prUrl record)) (prContent record)
+        B.writeFile (wsFolder </> hash prUrl) prContent
   where
     toSExpr' = T.encodeUtf8 . toSExpr
 

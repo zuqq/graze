@@ -26,7 +26,7 @@ data Config = Config
     { cWorkers  :: !Int       -- ^ Number of worker threads.
     , cDepth    :: !Int       -- ^ Depth of the search.
     , cFolder   :: !FilePath  -- ^ Folder to save the pages in.
-    , cDatabase :: !FilePath  -- ^ Name of the resulting CSV.
+    , cDatabase :: !FilePath  -- ^ File to save the records in.
     , cBase     :: !HttpUrl   -- ^ URL for the crawler to start at.
     }
 

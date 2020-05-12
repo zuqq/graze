@@ -5,7 +5,7 @@ module Graze.Worker
     ) where
 
 import           Control.Concurrent.STM       (atomically)
-import           Control.Concurrent.STM.TChan (readTChan, TChan, writeTChan)
+import           Control.Concurrent.STM.TChan (TChan, readTChan, writeTChan)
 import           Control.Exception            (try)
 import qualified Data.ByteString              as B (ByteString)
 import           Debug.Trace                  (traceIO)

@@ -16,7 +16,7 @@ import Text.XML.Cursor (attribute, descendant, element, fromDocument)
 import Graze.HttpUrl (HttpUrl (..), parseRel)
 
 -- $setup
--- >>> :set -XOverloadedStrings 
+-- >>> :set -XOverloadedStrings
 
 
 stripSpaces :: T.Text -> T.Text
@@ -29,7 +29,10 @@ rawLinks = fmap stripSpaces
     . parseBSChunks
     . return
 
--- |
+-- | Strip the fragment from a URL.
+--
+-- ==== __Examples__
+--
 -- >>> stripFragment "http://a.b/c#d"
 -- "http://a.b/c"
 -- >>> stripFragment "http://a.b/c?d=e#f"
@@ -37,7 +40,10 @@ rawLinks = fmap stripSpaces
 stripFragment :: T.Text -> T.Text
 stripFragment = fst . T.breakOn "#"
 
--- |
+-- | Remove relative elements from a path.
+--
+-- ==== __Examples__
+--
 -- >>> straighten "a"
 -- "a"
 -- >>> straighten "//"

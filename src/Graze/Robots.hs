@@ -12,7 +12,7 @@ import           Data.Either          (isLeft, isRight, lefts, rights)
 import qualified Data.Text            as T
 
 import Graze.HttpUrl (HttpUrl (..))
-import Graze.Trie    (completes, fromList, Trie)
+import Graze.Trie    (Trie, completes, fromList)
 
 
 type UserAgent = T.Text

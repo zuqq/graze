@@ -62,10 +62,10 @@ straighten :: T.Text -> T.Text
 straighten = T.intercalate "/" . go [] . T.split (== '/') . T.replace "//" "/"
   where
     go xs ("." : ys)        = go xs ys
-    go [""] (".." : ys)     = go [""] ys      -- If the input starts with "/../"
+    go [""] (".." : ys)     = go [""] ys      -- If the input starts with "/../".
     go (_ : xs) (".." : ys) = go xs ys
     go xs (y : ys)          = go (y : xs) ys
-    go xs []                = reverse xs      -- Base case
+    go xs []                = reverse xs      -- Base case.
 
 normalize :: HttpUrl -> HttpUrl
 normalize url = url { huPath = straighten . stripFragment . huPath $ url }

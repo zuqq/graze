@@ -47,8 +47,8 @@ disallowsFor :: UserAgent -> [Record] -> [Disallow]
 disallowsFor ua rs = [ d | (uas, ds) <- rs, ua `elem` uas, d <- ds ]
 
 parse
-    :: T.Text      -- ^ User agent.
-    -> T.Text      -- ^ Content of the robots.txt file.
+    :: T.Text    -- ^ User agent.
+    -> T.Text    -- ^ Content of the robots.txt file.
     -> [T.Text]
 parse ua = disallowsFor ua
     . toRecords

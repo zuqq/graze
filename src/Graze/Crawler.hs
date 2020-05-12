@@ -8,11 +8,11 @@ module Graze.Crawler
     ) where
 
 import Control.Concurrent.STM           (atomically)
-import Control.Concurrent.STM.TChan     (readTChan, TChan, writeTChan)
+import Control.Concurrent.STM.TChan     (TChan, readTChan, writeTChan)
 import Control.Exception                (try)
 import Control.Monad                    (filterM)
 import Control.Monad.IO.Class           (liftIO)
-import Control.Monad.Trans.State.Strict (evalStateT, get, gets, modify, StateT)
+import Control.Monad.Trans.State.Strict (StateT, evalStateT, get, gets, modify)
 import Data.Foldable                    (traverse_)
 import qualified Data.Set           as S (Set, insert, member, singleton)
 import qualified Data.Text.Encoding as T (decodeUtf8)
@@ -23,7 +23,7 @@ import Graze.Http     (reqPage)
 import Graze.HttpUrl  (HttpUrl (..))
 import Graze.Links    (links)
 import Graze.Messages
-import Graze.Robots   (disallowedBy, rules, Rules)
+import Graze.Robots   (Rules, disallowedBy, rules)
 
 
 reqRobots :: HttpUrl -> IO Rules

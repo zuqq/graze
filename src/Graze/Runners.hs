@@ -19,7 +19,7 @@ import Graze.Crawler  (crawl, evalCrawler, initCrawler)
 import Graze.HttpUrl  (HttpUrl (..), serialize)
 import Graze.Messages (Job (..))
 import Graze.Worker   (fetch)
-import Graze.Writer   (evalWriter, write, WriterState (..))
+import Graze.Writer   (WriterState (..), evalWriter, write)
 
 
 data Config = Config

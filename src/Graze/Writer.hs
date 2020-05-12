@@ -8,9 +8,9 @@ module Graze.Writer
     ) where
 
 import           Control.Concurrent.STM         (atomically)
-import           Control.Concurrent.STM.TChan   (readTChan, TChan)
+import           Control.Concurrent.STM.TChan   (TChan, readTChan)
 import           Control.Monad.IO.Class         (liftIO)
-import           Control.Monad.Trans.State.Lazy (evalStateT, get, StateT)
+import           Control.Monad.Trans.State.Lazy (StateT, evalStateT, get)
 import qualified Data.ByteString                as B
 import qualified Data.Text.Encoding             as T (encodeUtf8)
 import           Debug.Trace                    (traceIO)

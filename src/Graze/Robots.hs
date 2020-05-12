@@ -1,6 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Graze.Robots (disallowedBy, rules, Rules) where
+module Graze.Robots
+    ( Rules
+    , disallowedBy
+    , rules
+    ) where
 
 import qualified Data.Attoparsec.Text as A
 import           Data.Char            (isSpace)

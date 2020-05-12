@@ -1,4 +1,8 @@
-module Graze.Trie (completes, fromList, Trie) where
+module Graze.Trie
+    ( Trie
+    , completes
+    , fromList
+    ) where
 
 import           Data.Hashable       (Hashable)
 import qualified Data.HashMap.Strict as HM

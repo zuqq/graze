@@ -1,6 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Graze.Links (links) where
+module Graze.Links
+    ( links
+    ) where
 
 import           Control.Monad   ((<=<))
 import qualified Data.ByteString as B (ByteString)

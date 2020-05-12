@@ -1,6 +1,8 @@
 {-# LANGUAGE RecordWildCards #-}
 
-module Graze.Worker (fetch) where
+module Graze.Worker
+    ( fetch
+    ) where
 
 import           Control.Concurrent.STM       (atomically)
 import           Control.Concurrent.STM.TChan (readTChan, TChan, writeTChan)

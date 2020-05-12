@@ -1,7 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 
-module Graze.Crawler (crawl, initCrawler, evalCrawler) where
+module Graze.Crawler
+    ( crawl
+    , initCrawler
+    , evalCrawler
+    ) where
 
 import Control.Concurrent.STM           (atomically)
 import Control.Concurrent.STM.TChan     (readTChan, TChan, writeTChan)

@@ -1,4 +1,6 @@
-module Graze.Http (reqPage) where
+module Graze.Http
+    ( reqPage
+    ) where
 
 import           Control.Monad   ((<=<))
 import qualified Data.ByteString as B (ByteString)

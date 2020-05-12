@@ -1,7 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 
-module Graze.Runners (Config (..), run) where
+module Graze.Runners
+    ( Config (..)
+    , run
+    ) where
 
 import           Control.Concurrent           (forkIO)
 import           Control.Concurrent.STM       (atomically)

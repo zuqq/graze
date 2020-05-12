@@ -1,7 +1,11 @@
 {-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE RecordWildCards   #-}
 
-module Graze.Writer (evalWriter, write, WriterState (..)) where
+module Graze.Writer
+    ( WriterState (..)
+    , evalWriter
+    , write
+    ) where
 
 import           Control.Concurrent.STM         (atomically)
 import           Control.Concurrent.STM.TChan   (readTChan, TChan)

@@ -6,7 +6,7 @@ module Graze.Messages
     , Result (..)
     ) where
 
-import qualified Data.ByteString.Char8 as B (ByteString)
+import qualified Data.ByteString as B (ByteString)
 
 import Graze.HttpUrl (HttpUrl)
 
@@ -27,7 +27,8 @@ data FetchResponse = FetchResponse
 data Done = Done
 
 data PageRecord = PageRecord
-    { prParent  :: !HttpUrl
-    , prUrl     :: !HttpUrl
-    , prContent :: !B.ByteString
+    { prParent   :: !HttpUrl
+    , prUrl      :: !HttpUrl
+    , prChildren :: ![HttpUrl]
+    , prContent  :: !B.ByteString
     }

@@ -1,8 +1,13 @@
 {-# LANGUAGE RecordWildCards   #-}
 
-module Graze.HttpUrl (HttpUrl (..), serialize) where
+module Graze.HttpUrl (HttpUrl (..), hash, serialize) where
 
-import qualified Data.Text as T (Text)
+import qualified Data.ByteString.Lazy    as B
+import qualified Data.Text               as T  (Text)
+import qualified Data.Text.Lazy          as TL (fromStrict)
+import qualified Data.Text.Lazy.Encoding as TL (encodeUtf8)
+
+import Data.Digest.Pure.SHA (sha1, showDigest)
 
 -- $setup
 -- >>> :set -XOverloadedStrings
@@ -32,3 +37,6 @@ instance Ord HttpUrl where
 
 serialize :: HttpUrl -> T.Text
 serialize HttpUrl {..} = huScheme <> huDomain <> huPath
+
+hash :: HttpUrl -> String
+hash = showDigest . sha1 . TL.encodeUtf8 . TL.fromStrict . serialize

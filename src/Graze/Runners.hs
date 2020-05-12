@@ -7,7 +7,7 @@ import           Control.Concurrent           (forkIO)
 import           Control.Concurrent.STM       (atomically)
 import           Control.Concurrent.STM.TChan (newTChanIO, writeTChan)
 import           Control.Monad                (replicateM_)
-import qualified Data.ByteString.Char8        as B (writeFile)
+import qualified Data.ByteString              as B (writeFile)
 import           Debug.Trace                  (traceIO)
 import           System.Directory             (createDirectoryIfMissing)
 import           System.FilePath              ((</>))
@@ -42,6 +42,6 @@ run Config {..} = do
     _  <- forkIO $ evalCrawler (crawl jobChan resChan outChan) cs
 
     createDirectoryIfMissing True cFolder
-    B.writeFile (cFolder </> cDatabase) "id,parent,url\r\n"
+    B.writeFile (cFolder </> cDatabase) ""
 
-    evalWriter (write outChan) $ WriterState 0 cFolder cDatabase
+    evalWriter (write outChan) $ WriterState cFolder cDatabase

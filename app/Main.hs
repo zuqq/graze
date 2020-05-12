@@ -23,15 +23,15 @@ confParser = Config
         <> value 3
         <> help "Depth of the search")
     <*> option auto
-        (long "folder"
+        (long "page store"
         <> metavar "f"
-        <> value "download"
+        <> value "store"
         <> help "Folder to save the pages in")
     <*> option auto
-        (long "database"
-        <> metavar "db"
-        <> value "db.csv"
-        <> help "Name of the resulting CSV")
+        (long "record store"
+        <> metavar "r"
+        <> value "records"
+        <> help "File to save the records in")
     <*> argument (eitherReader $ parse . T.pack)
         (metavar "base"
         <> help "URL for the crawler to start at")

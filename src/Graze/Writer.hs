@@ -1,5 +1,4 @@
 {-# LANGUAGE LambdaCase        #-}
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 
 module Graze.Writer (evalWriter, write, WriterState (..)) where
@@ -8,18 +7,18 @@ import           Control.Concurrent.STM         (atomically)
 import           Control.Concurrent.STM.TChan   (readTChan, TChan)
 import           Control.Monad.IO.Class         (liftIO)
 import           Control.Monad.Trans.State.Lazy (evalStateT, get, modify, StateT)
-import qualified Data.ByteString.Char8          as B
+import qualified Data.ByteString                as B
 import qualified Data.Text.Encoding             as T (encodeUtf8)
 import           Debug.Trace                    (traceIO)
 import           System.FilePath                ((</>))
 
-import Graze.HttpUrl  (serialize)
+import Graze.HttpUrl  (hash, serialize)
 import Graze.Messages (Done, PageRecord (..))
+import Graze.Records  (toSExpr)
 
 
 data WriterState = WriterState
-    { wsCounter  :: !Int
-    , wsFolder   :: !FilePath
+    { wsFolder   :: !FilePath
     , wsDatabase :: !FilePath
     }
 
@@ -28,32 +27,18 @@ type Writer a = StateT WriterState IO a
 evalWriter :: Writer a -> WriterState -> IO a
 evalWriter = evalStateT
 
-encRecord :: Int -> PageRecord -> B.ByteString
-encRecord counter PageRecord {..} =
-    show' counter       <> ","    <>
-    serialize' prParent <> ","    <>
-    serialize' prUrl    <> "\r\n"
-  where
-    show'      = B.pack . show
-    serialize' = T.encodeUtf8 . serialize
-
 writeRecord :: PageRecord -> Writer ()
 writeRecord record = do
     WriterState {..} <- get
     liftIO $ do
-        B.appendFile (wsFolder </> wsDatabase) (encRecord wsCounter record)
-        B.writeFile (wsFolder </> show wsCounter) (prContent record)
-
-mapCounter :: (Int -> Int) -> Writer ()
-mapCounter f = modify $ \s ->
-    s { wsCounter = f (wsCounter s) }
+        B.appendFile (wsFolder </> wsDatabase) (toSExpr' record)
+        B.writeFile (wsFolder </> hash (prUrl record)) (prContent record)
+  where
+    toSExpr' = T.encodeUtf8 . toSExpr
 
 write :: TChan (Either Done PageRecord) -> Writer ()
 write outChan = loop
   where
     loop = (liftIO . atomically . readTChan) outChan >>= \case
         Left _       -> liftIO . traceIO $ "Done"
-        Right record -> do
-            writeRecord record
-            mapCounter (+ 1)
-            loop
+        Right record -> writeRecord record >> loop

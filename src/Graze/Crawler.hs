@@ -89,11 +89,12 @@ crawl jobChan resChan outChan = loop
             Success page -> if jDepth <= 0
                 then return ()
                 else do
+                    let ls = links jUrl page
                     liftIO . atomically .
-                        writeTChan outChan . Right $ PageRecord jParent jUrl page
-                    ls <- filterM newUrl (links jUrl page)
-                    sendJobs jobChan (jDepth - 1) jUrl ls
-                    mapActive (+ length ls)
+                        writeTChan outChan . Right $ PageRecord jParent jUrl ls page
+                    ls' <- filterM newUrl ls
+                    sendJobs jobChan (jDepth - 1) jUrl ls'
+                    mapActive (+ length ls')
         n <- gets csActive
         if n > 0
             then loop

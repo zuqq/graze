@@ -19,6 +19,7 @@ dependencies:
 - html-conduit
 - http-conduit
 - optparse-applicative
+- SHA
 - stm
 - text
 - transformers
@@ -33,6 +34,8 @@ executables:
     main:                Main.hs
     source-dirs:         app
     ghc-options:
+    - -Wall
+    - -Werror
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N

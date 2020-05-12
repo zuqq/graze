@@ -1,8 +1,8 @@
 module Graze.Http (reqPage) where
 
-import           Control.Monad         ((<=<))
-import qualified Data.ByteString.Char8 as B (ByteString)
-import qualified Data.Text             as T (unpack)
+import           Control.Monad   ((<=<))
+import qualified Data.ByteString as B (ByteString)
+import qualified Data.Text       as T (unpack)
 
 import Network.HTTP.Conduit (parseUrlThrow, redirectCount)
 import Network.HTTP.Simple  (getResponseBody, httpBS)

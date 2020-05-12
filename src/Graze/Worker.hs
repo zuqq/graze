@@ -5,7 +5,7 @@ module Graze.Worker (fetch) where
 import           Control.Concurrent.STM       (atomically)
 import           Control.Concurrent.STM.TChan (readTChan, TChan, writeTChan)
 import           Control.Exception            (try)
-import qualified Data.ByteString.Char8        as B (ByteString)
+import qualified Data.ByteString              as B (ByteString)
 import           Debug.Trace                  (traceIO)
 
 import Network.HTTP.Conduit (HttpException)

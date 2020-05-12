@@ -2,10 +2,10 @@
 
 module Graze.Links (links) where
 
-import           Control.Monad         ((<=<))
-import qualified Data.ByteString.Char8 as B (ByteString)
-import           Data.Either           (rights)
-import qualified Data.Text             as T
+import           Control.Monad   ((<=<))
+import qualified Data.ByteString as B (ByteString)
+import           Data.Either     (rights)
+import qualified Data.Text       as T
 
 import Text.HTML.DOM   (parseBSChunks)
 import Text.XML.Cursor (attribute, Cursor, descendant, element, fromDocument)

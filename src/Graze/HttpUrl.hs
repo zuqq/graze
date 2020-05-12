@@ -2,7 +2,6 @@
 
 module Graze.HttpUrl (HttpUrl (..), hash, serialize) where
 
-import qualified Data.ByteString.Lazy    as B
 import qualified Data.Text               as T  (Text)
 import qualified Data.Text.Lazy          as TL (fromStrict)
 import qualified Data.Text.Lazy.Encoding as TL (encodeUtf8)

@@ -25,8 +25,11 @@ type Rules = Trie T.Text
 chunk :: T.Text -> Chunks
 chunk = filter (not . T.null) . T.split (== '/')
 
-rules :: T.Text -> Rules
-rules = fromList . fmap chunk . parse
+rules
+    :: T.Text  -- ^ User agent.
+    -> T.Text  -- ^ Content of the robots.txt file.
+    -> Rules
+rules ua = fromList . fmap chunk . parse ua
 
 disallowedBy :: HttpUrl -> Rules -> Bool
 disallowedBy = completes . chunk . huPath

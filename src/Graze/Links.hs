@@ -9,7 +9,7 @@ import           Data.Either     (rights)
 import qualified Data.Text       as T
 
 import Text.HTML.DOM   (parseBSChunks)
-import Text.XML.Cursor (attribute, Cursor, descendant, element, fromDocument)
+import Text.XML.Cursor (attribute, descendant, element, fromDocument)
 
 import Graze.HttpUrl        (HttpUrl (..))
 import Graze.HttpUrl.Parser (parseRel)
@@ -56,7 +56,7 @@ straighten = T.intercalate "/" . go [] . T.split (== '/') . T.replace "//" "/"
   where
     go xs ("." : ys)        = go xs ys
     go [""] (".." : ys)     = go [""] ys      -- If the input starts with "/../"
-    go (x : xs) (".." : ys) = go xs ys
+    go (_ : xs) (".." : ys) = go xs ys
     go xs (y : ys)          = go (y : xs) ys
     go xs []                = reverse xs      -- Base case
 

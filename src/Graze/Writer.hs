@@ -6,13 +6,13 @@ module Graze.Writer (evalWriter, write, WriterState (..)) where
 import           Control.Concurrent.STM         (atomically)
 import           Control.Concurrent.STM.TChan   (readTChan, TChan)
 import           Control.Monad.IO.Class         (liftIO)
-import           Control.Monad.Trans.State.Lazy (evalStateT, get, modify, StateT)
+import           Control.Monad.Trans.State.Lazy (evalStateT, get, StateT)
 import qualified Data.ByteString                as B
 import qualified Data.Text.Encoding             as T (encodeUtf8)
 import           Debug.Trace                    (traceIO)
 import           System.FilePath                ((</>))
 
-import Graze.HttpUrl  (hash, serialize)
+import Graze.HttpUrl  (hash)
 import Graze.Messages (Done, PageRecord (..))
 import Graze.Records  (toSExpr)
 

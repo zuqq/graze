@@ -22,8 +22,8 @@ import Graze.Records  (toSExpr)
 
 
 data WriterState = WriterState
-    { wsFolder   :: !FilePath
-    , wsDatabase :: !FilePath
+    { wsFolder  :: !FilePath
+    , wsRecords :: !FilePath
     }
 
 type Writer a = StateT WriterState IO a
@@ -35,7 +35,7 @@ writeRecord :: PageRecord -> Writer ()
 writeRecord record@PageRecord {..} = do
     WriterState {..} <- get
     liftIO $ do
-        B.appendFile (wsFolder </> wsDatabase) (toSExpr' record)
+        B.appendFile wsRecords (toSExpr' record)
         B.writeFile (wsFolder </> hash prUrl) prContent
   where
     toSExpr' = T.encodeUtf8 . toSExpr

@@ -23,11 +23,11 @@ import Graze.Writer   (WriterState (..), evalWriter, write)
 
 
 data Config = Config
-    { cWorkers  :: !Int       -- ^ Number of worker threads.
-    , cDepth    :: !Int       -- ^ Depth of the search.
-    , cFolder   :: !FilePath  -- ^ Folder to save the pages in.
-    , cDatabase :: !FilePath  -- ^ File to save the records in.
-    , cBase     :: !HttpUrl   -- ^ URL for the crawler to start at.
+    { cWorkers :: !Int       -- ^ Number of worker threads.
+    , cDepth   :: !Int       -- ^ Depth of the search.
+    , cFolder  :: !FilePath  -- ^ Download folder.
+    , cRecords :: !FilePath  -- ^ Page record file.
+    , cBase    :: !HttpUrl   -- ^ URL to start at.
     }
 
 run :: Config -> IO ()
@@ -45,6 +45,6 @@ run Config {..} = do
     _  <- forkIO $ evalCrawler (crawl jobChan resChan outChan) cs
 
     createDirectoryIfMissing True cFolder
-    B.writeFile (cFolder </> cDatabase) ""
+    B.writeFile cRecords ""
 
-    evalWriter (write outChan) $ WriterState cFolder cDatabase
+    evalWriter (write outChan) (WriterState cFolder cRecords)

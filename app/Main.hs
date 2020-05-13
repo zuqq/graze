@@ -23,18 +23,18 @@ confParser = Config
         <> value 3
         <> help "Depth of the search")
     <*> option auto
-        (long "page store"
+        (long "folder"
         <> metavar "f"
-        <> value "store"
-        <> help "Folder to save the pages in")
+        <> value "download"
+        <> help "Download folder")
     <*> option auto
-        (long "record store"
+        (long "records"
         <> metavar "r"
         <> value "records"
-        <> help "File to save the records in")
+        <> help "Page record file")
     <*> argument (eitherReader $ parse . T.pack)
         (metavar "base"
-        <> help "URL for the crawler to start at")
+        <> help "URL to start at")
 
 confInfo :: ParserInfo Config
 confInfo = info (confParser <**> helper) fullDesc

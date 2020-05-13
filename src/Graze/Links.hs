@@ -68,7 +68,7 @@ straighten = T.intercalate "/" . go [] . T.split (== '/') . T.replace "//" "/"
     go xs []                = reverse xs      -- Base case.
 
 normalize :: HttpUrl -> HttpUrl
-normalize url = url { huPath = straighten . stripFragment . huPath $ url }
+normalize url = url {huPath = straighten . stripFragment . huPath $ url}
 
 links :: HttpUrl -> B.ByteString -> [HttpUrl]
 links base = fmap normalize

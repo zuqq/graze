@@ -27,9 +27,9 @@ import Graze.Robots   (Rules, disallowedBy, rules)
 
 
 reqRobots :: HttpUrl -> IO Rules
-reqRobots url = fmap (rules "*". T.decodeUtf8) . reqPage $ robotsUrl
+reqRobots url = fmap (rules "*" . T.decodeUtf8) . reqPage $ robotsUrl
   where
-    robotsUrl = url { huPath = "/robots.txt" }
+    robotsUrl = url {huPath = "/robots.txt"}
 
 data CrawlerState = CrawlerState
     { csBase   :: !HttpUrl          -- ^ Page that the crawler started at.
@@ -49,11 +49,11 @@ initCrawler base = do
     resp <- try (reqRobots base) :: IO (Either HttpException Rules)
     case resp of
         Left _  -> return s
-        Right r -> return s { csRobots = r }
+        Right r -> return s {csRobots = r}
 
 addSeen :: HttpUrl -> Crawler ()
 addSeen url = modify $ \s ->
-    s { csSeen = S.insert url (csSeen s) }
+    s {csSeen = S.insert url (csSeen s)}
 
 newUrl :: HttpUrl -> Crawler Bool
 newUrl url = do
@@ -66,7 +66,7 @@ newUrl url = do
 
 mapActive :: (Int -> Int) -> Crawler ()
 mapActive f = modify $ \s ->
-    s { csActive = f (csActive s) }
+    s {csActive = f (csActive s)}
 
 sendJobs
     :: TChan Job

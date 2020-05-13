@@ -20,4 +20,4 @@ reqPage = fmap getResponseBody
     . T.unpack
     . serialize
   where
-    noFollow r = r { redirectCount = 0 }
+    noFollow r = r {redirectCount = 0}

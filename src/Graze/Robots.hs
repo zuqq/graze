@@ -2,7 +2,7 @@
 
 module Graze.Robots
     ( Rules
-    , disallowedBy
+    , allowed
     , rules
     ) where
 
@@ -80,5 +80,8 @@ rules
     -> Rules
 rules ua = fromList . fmap chunk . parse ua
 
-disallowedBy :: HttpUrl -> Rules -> Bool
-disallowedBy = completes . chunk . huPath
+allowed :: HttpUrl -> Rules -> HttpUrl -> Bool
+allowed base robots url = huDomain url == huDomain base
+    && not (url `disallowedBy` robots)
+  where
+    disallowedBy = completes . chunk . huPath

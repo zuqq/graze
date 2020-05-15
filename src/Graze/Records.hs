@@ -8,7 +8,7 @@ module Graze.Records
 import qualified Data.Text as T (Text)
 
 import Graze.HttpUrl  (serialize)
-import Graze.Messages (PageRecord (..))
+import Graze.Messages (Record (..))
 
 -- $setup
 -- >>> :set -XOverloadedStrings
@@ -99,14 +99,14 @@ pp :: SExpr -> T.Text
 pp (Leaf s)  = doubleQuotes s
 pp (Node xs) = parens . hsep . fmap pp $ xs
 
--- | Encode a 'PageRecord' as a newline-terminated S-expression.
-toSExpr :: PageRecord -> T.Text
-toSExpr PageRecord {..} = newline . pp $ Node
+-- | Encode a 'Record' as a newline-terminated S-expression.
+toSExpr :: Record -> T.Text
+toSExpr Record {..} = newline . pp $ Node
     [ Node [Leaf "url", Leaf url]
     , Node [Leaf "parent", Leaf parent]
     , Node [Leaf "children", Node children]
     ]
   where
-    url      = serialize prUrl
-    parent   = serialize prParent
-    children = fmap (Leaf . serialize) prChildren
+    url      = serialize rUrl
+    parent   = serialize rParent
+    children = fmap (Leaf . serialize) rChildren

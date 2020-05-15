@@ -1,41 +1,28 @@
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 
 module Graze.Crawler
-    ( crawl
-    , initCrawler
+    ( CrawlerState (..)
+    , crawl
     , evalCrawler
     ) where
 
 import Control.Concurrent.STM           (atomically)
 import Control.Concurrent.STM.TChan     (TChan, readTChan, writeTChan)
-import Control.Exception                (try)
-import Control.Monad                    (filterM)
 import Control.Monad.IO.Class           (liftIO)
-import Control.Monad.Trans.State.Strict (StateT, evalStateT, get, gets, modify)
+import Control.Monad.Trans.State.Strict (StateT, evalStateT, get, gets, modify, put)
 import Data.Foldable                    (traverse_)
-import qualified Data.Set           as S (Set, insert, member, singleton)
-import qualified Data.Text.Encoding as T (decodeUtf8)
+import qualified Data.ByteString    as B (ByteString)
+import qualified Data.Set           as S (Set, insert, member)
 
-import Network.HTTP.Conduit (HttpException)
 
-import Graze.Http     (reqPage)
-import Graze.HttpUrl  (HttpUrl (..))
+import Graze.HttpUrl  (HttpUrl)
 import Graze.Links    (links)
 import Graze.Messages
-import Graze.Robots   (Rules, disallowedBy, rules)
 
-
-reqRobots :: HttpUrl -> IO Rules
-reqRobots url = fmap (rules "*" . T.decodeUtf8) . reqPage $ robotsUrl
-  where
-    robotsUrl = url {huPath = "/robots.txt"}
 
 data CrawlerState = CrawlerState
-    { csBase   :: !HttpUrl          -- ^ Page that the crawler started at.
-    , csRobots :: !Rules            -- ^ Robots.txt rules for @csBase@'s domain.
-    , csSeen   :: !(S.Set HttpUrl)  -- ^ Seen URLs.
-    , csActive :: !Int              -- ^ Number of open jobs.
+    { csActive :: !Int
+    , csSeen   :: !(S.Set HttpUrl)
     }
 
 type Crawler a = StateT CrawlerState IO a
@@ -43,63 +30,38 @@ type Crawler a = StateT CrawlerState IO a
 evalCrawler :: Crawler a -> CrawlerState -> IO a
 evalCrawler = evalStateT
 
-initCrawler :: HttpUrl -> IO CrawlerState
-initCrawler base = do
-    let s = CrawlerState base (rules "*" "") (S.singleton base) 1
-    resp <- try (reqRobots base) :: IO (Either HttpException Rules)
-    case resp of
-        Left _  -> return s
-        Right r -> return s {csRobots = r}
-
-addSeen :: HttpUrl -> Crawler ()
-addSeen url = modify $ \s ->
-    s {csSeen = S.insert url (csSeen s)}
-
-newUrl :: HttpUrl -> Crawler Bool
-newUrl url = do
-    CrawlerState {..} <- get
-    if huDomain url /= huDomain csBase
-        || url `disallowedBy` csRobots
-        || url `S.member` csSeen
-        then return False
-        else addSeen url >> return True
-
-mapActive :: (Int -> Int) -> Crawler ()
-mapActive f = modify $ \s ->
-    s {csActive = f (csActive s)}
-
-sendJobs
-    :: TChan Job
-    -> Int        -- ^ Depth
-    -> HttpUrl    -- ^ Parent
-    -> [HttpUrl]  -- ^ URLs
-    -> Crawler ()
-sendJobs chan depth parent = liftIO . atomically .
-    traverse_ (writeTChan chan . Job depth parent)
-
 crawl
-    :: TChan Job
-    -> TChan FetchResponse
-    -> TChan (Either Done PageRecord)
+    :: (HttpUrl -> Bool)
+    -> TChan Job
+    -> TChan Report
+    -> TChan Instruction
     -> Crawler ()
-crawl jobChan resChan outChan = loop
+crawl p jobChan repChan outChan = loop
   where
     loop = do
-        FetchResponse {..} <- liftIO . atomically . readTChan $ resChan
-        mapActive (+ (-1))
-        let Job {..} = frJob
-        case frResult of
+        Report Job {..} res <- liftIO . atomically $
+            readTChan repChan
+        modify $ \s -> s {csActive = csActive s - 1}
+        case res of
             Fail         -> return ()
-            Success page -> if jDepth <= 0
-                then return ()
-                else do
-                    let ls = links jUrl page
-                    liftIO . atomically .
-                        writeTChan outChan . Right $ PageRecord jParent jUrl ls page
-                    ls' <- filterM newUrl ls
-                    sendJobs jobChan (jDepth - 1) jUrl ls'
-                    mapActive (+ length ls')
+            Success cont -> do
+                let urls = links jUrl cont
+                liftIO . atomically $
+                    writeTChan outChan $
+                        Write (Record jParent jUrl urls cont)
+                if jDepth <= 0
+                    then return ()
+                    else do
+                        CrawlerState {..} <- get
+                        let p' url = p url && not (url `S.member` csSeen)
+                            urls'  = filter p' urls
+                            jobs   = Job (jDepth - 1) jUrl <$> urls'
+                        liftIO . atomically $
+                            traverse_ (writeTChan jobChan) jobs
+                        put $ CrawlerState
+                            (csActive + length urls')
+                            (foldr S.insert csSeen urls')
         n <- gets csActive
-        if n > 0
-            then loop
-            else liftIO . atomically . writeTChan outChan . Left $ Done
+        if n <= 0
+            then liftIO . atomically $ writeTChan outChan Stop
+            else loop

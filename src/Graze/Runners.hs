@@ -11,15 +11,18 @@ import           Control.Concurrent.STM       (atomically)
 import           Control.Concurrent.STM.TChan (newTChanIO, writeTChan)
 import           Control.Monad                (replicateM_)
 import qualified Data.ByteString              as B (writeFile)
+import qualified Data.Set                     as S (singleton)
 import           Debug.Trace                  (traceIO)
 import           System.Directory             (createDirectoryIfMissing)
 import           System.FilePath              ((</>))
 
-import Graze.Crawler  (crawl, evalCrawler, initCrawler)
+import Graze.Crawler  (CrawlerState (..), crawl, evalCrawler)
+import Graze.Http     (robots)
 import Graze.HttpUrl  (HttpUrl (..), serialize)
 import Graze.Messages (Job (..))
+import Graze.Robots   (allowed)
 import Graze.Worker   (fetch)
-import Graze.Writer   (WriterState (..), evalWriter, write)
+import Graze.Writer   (write)
 
 
 data Config = Config
@@ -35,16 +38,22 @@ run Config {..} = do
     traceIO $ "Crawling " <> (show . serialize) cBase
 
     jobChan <- newTChanIO
-    resChan <- newTChanIO
+    repChan <- newTChanIO
     outChan <- newTChanIO
-    atomically . writeTChan jobChan $ Job cDepth cBase cBase
 
-    replicateM_ cWorkers . forkIO $ fetch jobChan resChan
+    atomically $
+        writeTChan jobChan (Job cDepth cBase cBase)
 
-    cs <- initCrawler cBase
-    _  <- forkIO $ evalCrawler (crawl jobChan resChan outChan) cs
+    replicateM_ cWorkers $
+        forkIO (fetch jobChan repChan)
+
+    rs <- robots cBase
+    _  <- forkIO $
+            evalCrawler
+                (crawl (allowed cBase rs) jobChan repChan outChan)
+                (CrawlerState 1 (S.singleton cBase))
 
     createDirectoryIfMissing True cFolder
     B.writeFile cRecords ""
 
-    evalWriter (write outChan) (WriterState cFolder cRecords)
+    write cFolder cRecords outChan

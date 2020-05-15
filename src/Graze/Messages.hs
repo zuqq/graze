@@ -1,8 +1,8 @@
 module Graze.Messages
-    ( Done (..)
-    , FetchResponse (..)
+    ( Instruction (..)
     , Job (..)
-    , PageRecord (..)
+    , Record (..)
+    , Report (..)
     , Result (..)
     ) where
 
@@ -19,16 +19,13 @@ data Job = Job
 
 data Result = Fail | Success !B.ByteString
 
-data FetchResponse = FetchResponse
-    { frJob    :: !Job
-    , frResult :: !Result
+data Report = Report !Job !Result
+
+data Record = Record
+    { rParent   :: !HttpUrl
+    , rUrl      :: !HttpUrl
+    , rChildren :: ![HttpUrl]
+    , rContent  :: !B.ByteString
     }
 
-data Done = Done
-
-data PageRecord = PageRecord
-    { prParent   :: !HttpUrl
-    , prUrl      :: !HttpUrl
-    , prChildren :: ![HttpUrl]
-    , prContent  :: !B.ByteString
-    }
+data Instruction = Stop | Write !Record

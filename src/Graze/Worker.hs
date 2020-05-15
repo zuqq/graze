@@ -12,25 +12,24 @@ import           Debug.Trace                  (traceIO)
 
 import Network.HTTP.Conduit (HttpException)
 
-import Graze.Http     (reqPage)
+import Graze.Http     (request)
 import Graze.HttpUrl  (serialize)
-import Graze.Messages (FetchResponse (..), Job (..), Result (..))
+import Graze.Messages (Report (..), Job (..), Result (..))
 
+
+toResult :: Either e B.ByteString -> Result
+toResult = either (const Fail) Success
 
 fetch
     :: TChan Job
-    -> TChan FetchResponse
+    -> TChan Report
     -> IO ()
-fetch jobChan resChan = loop
+fetch jobChan repChan = loop
   where
     loop = do
         job@Job {..} <- atomically (readTChan jobChan)
-        traceIO $
-            "[" <> show jDepth <> "] " <> "GET " <> (show . serialize) jUrl
-        resp <- try (reqPage jUrl)
-                :: IO (Either HttpException B.ByteString)
-        atomically . writeTChan resChan . FetchResponse job $
-            case resp of
-                Left _     -> Fail
-                Right page -> Success page
+        traceIO . ("GET " <>) . show . serialize $ jUrl
+        res <- try (request jUrl) :: IO (Either HttpException B.ByteString)
+        atomically $
+            writeTChan repChan (Report job (toResult res))
         loop

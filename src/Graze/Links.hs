@@ -8,6 +8,7 @@ import           Control.Monad   ((<=<))
 import qualified Data.ByteString as B (ByteString)
 import           Data.Char       (isSpace)
 import           Data.Either     (rights)
+import qualified Data.Set        as S (fromList, toList)
 import qualified Data.Text       as T
 
 import Text.HTML.DOM   (parseBSChunks)
@@ -71,7 +72,9 @@ normalize :: HttpUrl -> HttpUrl
 normalize url = url {huPath = straighten . stripFragment . huPath $ url}
 
 links :: HttpUrl -> B.ByteString -> [HttpUrl]
-links base = fmap normalize
+links base = S.toList
+    . S.fromList
+    . fmap normalize
     . rights
     . fmap (parseRel base)
     . rawLinks

@@ -9,7 +9,14 @@ module Graze.Crawler
 import Control.Concurrent.STM           (atomically)
 import Control.Concurrent.STM.TChan     (TChan, readTChan, writeTChan)
 import Control.Monad.IO.Class           (liftIO)
-import Control.Monad.Trans.State.Strict (StateT, evalStateT, get, gets, modify, put)
+import Control.Monad.Trans.State.Strict
+    ( StateT
+    , evalStateT
+    , get
+    , gets
+    , modify
+    , put
+    )
 import Data.Foldable                    (traverse_)
 import qualified Data.ByteString    as B (ByteString)
 import qualified Data.Set           as S (Set, insert, member)
@@ -39,8 +46,7 @@ crawl
 crawl p jobChan repChan outChan = loop
   where
     loop = do
-        Report Job {..} res <- liftIO . atomically $
-            readTChan repChan
+        Report Job {..} res <- liftIO . atomically $ readTChan repChan
         modify $ \s -> s {csActive = csActive s - 1}
         case res of
             Fail         -> return ()

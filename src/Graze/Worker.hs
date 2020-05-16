@@ -27,9 +27,10 @@ fetch
 fetch jobChan repChan = loop
   where
     loop = do
-        job@Job {..} <- atomically (readTChan jobChan)
-        traceIO . ("GET " <>) . show . serialize $ jUrl
+        job@Job {..} <- atomically $ readTChan jobChan
+        traceIO $ "GET " <> show (serialize jUrl)
         res <- try (request jUrl) :: IO (Either HttpException B.ByteString)
         atomically $
-            writeTChan repChan (Report job (toResult res))
+            writeTChan repChan $
+                Report job (toResult res)
         loop

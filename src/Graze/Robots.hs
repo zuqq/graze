@@ -33,8 +33,8 @@ disallow = A.string "Disallow:"
     *> A.skipSpace
     *> A.takeWhile (not . isSpace)
 
-line :: A.Parser RobotsLine
-line = A.eitherP userAgent disallow
+robotsLine :: A.Parser RobotsLine
+robotsLine = A.eitherP userAgent disallow
 
 toRecords :: [RobotsLine] -> [Record]
 toRecords [] = []
@@ -47,18 +47,18 @@ disallowsFor :: UserAgent -> [Record] -> [Disallow]
 disallowsFor ua rs = [ d | (uas, ds) <- rs, ua `elem` uas, d <- ds ]
 
 parse
-    :: T.Text    -- ^ User agent.
-    -> T.Text    -- ^ Content of the robots.txt file.
-    -> [T.Text]
+    :: UserAgent
+    -> T.Text      -- ^ Content of the robots.txt file.
+    -> [Disallow]
 parse ua = disallowsFor ua
     . toRecords
     . rights
-    . fmap (A.parseOnly line)
+    . fmap (A.parseOnly robotsLine)
     . T.lines
 
-type Chunks = [T.Text]
+type Chunk = T.Text
 
-type Rules = Trie T.Text
+type Rules = Trie Chunk
 
 -- | Split at @'/'@, dropping any empty substrings.
 --
@@ -67,21 +67,24 @@ type Rules = Trie T.Text
 -- >>> :set -XOverloadedStrings
 -- >>> chunk "a"
 -- ["a"]
+-- >>> chunk "/a"
+-- ["a"]
 -- >>> chunk "a/"
 -- ["a"]
--- >>> chunk "a/b"
+-- >>> chunk "/a/b"
 -- ["a","b"]
-chunk :: T.Text -> Chunks
+chunk :: T.Text -> [Chunk]
 chunk = filter (not . T.null) . T.split (== '/')
 
 rules
-    :: T.Text  -- ^ User agent.
-    -> T.Text  -- ^ Content of the robots.txt file.
+    :: UserAgent
+    -> T.Text     -- ^ Content of the robots.txt file.
     -> Rules
 rules ua = fromList . fmap chunk . parse ua
 
 allowed :: HttpUrl -> Rules -> HttpUrl -> Bool
-allowed base robots url = huDomain url == huDomain base
+allowed base robots url =
+    huDomain url == huDomain base
     && not (url `disallowedBy` robots)
   where
     disallowedBy = completes . chunk . huPath

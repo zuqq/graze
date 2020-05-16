@@ -9,13 +9,13 @@ module Graze.HttpUrl
     , serialize
     ) where
 
-import           Control.Applicative     ((<|>), liftA2, liftA3)
-import qualified Data.Attoparsec.Text    as A
-import qualified Data.Text               as T
-import qualified Data.Text.Lazy          as TL (fromStrict)
-import qualified Data.Text.Lazy.Encoding as TL (encodeUtf8)
+import           Control.Applicative  ((<|>), liftA2, liftA3)
+import qualified Data.Attoparsec.Text as A
+import qualified Data.Text            as T (Text, cons, dropWhileEnd)
+import qualified Data.Text.Encoding   as T (encodeUtf8)
 
-import Data.Digest.Pure.SHA (sha1, showDigest)
+import qualified Crypto.Hash.SHA1       as SHA1   (hash)
+import qualified Data.ByteString.Base16 as Base16 (encode)
 
 -- $setup
 -- >>> :set -XOverloadedStrings
@@ -48,7 +48,7 @@ serialize HttpUrl {..} = huScheme <> huDomain <> huPath
 
 -- | Map an 'HttpUrl' to its SHA-1 digest.
 hash :: HttpUrl -> String
-hash = showDigest . sha1 . TL.encodeUtf8 . TL.fromStrict . serialize
+hash = show . Base16.encode . SHA1.hash . T.encodeUtf8 . serialize
 
 scheme :: A.Parser T.Text
 scheme = A.string "https:" <|> A.string "http:"

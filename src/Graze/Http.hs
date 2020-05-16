@@ -6,7 +6,6 @@ module Graze.Http
     ) where
 
 import           Control.Exception    (try)
-import           Control.Monad        ((<=<))
 import           Data.Either          (fromRight)
 import qualified Data.ByteString      as B  (ByteString)
 import qualified Data.ByteString.Lazy as LB (toStrict)

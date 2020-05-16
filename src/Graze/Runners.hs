@@ -14,7 +14,6 @@ import qualified Data.ByteString              as B (writeFile)
 import qualified Data.Set                     as S (singleton)
 import           Debug.Trace                  (traceIO)
 import           System.Directory             (createDirectoryIfMissing)
-import           System.FilePath              ((</>))
 
 import Network.HTTP.Client.TLS (newTlsManager, setGlobalManager)
 

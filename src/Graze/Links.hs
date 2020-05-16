@@ -4,7 +4,6 @@ module Graze.Links
     ( links
     ) where
 
-import           Control.Monad      ((<=<))
 import qualified Data.ByteString    as B (ByteString)
 import           Data.Char          (isSpace)
 import           Data.Either        (rights)

@@ -6,9 +6,9 @@ module Graze.Crawler
     , evalCrawler
     ) where
 
-import Control.Concurrent.STM           (atomically)
-import Control.Concurrent.STM.TChan     (TChan, readTChan, writeTChan)
-import Control.Monad.IO.Class           (liftIO)
+import Control.Concurrent.STM            (atomically)
+import Control.Concurrent.STM.TChan      (TChan, readTChan, writeTChan)
+import Control.Monad.IO.Class            (liftIO)
 import Control.Monad.Trans.State.Strict
     ( StateT
     , evalStateT
@@ -17,8 +17,7 @@ import Control.Monad.Trans.State.Strict
     , modify
     , put
     )
-import Data.Foldable                    (traverse_)
-import qualified Data.ByteString    as B (ByteString)
+import Data.Foldable                     (traverse_)
 import qualified Data.Set           as S (Set, insert, member)
 
 

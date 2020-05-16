@@ -4,15 +4,23 @@ module Graze.Links
     ( links
     ) where
 
-import           Control.Monad   ((<=<))
-import qualified Data.ByteString as B (ByteString)
-import           Data.Char       (isSpace)
-import           Data.Either     (rights)
-import qualified Data.Set        as S (fromList, toList)
-import qualified Data.Text       as T
+import           Control.Monad      ((<=<))
+import qualified Data.ByteString    as B (ByteString)
+import           Data.Char          (isSpace)
+import           Data.Either        (rights)
+import           Data.Maybe         (mapMaybe)
+import qualified Data.Set           as S (fromList, toList)
+import qualified Data.Text          as T
+    ( Text
+    , breakOn
+    , filter
+    , intercalate
+    , replace
+    , split
+    )
+import qualified Data.Text.Encoding as T (decodeUtf8)
 
-import Text.HTML.DOM   (parseBSChunks)
-import Text.XML.Cursor (attribute, descendant, element, fromDocument)
+import Text.HTML.TagSoup (Tag (TagOpen), parseTags)
 
 import Graze.HttpUrl (HttpUrl (..), parseRel)
 
@@ -20,15 +28,9 @@ import Graze.HttpUrl (HttpUrl (..), parseRel)
 -- >>> :set -XOverloadedStrings
 
 
-stripSpaces :: T.Text -> T.Text
-stripSpaces = T.filter (not . isSpace)
-
 rawLinks :: B.ByteString -> [T.Text]
-rawLinks = fmap stripSpaces
-    . (attribute "href" <=< element "a" <=< descendant)
-    . fromDocument
-    . parseBSChunks
-    . return
+rawLinks s = T.filter (not . isSpace) . T.decodeUtf8 <$>
+    mapMaybe (lookup "href") [ as | TagOpen "a" as <- parseTags s ]
 
 -- | Strip the fragment from a URL.
 --

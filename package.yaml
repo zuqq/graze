@@ -9,6 +9,7 @@ extra-source-files:
 description:         Please see the README on GitHub at <https://github.com/zuqq/graze#readme>
 
 dependencies:
+- SHA
 - attoparsec
 - base >= 4.7 && < 5
 - bytestring
@@ -16,16 +17,14 @@ dependencies:
 - directory
 - filepath
 - hashable
-- html-conduit
 - http-client
 - http-client-tls
 - optparse-applicative
-- SHA
 - stm
+- tagsoup
 - text
 - transformers
 - unordered-containers
-- xml-conduit
 
 library:
   source-dirs: src

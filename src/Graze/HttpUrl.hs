@@ -9,9 +9,10 @@ module Graze.HttpUrl
     , serialize
     ) where
 
-import           Control.Applicative  ((<|>), liftA2, liftA3)
+import           Control.Applicative  ((<|>))
+import           Control.Monad        ((>=>))
 import qualified Data.Attoparsec.Text as A
-import qualified Data.Text            as T (Text, cons, dropWhileEnd)
+import qualified Data.Text            as T (Text, cons, dropWhileEnd, snoc)
 import qualified Data.Text.Encoding   as T (encodeUtf8)
 
 import qualified Crypto.Hash.SHA1       as SHA1   (hash)
@@ -26,6 +27,7 @@ data HttpUrl = HttpUrl
     , huDomain :: !T.Text
     , huPath   :: !T.Text
     }
+    deriving Show
 
 -- |
 -- >>> x = HttpUrl "http:" "//x" "/y"
@@ -51,31 +53,39 @@ hash :: HttpUrl -> String
 hash = show . Base16.encode . SHA1.hash . T.encodeUtf8 . serialize
 
 scheme :: A.Parser T.Text
-scheme = A.string "https:" <|> A.string "http:"
+scheme = T.snoc <$> A.takeWhile (/= ':') <*> A.char ':'
 
 domain :: A.Parser T.Text
-domain = liftA2 (<>) (A.string "//") (A.takeWhile (/= '/'))
+domain = (<>) <$> A.string "//" <*> A.takeWhile (/= '/')
 
 path :: A.Parser T.Text
-path = liftA2 T.cons (A.char '/') A.takeText
+path = T.cons <$> A.char '/' <*> A.takeText
 
 url :: A.Parser HttpUrl
-url = liftA3 HttpUrl scheme domain (path <|> pure "/")
+url = HttpUrl
+    <$> scheme
+    <*> domain
+    <*> (path <|> pure "/")
 
 relUrl :: HttpUrl -> A.Parser HttpUrl
-relUrl HttpUrl {..} = liftA3 HttpUrl
-    (scheme <|> pure huScheme)
-    (domain <|> pure huDomain)
-    (path   <|> relPath)
+relUrl HttpUrl {..} = HttpUrl
+    <$> (scheme <|> pure huScheme)
+    <*> (domain <|> pure huDomain)
+    <*> (path   <|> relPath)
   where
     huFolder = T.dropWhileEnd (/= '/') huPath
-    relPath  = liftA2 (<>) (pure huFolder) A.takeText
+    relPath  = (<>) <$> pure huFolder <*> A.takeText
 
--- | Parse an absolute URL.
+checkScheme :: HttpUrl -> Either String HttpUrl
+checkScheme x@(HttpUrl s _ _) = case s of
+    "http:"  -> Right x
+    "https:" -> Right x
+    _        -> Left "Scheme is not HTTP(S)"
+
+-- | Parse an absolute HTTP(S) URL.
 parse :: T.Text -> Either String HttpUrl
-parse = A.parseOnly url
+parse = A.parseOnly url >=> checkScheme
 
--- | Parse a relative or absolute URL; if it is relative, interpret it relative
--- to the first argument.
+-- | Parse an HTTP(S) URL relative to the first argument.
 parseRel :: HttpUrl -> T.Text -> Either String HttpUrl
-parseRel = A.parseOnly . relUrl
+parseRel x = A.parseOnly (relUrl x) >=> checkScheme

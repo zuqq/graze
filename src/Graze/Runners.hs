@@ -16,6 +16,8 @@ import           Debug.Trace                  (traceIO)
 import           System.Directory             (createDirectoryIfMissing)
 import           System.FilePath              ((</>))
 
+import Network.HTTP.Client.TLS (newTlsManager, setGlobalManager)
+
 import Graze.Crawler  (CrawlerState (..), crawl, evalCrawler)
 import Graze.Http     (robots)
 import Graze.HttpUrl  (HttpUrl (..), serialize)
@@ -43,6 +45,9 @@ run Config {..} = do
 
     atomically $
         writeTChan jobChan (Job cDepth cBase cBase)
+
+    m <- newTlsManager
+    setGlobalManager m
 
     replicateM_ cWorkers $
         forkIO (fetch jobChan repChan)

@@ -10,7 +10,7 @@ import           Control.Exception            (try)
 import qualified Data.ByteString              as B (ByteString)
 import           Debug.Trace                  (traceIO)
 
-import Network.HTTP.Conduit (HttpException)
+import Network.HTTP.Client (HttpException)
 
 import Graze.Http     (request)
 import Graze.HttpUrl  (serialize)

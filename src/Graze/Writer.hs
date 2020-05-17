@@ -13,7 +13,7 @@ import           System.FilePath              ((</>))
 
 import Graze.HttpUrl  (hash)
 import Graze.Messages (Instruction (..), Record (..))
-import Graze.Records  (toSExpr)
+import Graze.Records  (toText)
 
 
 write
@@ -26,6 +26,6 @@ write folder records outChan = loop
     loop = atomically (readTChan outChan) >>= \case
         Stop      -> traceIO "Done"
         Write rec -> do
-            B.appendFile records (T.encodeUtf8 (toSExpr rec))
+            B.appendFile records (T.encodeUtf8 (toText rec))
             B.writeFile (folder </> hash (rUrl rec)) (rContent rec)
             loop

@@ -2,7 +2,7 @@
 {-# LANGUAGE RecordWildCards   #-}
 
 module Graze.Records
-    ( toSExpr
+    ( toText
     ) where
 
 import qualified Data.Text as T (Text)
@@ -100,8 +100,8 @@ pp (Leaf s)  = doubleQuotes s
 pp (Node xs) = parens . hsep . fmap pp $ xs
 
 -- | Encode a 'Record' as a newline-terminated S-expression.
-toSExpr :: Record -> T.Text
-toSExpr Record {..} = newline . pp $ Node
+toText :: Record -> T.Text
+toText Record {..} = newline . pp $ Node
     [ Node [Leaf "url", Leaf url]
     , Node [Leaf "parent", Leaf parent]
     , Node [Leaf "children", Node children]

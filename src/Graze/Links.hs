@@ -14,19 +14,16 @@ import qualified Data.Text.Encoding as T (decodeUtf8)
 
 import Text.HTML.TagSoup (Tag (TagOpen), parseTags)
 
-import Graze.HttpUrl (HttpUrl (..), parseRel)
-
--- $setup
--- >>> :set -XOverloadedStrings
+import Graze.HttpUrl (HttpUrl (..), parseRelTo)
 
 
-rawLinks :: B.ByteString -> [T.Text]
-rawLinks s = T.filter (not . isSpace) . T.decodeUtf8 <$>
+hrefs :: B.ByteString -> [T.Text]
+hrefs s = T.filter (not . isSpace) . T.decodeUtf8 <$>
     mapMaybe (lookup "href") [ as | TagOpen "a" as <- parseTags s ]
 
 links :: HttpUrl -> B.ByteString -> [HttpUrl]
 links base = S.toList
     . S.fromList
     . rights
-    . fmap (parseRel base)
-    . rawLinks
+    . fmap (parseRelTo base)
+    . hrefs

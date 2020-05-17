@@ -6,7 +6,7 @@ module Graze.HttpUrl
     ( HttpUrl (huDomain, huPath, huScheme)
     , hash
     , parse
-    , parseRel
+    , parseRelTo
     , serialize
     ) where
 
@@ -72,8 +72,8 @@ relPath folder = normalize <$> liftA2 (<>) (pure folder) A.takeText
 url :: A.Parser HttpUrl
 url = liftA3 HttpUrl scheme domain (path <|> pure "/")
 
-relUrl :: HttpUrl -> A.Parser HttpUrl
-relUrl HttpUrl {..} = liftA3 HttpUrl
+relTo :: HttpUrl -> A.Parser HttpUrl
+relTo HttpUrl {..} = liftA3 HttpUrl
     (scheme <|> pure huScheme)
     (domain <|> pure huDomain)
     (path   <|> relPath huFolder)
@@ -85,5 +85,5 @@ parse :: T.Text -> Either String HttpUrl
 parse = A.parseOnly url
 
 -- | Parse an HTTP(S) URL relative to the first argument.
-parseRel :: HttpUrl -> T.Text -> Either String HttpUrl
-parseRel x = A.parseOnly (relUrl x)
+parseRelTo :: HttpUrl -> T.Text -> Either String HttpUrl
+parseRelTo x = A.parseOnly (relTo x)

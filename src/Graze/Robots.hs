@@ -32,32 +32,32 @@ disallow = A.string "Disallow:"
     *> A.skipSpace
     *> A.takeWhile (not . isSpace)
 
-robotsLine :: A.Parser Line
-robotsLine = A.eitherP userAgent disallow
+line :: A.Parser Line
+line = A.eitherP userAgent disallow
 
-toRecords :: [Line] -> [Record]
-toRecords [] = []
-toRecords xs = (lefts uas, rights ds) : toRecords xs''
+group :: [Line] -> [Record]
+group [] = []
+group xs = (lefts uas, rights ds) : group xs''
   where
     (uas, xs') = span isLeft xs
     (ds, xs'') = span isRight xs'
 
-disallowsFor :: UserAgent -> [Record] -> [Disallow]
-disallowsFor ua rs = [ d | (uas, ds) <- rs, ua `elem` uas, d <- ds ]
+targeting :: UserAgent -> [Record] -> [Disallow]
+targeting ua rs = [ d | (uas, ds) <- rs, ua `elem` uas, d <- ds ]
 
 type Robots = Trie T.Text
 
 chunk :: T.Text -> [T.Text]
 chunk = T.split (== '/')
 
+allowedBy :: T.Text -> Robots -> Bool
+allowedBy = fmap not . completes . chunk
+
 parse :: UserAgent -> T.Text -> Robots
 parse ua = fromList
     . fmap chunk
-    . disallowsFor ua
-    . toRecords
+    . targeting ua
+    . group
     . rights
-    . fmap (A.parseOnly robotsLine)
+    . fmap (A.parseOnly line)
     . T.lines
-
-allowedBy :: T.Text -> Robots -> Bool
-allowedBy = fmap not . completes . chunk

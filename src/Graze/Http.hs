@@ -22,7 +22,7 @@ import Network.HTTP.Client
 import Network.HTTP.Client.TLS (getGlobalManager)
 
 import Graze.HttpUrl (HttpUrl (..), serialize)
-import Graze.Robots  (Rules, rules)
+import Graze.Robots  (Robots, parse)
 
 
 request :: HttpUrl -> IO B.ByteString
@@ -33,8 +33,8 @@ request url = do
   where
     url' = T.unpack . serialize $ url
 
-robots :: HttpUrl -> IO Rules
-robots url = rules "*" . T.decodeUtf8 . fromRight "" <$>
+robots :: HttpUrl -> IO Robots
+robots url = parse "*" . T.decodeUtf8 . fromRight "" <$>
     (try (request url') :: IO (Either HttpException B.ByteString))
   where
     url' = url {huPath = "/robots.txt"}

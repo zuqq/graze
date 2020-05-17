@@ -1,25 +1,22 @@
+{-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 
 module Graze.HttpUrl
-    ( HttpUrl (..)
+    ( HttpUrl (huDomain, huPath, huScheme)
     , hash
     , parse
     , parseRel
     , serialize
     ) where
 
-import           Control.Applicative  ((<|>))
-import           Control.Monad        ((>=>))
+import           Control.Applicative  ((<|>), liftA2, liftA3)
 import qualified Data.Attoparsec.Text as A
-import qualified Data.Text            as T (Text, cons, dropWhileEnd, snoc)
+import qualified Data.Text            as T
 import qualified Data.Text.Encoding   as T (encodeUtf8)
 
 import qualified Crypto.Hash.SHA1       as SHA1   (hash)
 import qualified Data.ByteString.Base16 as Base16 (encode)
-
--- $setup
--- >>> :set -XOverloadedStrings
 
 
 data HttpUrl = HttpUrl
@@ -27,21 +24,10 @@ data HttpUrl = HttpUrl
     , huDomain :: !T.Text
     , huPath   :: !T.Text
     }
-    deriving Show
 
--- |
--- >>> x = HttpUrl "http:" "//x" "/y"
--- >>> y = HttpUrl "https:" "//x" "/y"
--- >>> x == y
--- True
 instance Eq HttpUrl where
     x == y = (huDomain x, huPath x) == (huDomain y, huPath y)
 
--- |
--- >>> x = HttpUrl "https:" "//x" "/"
--- >>> y = HttpUrl "http:" "//x" "/y"
--- >>> x < y
--- True
 instance Ord HttpUrl where
     x <= y = (huDomain x, huPath x) <= (huDomain y, huPath y)
 
@@ -53,39 +39,51 @@ hash :: HttpUrl -> String
 hash = show . Base16.encode . SHA1.hash . T.encodeUtf8 . serialize
 
 scheme :: A.Parser T.Text
-scheme = T.snoc <$> A.takeWhile (/= ':') <*> A.char ':'
+scheme = liftA2 T.snoc (A.takeWhile (/= ':')) (A.char ':') >>= \case
+    "http:"  -> return "http:"
+    "https:" -> return "https:"
+    _        -> fail "scheme"
 
 domain :: A.Parser T.Text
-domain = (<>) <$> A.string "//" <*> A.takeWhile (/= '/')
+domain = liftA2 (<>) (A.string "//") (A.takeWhile (/= '/'))
+
+splitPath :: T.Text -> (T.Text, T.Text)
+splitPath = T.breakOn "?" . fst . T.breakOn "#"
+
+normalize :: T.Text -> T.Text
+normalize s =
+    let (p, q)  = splitPath s
+        chunks  = filter (not . T.null) . T.split (== '/') $ p
+        suffix  = if "/" `T.isSuffixOf` p && chunks /= [] then "/" else ""
+        chunks' = go [] chunks
+    in "/" <> T.intercalate "/" chunks' <> suffix <> q
+  where
+    go xs (".." : ys) = go (drop 1 xs) ys
+    go xs ("." : ys)  = go xs ys
+    go xs (y : ys)    = go (y : xs) ys
+    go xs []          = reverse xs
 
 path :: A.Parser T.Text
-path = T.cons <$> A.char '/' <*> A.takeText
+path = normalize <$> liftA2 T.cons (A.char '/') A.takeText
+
+relPath :: T.Text -> A.Parser T.Text
+relPath folder = normalize <$> liftA2 (<>) (pure folder) A.takeText
 
 url :: A.Parser HttpUrl
-url = HttpUrl
-    <$> scheme
-    <*> domain
-    <*> (path <|> pure "/")
+url = liftA3 HttpUrl scheme domain (path <|> pure "/")
 
 relUrl :: HttpUrl -> A.Parser HttpUrl
-relUrl HttpUrl {..} = HttpUrl
-    <$> (scheme <|> pure huScheme)
-    <*> (domain <|> pure huDomain)
-    <*> (path   <|> relPath)
+relUrl HttpUrl {..} = liftA3 HttpUrl
+    (scheme <|> pure huScheme)
+    (domain <|> pure huDomain)
+    (path   <|> relPath huFolder)
   where
-    huFolder = T.dropWhileEnd (/= '/') huPath
-    relPath  = (<>) <$> pure huFolder <*> A.takeText
-
-checkScheme :: HttpUrl -> Either String HttpUrl
-checkScheme x@(HttpUrl s _ _) = case s of
-    "http:"  -> Right x
-    "https:" -> Right x
-    _        -> Left "Scheme is not HTTP(S)"
+    huFolder = T.dropWhileEnd (/= '/') . fst . splitPath $ huPath
 
 -- | Parse an absolute HTTP(S) URL.
 parse :: T.Text -> Either String HttpUrl
-parse = A.parseOnly url >=> checkScheme
+parse = A.parseOnly url
 
 -- | Parse an HTTP(S) URL relative to the first argument.
 parseRel :: HttpUrl -> T.Text -> Either String HttpUrl
-parseRel x = A.parseOnly (relUrl x) >=> checkScheme
+parseRel x = A.parseOnly (relUrl x)

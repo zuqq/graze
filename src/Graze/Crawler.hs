@@ -6,20 +6,12 @@ module Graze.Crawler
     , evalCrawler
     ) where
 
-import Control.Concurrent.STM            (atomically)
-import Control.Concurrent.STM.TChan      (TChan, readTChan, writeTChan)
-import Control.Monad.IO.Class            (liftIO)
-import Control.Monad.Trans.State.Strict
-    ( StateT
-    , evalStateT
-    , get
-    , gets
-    , modify
-    , put
-    )
-import Data.Foldable                     (traverse_)
-import qualified Data.Set           as S (Set, insert, member)
-
+import           Control.Concurrent.STM           (atomically)
+import           Control.Concurrent.STM.TChan     (TChan, readTChan, writeTChan)
+import           Control.Monad.IO.Class           (liftIO)
+import           Control.Monad.Trans.State.Strict
+import           Data.Foldable                    (traverse_)
+import qualified Data.Set                         as S (Set, insert, member)
 
 import Graze.HttpUrl  (HttpUrl)
 import Graze.Links    (links)

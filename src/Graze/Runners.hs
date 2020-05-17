@@ -21,7 +21,7 @@ import Graze.Crawler  (CrawlerState (..), crawl, evalCrawler)
 import Graze.Http     (robots)
 import Graze.HttpUrl  (HttpUrl (..), serialize)
 import Graze.Messages (Job (..))
-import Graze.Robots   (allowed)
+import Graze.Robots   (allowedBy)
 import Graze.Worker   (fetch)
 import Graze.Writer   (write)
 
@@ -52,10 +52,13 @@ run Config {..} = do
         forkIO (fetch jobChan repChan)
 
     rs <- robots cBase
-    _  <- forkIO $
-            evalCrawler
-                (crawl (allowed cBase rs) jobChan repChan outChan)
-                (CrawlerState 1 (S.singleton cBase))
+    _  <- let legal url =
+                huDomain url == huDomain cBase
+                && huPath url `allowedBy` rs
+          in forkIO $
+                evalCrawler
+                    (crawl legal jobChan repChan outChan)
+                    (CrawlerState 1 (S.singleton cBase))
 
     createDirectoryIfMissing True cFolder
     B.writeFile cRecords ""

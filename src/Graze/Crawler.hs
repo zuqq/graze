@@ -1,64 +1,65 @@
 {-# LANGUAGE RecordWildCards   #-}
 
 module Graze.Crawler
-    ( CrawlerState (..)
-    , crawl
-    , evalCrawler
+    ( Chans (Chans)
+    , Config (Config)
+    , run
     ) where
 
 import           Control.Concurrent.STM           (atomically)
 import           Control.Concurrent.STM.TChan     (TChan, readTChan, writeTChan)
+import           Control.Monad                    (unless)
 import           Control.Monad.IO.Class           (liftIO)
 import           Control.Monad.Trans.State.Strict
 import           Data.Foldable                    (traverse_)
-import qualified Data.Set                         as S (Set, insert, member)
+import qualified Data.HashSet                     as HS
 
 import Graze.HttpUrl  (HttpUrl)
-import Graze.Links    (links)
 import Graze.Messages
 
 
-data CrawlerState = CrawlerState
-    { csActive :: !Int
-    , csSeen   :: !(S.Set HttpUrl)
+data Config = Config
+    { depth :: !Int
+    , base  :: !HttpUrl
+    , legal :: !(HttpUrl -> Bool)
     }
 
-type Crawler a = StateT CrawlerState IO a
+data Chans = Chans
+    { inbox  :: TChan FetchResult
+    , outbox :: TChan FetchCommand
+    , writer :: TChan WriteCommand
+    }
 
-evalCrawler :: Crawler a -> CrawlerState -> IO a
-evalCrawler = evalStateT
+data LoopState = LoopState
+    { active :: !Int
+    , seen   :: !(HS.HashSet HttpUrl)
+    }
 
-crawl
-    :: (HttpUrl -> Bool)
-    -> TChan Job
-    -> TChan Report
-    -> TChan Instruction
-    -> Crawler ()
-crawl p jobChan repChan outChan = loop
+run :: Config -> Chans -> IO ()
+run Config {..} Chans {..} = do
+    atomically $
+        writeTChan outbox $
+            Fetch (Job depth base base)
+    evalStateT loop (LoopState 1 (HS.singleton base))
   where
     loop = do
-        Report Job {..} res <- liftIO . atomically $ readTChan repChan
-        modify $ \s -> s {csActive = csActive s - 1}
-        case res of
-            Fail         -> return ()
-            Success cont -> do
-                let urls = links jUrl cont
+        result <- liftIO . atomically $ readTChan inbox
+        modify' $ \s -> s {active = active s - 1}
+        case result of
+            Failure        -> return ()
+            Success record -> do
                 liftIO . atomically $
-                    writeTChan outChan $
-                        Write (Record jParent jUrl urls cont)
-                if jDepth <= 0
-                    then return ()
-                    else do
-                        CrawlerState {..} <- get
-                        let p' url = p url && not (url `S.member` csSeen)
-                            urls'  = filter p' urls
-                            jobs   = Job (jDepth - 1) jUrl <$> urls'
-                        liftIO . atomically $
-                            traverse_ (writeTChan jobChan) jobs
-                        put $ CrawlerState
-                            (csActive + length urls')
-                            (foldr S.insert csSeen urls')
-        n <- gets csActive
-        if n <= 0
-            then liftIO . atomically $ writeTChan outChan Stop
-            else loop
+                    writeTChan writer (Write record)
+                let Job {..} = rJob record
+                unless (jDepth <= 0) $ do
+                    LoopState {..} <- get
+                    let legal' url = legal url && not (url `HS.member` seen)
+                        urls = filter legal' (rLinks record)
+                        jobs = Job (jDepth - 1) jUrl <$> urls
+                    liftIO . atomically $
+                        traverse_ (writeTChan outbox . Fetch) jobs
+                    put $ LoopState
+                        (active + length urls)
+                        (foldr HS.insert seen urls)
+        n <- gets active
+        unless (n <= 0) loop

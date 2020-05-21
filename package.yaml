@@ -13,7 +13,6 @@ dependencies:
 - base >= 4.7 && < 5
 - base16-bytestring
 - bytestring
-- containers
 - cryptohash-sha1
 - directory
 - filepath
@@ -23,7 +22,7 @@ dependencies:
 - optparse-applicative
 - stm
 - tagsoup
-- text
+- time
 - transformers
 - unordered-containers
 

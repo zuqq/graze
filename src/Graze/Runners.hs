@@ -6,24 +6,24 @@ module Graze.Runners
     , run
     ) where
 
-import           Control.Concurrent           (forkIO)
-import           Control.Concurrent.STM       (atomically)
-import           Control.Concurrent.STM.TChan (newTChanIO, writeTChan)
-import           Control.Monad                (replicateM_)
-import qualified Data.ByteString              as B (writeFile)
-import qualified Data.Set                     as S (singleton)
-import           Debug.Trace                  (traceIO)
-import           System.Directory             (createDirectoryIfMissing)
+import Control.Concurrent           (forkFinally)
+import Control.Concurrent.STM       (atomically)
+import Control.Concurrent.STM.TChan (newTChanIO, writeTChan)
+import Control.Concurrent.STM.TMVar
+import Control.Monad                (replicateM, replicateM_)
+import Data.Foldable                (traverse_)
 
 import Network.HTTP.Client.TLS (newTlsManager, setGlobalManager)
 
-import Graze.Crawler  (CrawlerState (..), crawl, evalCrawler)
 import Graze.Http     (robots)
 import Graze.HttpUrl  (HttpUrl (..), serialize)
-import Graze.Messages (Job (..))
+import Graze.Messages
 import Graze.Robots   (allowedBy)
-import Graze.Worker   (fetch)
-import Graze.Writer   (write)
+
+import qualified Graze.Crawler as Crawler
+import qualified Graze.Fetcher as Fetcher
+import qualified Graze.Logger  as Logger
+import qualified Graze.Writer  as Writer
 
 
 data Config = Config
@@ -31,36 +31,50 @@ data Config = Config
     , cDepth   :: !Int       -- ^ Depth of the search.
     , cFolder  :: !FilePath  -- ^ Download folder.
     , cRecords :: !FilePath  -- ^ Page record file.
+    , cLog     :: !FilePath  -- ^ Log file.
     , cBase    :: !HttpUrl   -- ^ URL to start at.
     }
 
 run :: Config -> IO ()
 run Config {..} = do
-    traceIO $ "Crawling " <> (show . serialize) cBase
+    putStrLn $ "Crawling " <> show (serialize cBase)
 
-    jobChan <- newTChanIO
-    repChan <- newTChanIO
-    outChan <- newTChanIO
+    tls <- newTlsManager
+    setGlobalManager tls
 
-    atomically $
-        writeTChan jobChan (Job cDepth cBase cBase)
+    fetcher <- newTChanIO
+    crawler <- newTChanIO
+    writer  <- newTChanIO
+    logger  <- newTChanIO
 
-    m <- newTlsManager
-    setGlobalManager m
+    let forkChild x = do
+            m <- atomically newEmptyTMVar
+            _ <- forkFinally x (\_ -> atomically $ putTMVar m ())
+            return m
 
-    replicateM_ cWorkers $
-        forkIO (fetch jobChan repChan)
+    lm <- forkChild $ Logger.run
+        (Logger.Config cLog)
+        (Logger.Chans logger)
+
+    wm <- forkChild $ Writer.run
+        (Writer.Config cFolder cRecords)
+        (Writer.Chans writer)
+
+    ms <- replicateM cWorkers . forkChild $ Fetcher.run
+        (Fetcher.Chans fetcher crawler logger)
 
     rs <- robots cBase
-    _  <- let legal url =
-                huDomain url == huDomain cBase
-                && huPath url `allowedBy` rs
-          in forkIO $
-                evalCrawler
-                    (crawl legal jobChan repChan outChan)
-                    (CrawlerState 1 (S.singleton cBase))
+    let legal url =
+            huDomain url == huDomain cBase
+            && huPath url `allowedBy` rs
+    Crawler.run
+        (Crawler.Config cDepth cBase legal)
+        (Crawler.Chans crawler fetcher writer)
 
-    createDirectoryIfMissing True cFolder
-    B.writeFile cRecords ""
+    atomically $ do
+        replicateM_ cWorkers $
+            writeTChan fetcher StopFetching
+        writeTChan writer StopWriting
+        writeTChan logger StopLogging
 
-    write cFolder cRecords outChan
+    traverse_ (atomically . takeTMVar) (lm : wm : ms)

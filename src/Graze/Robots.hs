@@ -6,30 +6,31 @@ module Graze.Robots
     , parse
     ) where
 
-import qualified Data.Attoparsec.Text as A
-import           Data.Char            (isSpace)
-import           Data.Either          (isLeft, isRight, lefts, rights)
-import qualified Data.Text            as T
+import qualified Data.Attoparsec.ByteString as A
+import           Data.Either                (isLeft, isRight, lefts, rights)
+import qualified Data.ByteString.Char8      as C8 (ByteString, lines, split)
+import           Data.Word                  (Word8)
 
 import Graze.Trie (Trie, completes, fromList)
 
 
-type UserAgent = T.Text
+type UserAgent = C8.ByteString
+type Disallow  = C8.ByteString
+type Line      = Either UserAgent Disallow
+type Record    = ([UserAgent], [Disallow])
 
-type Disallow = T.Text
-
-type Line = Either UserAgent Disallow
-
-type Record = ([UserAgent], [Disallow])
+-- From base's isSpace.
+isSpace :: Word8 -> Bool
+isSpace w = w == 32 || w - 0x9 <= 4 || w == 0xa0
 
 userAgent :: A.Parser UserAgent
 userAgent = A.string "User-agent:"
-    *> A.skipSpace
+    *> A.takeWhile isSpace
     *> A.takeWhile (not . isSpace)
 
 disallow :: A.Parser Disallow
 disallow = A.string "Disallow:"
-    *> A.skipSpace
+    *> A.takeWhile isSpace
     *> A.takeWhile (not . isSpace)
 
 line :: A.Parser Line
@@ -45,19 +46,19 @@ group xs = (lefts uas, rights ds) : group xs''
 targeting :: UserAgent -> [Record] -> [Disallow]
 targeting ua rs = [ d | (uas, ds) <- rs, ua `elem` uas, d <- ds ]
 
-type Robots = Trie T.Text
+type Robots = Trie C8.ByteString
 
-chunk :: T.Text -> [T.Text]
-chunk = T.split (== '/')
+chunk :: C8.ByteString -> [C8.ByteString]
+chunk = C8.split '/'
 
-allowedBy :: T.Text -> Robots -> Bool
+allowedBy :: C8.ByteString -> Robots -> Bool
 allowedBy = fmap not . completes . chunk
 
-parse :: UserAgent -> T.Text -> Robots
+parse :: UserAgent -> C8.ByteString -> Robots
 parse ua = fromList
     . fmap chunk
     . targeting ua
     . group
     . rights
     . fmap (A.parseOnly line)
-    . T.lines
+    . C8.lines

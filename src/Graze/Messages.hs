@@ -1,9 +1,10 @@
 module Graze.Messages
-    ( Instruction (..)
+    ( FetchCommand (..)
+    , FetchResult (..)
+    , LogCommand (..)
     , Job (..)
     , Record (..)
-    , Report (..)
-    , Result (..)
+    , WriteCommand (..)
     ) where
 
 import qualified Data.ByteString as B (ByteString)
@@ -13,19 +14,20 @@ import Graze.HttpUrl (HttpUrl)
 
 data Job = Job
     { jDepth  :: !Int      -- ^ Remaining depth of the search.
-    , jParent :: !HttpUrl
+    , jOrigin :: !HttpUrl
     , jUrl    :: !HttpUrl
     }
 
-data Result = Fail | Success !B.ByteString
-
-data Report = Report !Job !Result
+data FetchCommand = StopFetching | Fetch !Job
 
 data Record = Record
-    { rParent   :: !HttpUrl
-    , rUrl      :: !HttpUrl
-    , rChildren :: ![HttpUrl]
-    , rContent  :: !B.ByteString
+    { rJob   :: !Job
+    , rLinks :: ![HttpUrl]
+    , rBody  :: !B.ByteString
     }
 
-data Instruction = Stop | Write !Record
+data FetchResult = Failure | Success !Record
+
+data WriteCommand = StopWriting | Write !Record
+
+data LogCommand = StopLogging | Get !String !String !HttpUrl

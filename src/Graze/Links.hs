@@ -4,26 +4,24 @@ module Graze.Links
     ( links
     ) where
 
-import qualified Data.ByteString    as B (ByteString)
-import           Data.Char          (isSpace)
-import           Data.Either        (rights)
-import           Data.Maybe         (mapMaybe)
-import qualified Data.Set           as S (fromList, toList)
-import qualified Data.Text          as T
-import qualified Data.Text.Encoding as T (decodeUtf8)
+import           Data.Char             (isSpace)
+import           Data.Either           (rights)
+import qualified Data.HashSet          as HS (fromList, toList)
+import           Data.Maybe            (mapMaybe)
+import qualified Data.ByteString.Char8 as C8 (ByteString, filter)
 
 import Text.HTML.TagSoup (Tag (TagOpen), parseTags)
 
 import Graze.HttpUrl (HttpUrl (..), parseRelTo)
 
 
-hrefs :: B.ByteString -> [T.Text]
-hrefs s = T.filter (not . isSpace) . T.decodeUtf8 <$>
+hrefs :: C8.ByteString -> [C8.ByteString]
+hrefs s = C8.filter (not . isSpace) <$>
     mapMaybe (lookup "href") [ as | TagOpen "a" as <- parseTags s ]
 
-links :: HttpUrl -> B.ByteString -> [HttpUrl]
-links base = S.toList
-    . S.fromList
+links :: HttpUrl -> C8.ByteString -> [HttpUrl]
+links base = HS.toList
+    . HS.fromList
     . rights
     . fmap (parseRelTo base)
     . hrefs

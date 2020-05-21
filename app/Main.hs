@@ -2,7 +2,7 @@
 
 module Main (main) where
 
-import qualified Data.Text as T (pack)
+import qualified Data.ByteString.Char8 as C8 (pack)
 
 import Options.Applicative
 
@@ -32,7 +32,12 @@ confParser = Config
         <> metavar "r"
         <> value "records"
         <> help "Page record file")
-    <*> argument (eitherReader $ parse . T.pack)
+    <*> option auto
+        (long "log"
+        <> metavar "l"
+        <> value "debug.log"
+        <> help "Log file")
+    <*> argument (eitherReader $ parse . C8.pack)
         (metavar "base"
         <> help "URL to start at")
 

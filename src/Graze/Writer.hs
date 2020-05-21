@@ -1,31 +1,63 @@
-{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE LambdaCase        #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards   #-}
 
 module Graze.Writer
-    ( write
+    ( Chans (Chans)
+    , Config (Config)
+    , run
     ) where
 
 import           Control.Concurrent.STM       (atomically)
 import           Control.Concurrent.STM.TChan (TChan, readTChan)
 import qualified Data.ByteString              as B (appendFile, writeFile)
-import qualified Data.Text.Encoding           as T (encodeUtf8)
-import           Debug.Trace                  (traceIO)
+import           System.Directory             (createDirectoryIfMissing)
 import           System.FilePath              ((</>))
 
-import Graze.HttpUrl  (hash)
-import Graze.Messages (Instruction (..), Record (..))
-import Graze.Records  (toText)
+import Graze.HttpUrl  (hash, serialize)
+import Graze.Messages
+import Graze.SExpr    (SExpr (..), toByteString)
 
 
-write
-    :: FilePath           -- ^ Download folder.
-    -> FilePath           -- ^ Page record file.
-    -> TChan Instruction
-    -> IO ()
-write folder records outChan = loop
+toSExpr :: Record -> SExpr
+toSExpr record = Node
+    [ Node
+        [ Leaf "origin"
+        , Leaf origin]
+    , Node
+        [ Leaf "url"
+        , Leaf url
+        ]
+    , Node
+        [ Leaf "links"
+        , Node links
+        ]
+    ]
   where
-    loop = atomically (readTChan outChan) >>= \case
-        Stop      -> traceIO "Done"
-        Write rec -> do
-            B.appendFile records (T.encodeUtf8 (toText rec))
-            B.writeFile (folder </> hash (rUrl rec)) (rContent rec)
+    job    = rJob record
+    url    = serialize (jUrl job)
+    origin = serialize (jOrigin job)
+    links  = Leaf . serialize <$> rLinks record
+
+
+data Config = Config
+    { folder  :: FilePath  -- ^ Download folder.
+    , records :: FilePath  -- ^ Page record file.
+    }
+
+newtype Chans = Chans {inbox :: TChan WriteCommand}
+
+run :: Config -> Chans -> IO ()
+run Config {..} Chans {..} = do
+    createDirectoryIfMissing True folder
+    B.writeFile records ""
+    loop
+  where
+    loop = atomically (readTChan inbox) >>= \case
+        StopWriting  -> return ()
+        Write record -> do
+            let url  = jUrl (rJob record)
+            let body = rBody record
+            B.appendFile records (toByteString (toSExpr record) <> "\n")
+            B.writeFile (folder </> hash url) body
             loop

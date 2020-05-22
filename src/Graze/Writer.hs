@@ -21,17 +21,9 @@ import Graze.SExpr    (SExpr (..), toByteString)
 
 toSExpr :: Record -> SExpr
 toSExpr record = Node
-    [ Node
-        [ Leaf "origin"
-        , Leaf origin]
-    , Node
-        [ Leaf "url"
-        , Leaf url
-        ]
-    , Node
-        [ Leaf "links"
-        , Node links
-        ]
+    [ Node [Leaf "origin" , Leaf origin]
+    , Node [Leaf "url" , Leaf url]
+    , Node [Leaf "links" , Node links]
     ]
   where
     job    = rJob record

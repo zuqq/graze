@@ -1,13 +1,16 @@
 module Graze.Messages
     ( FetchCommand (..)
     , FetchResult (..)
-    , LogCommand (..)
     , Job (..)
+    , LogCommand (..)
+    , Level (..)
+    , Message (..)
     , Record (..)
     , WriteCommand (..)
     ) where
 
-import qualified Data.ByteString as B (ByteString)
+import qualified Data.ByteString     as B (ByteString)
+import           Data.Time.LocalTime (ZonedTime)
 
 import Graze.HttpUrl (HttpUrl)
 
@@ -18,7 +21,9 @@ data Job = Job
     , jUrl    :: !HttpUrl
     }
 
-data FetchCommand = StopFetching | Fetch !Job
+data FetchCommand
+    = StopFetching
+    | Fetch !Job
 
 data Record = Record
     { rJob   :: !Job
@@ -26,8 +31,22 @@ data Record = Record
     , rBody  :: !B.ByteString
     }
 
-data FetchResult = Failure | Success !Record
+data FetchResult
+    = Failure
+    | Success !Record
 
-data WriteCommand = StopWriting | Write !Record
+data WriteCommand
+    = StopWriting
+    | Write !Record
 
-data LogCommand = StopLogging | Get !String !String !HttpUrl
+data Level
+    = Debug
+    | Info
+    | Warning
+    | Error
+
+data Message = Message ZonedTime Level B.ByteString
+
+data LogCommand
+    = StopLogging
+    | Log Message

@@ -7,16 +7,15 @@ module Graze.Fetcher
     , run
     ) where
 
-import Control.Concurrent           (myThreadId)
 import Control.Concurrent.STM       (atomically)
 import Control.Concurrent.STM.TChan (TChan, readTChan, writeTChan)
 import Control.Exception            (try)
-import Data.Time.Format             (defaultTimeLocale, formatTime)
 import Data.Time.LocalTime          (getZonedTime)
 
 import Network.HTTP.Client (HttpException)
 
 import Graze.Http     (request)
+import Graze.HttpUrl  (serialize)
 import Graze.Links    (links)
 import Graze.Messages
 
@@ -33,12 +32,11 @@ run Chans {..} = loop
     loop = atomically (readTChan inbox) >>= \case
         StopFetching -> return ()
         Fetch job    -> do
-            t <- formatTime defaultTimeLocale "%H:%M:%S,%3q" <$> getZonedTime
-            i <- myThreadId
+            t <- getZonedTime
             let url = jUrl job
             atomically $
                 writeTChan logger $
-                    Get t (show i) url
+                    Log (Message t Debug (serialize url))
             try (request url) >>= \case
                 Left (_ :: HttpException) -> atomically $
                     writeTChan outbox Failure

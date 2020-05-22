@@ -31,7 +31,6 @@ toSExpr record = Node
     origin = serialize (jOrigin job)
     links  = Leaf . serialize <$> rLinks record
 
-
 data Config = Config
     { folder  :: FilePath  -- ^ Download folder.
     , records :: FilePath  -- ^ Page record file.

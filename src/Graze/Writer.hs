@@ -50,6 +50,6 @@ run Config {..} Chans {..} = do
         Write record -> do
             let url  = jUrl (rJob record)
             let body = rBody record
-            B.appendFile records (toByteString (toSExpr record) <> "\n")
             B.writeFile (folder </> hash url) body
+            B.appendFile records (toByteString (toSExpr record) <> "\n")
             loop

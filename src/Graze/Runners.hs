@@ -2,7 +2,7 @@
 {-# LANGUAGE RecordWildCards   #-}
 
 module Graze.Runners
-    ( Config (..)
+    ( Config (Config)
     , run
     ) where
 
@@ -27,17 +27,17 @@ import qualified Graze.Writer  as Writer
 
 
 data Config = Config
-    { cWorkers :: !Int       -- ^ Number of worker threads.
-    , cDepth   :: !Int       -- ^ Depth of the search.
-    , cFolder  :: !FilePath  -- ^ Download folder.
-    , cRecords :: !FilePath  -- ^ Page record file.
-    , cLog     :: !FilePath  -- ^ Log file.
-    , cBase    :: !HttpUrl   -- ^ URL to start at.
+    { base    :: !HttpUrl   -- ^ URL to start at.
+    , depth   :: !Int       -- ^ Depth of the search.
+    , threads :: !Int       -- ^ Number of threads.
+    , folder  :: !FilePath  -- ^ Download folder.
+    , records :: !FilePath  -- ^ Page record file.
+    , logFile :: !FilePath  -- ^ Log file.
     }
 
 run :: Config -> IO ()
 run Config {..} = do
-    putStrLn $ "Crawling " <> show (serialize cBase)
+    putStrLn $ "Crawling " <> show (serialize base)
 
     tls <- newTlsManager
     setGlobalManager tls
@@ -53,26 +53,26 @@ run Config {..} = do
             return m
 
     lm <- forkChild $ Logger.run
-        (Logger.Config cLog)
+        (Logger.Config logFile)
         (Logger.Chans logger)
 
     wm <- forkChild $ Writer.run
-        (Writer.Config cFolder cRecords)
+        (Writer.Config folder records)
         (Writer.Chans writer)
 
-    ms <- replicateM cWorkers . forkChild $ Fetcher.run
+    ms <- replicateM threads . forkChild $ Fetcher.run
         (Fetcher.Chans fetcher crawler logger)
 
-    rs <- robots cBase
+    rs <- robots base
     let legal url =
-            huDomain url == huDomain cBase
+            huDomain url == huDomain base
             && huPath url `allowedBy` rs
     Crawler.run
-        (Crawler.Config cDepth cBase legal)
+        (Crawler.Config depth base legal)
         (Crawler.Chans crawler fetcher writer)
 
     atomically $ do
-        replicateM_ cWorkers $
+        replicateM_ threads $
             writeTChan fetcher StopFetching
         writeTChan writer StopWriting
         writeTChan logger StopLogging

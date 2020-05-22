@@ -19,6 +19,15 @@ import Graze.Messages
 import Graze.SExpr    (SExpr (..), toByteString)
 
 
+data Config = Config
+    { folder  :: FilePath  -- ^ Download folder.
+    , records :: FilePath  -- ^ Page record file.
+    }
+
+newtype Chans = Chans
+    { inbox :: TChan WriteCommand
+    }
+
 toSExpr :: Record -> SExpr
 toSExpr record = Node
     [ Node [Leaf "origin" , Leaf origin]
@@ -27,16 +36,9 @@ toSExpr record = Node
     ]
   where
     job    = rJob record
-    url    = serialize (jUrl job)
     origin = serialize (jOrigin job)
+    url    = serialize (jUrl job)
     links  = Leaf . serialize <$> rLinks record
-
-data Config = Config
-    { folder  :: FilePath  -- ^ Download folder.
-    , records :: FilePath  -- ^ Page record file.
-    }
-
-newtype Chans = Chans {inbox :: TChan WriteCommand}
 
 run :: Config -> Chans -> IO ()
 run Config {..} Chans {..} = do

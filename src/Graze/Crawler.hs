@@ -44,7 +44,7 @@ run Config {..} Chans {..} = do
   where
     loop = do
         result <- liftIO . atomically $ readTChan inbox
-        modify' $ \s -> s { active = active s - 1 }
+        modify' $ \s -> s {active = active s - 1}
         case result of
             Failure        -> return ()
             Success record -> do

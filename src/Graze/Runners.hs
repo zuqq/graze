@@ -27,12 +27,12 @@ import qualified Graze.Writer  as Writer
 
 
 data Config = Config
-    { base    :: !HttpUrl   -- ^ URL to start at.
-    , depth   :: !Int       -- ^ Depth of the search.
+    { depth   :: !Int       -- ^ Depth of the search.
     , threads :: !Int       -- ^ Number of threads.
     , folder  :: !FilePath  -- ^ Download folder.
     , records :: !FilePath  -- ^ Page record file.
     , logFile :: !FilePath  -- ^ Log file.
+    , base    :: !HttpUrl   -- ^ URL to start at.
     }
 
 run :: Config -> IO ()

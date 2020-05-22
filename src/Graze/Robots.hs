@@ -18,6 +18,7 @@ type UserAgent = C8.ByteString
 type Disallow  = C8.ByteString
 type Line      = Either UserAgent Disallow
 type Record    = ([UserAgent], [Disallow])
+type Robots    = Trie C8.ByteString
 
 -- From base's isSpace.
 isSpace :: Word8 -> Bool
@@ -46,7 +47,6 @@ group xs = (lefts uas, rights ds) : group xs''
 targeting :: UserAgent -> [Record] -> [Disallow]
 targeting ua rs = [ d | (uas, ds) <- rs, ua `elem` uas, d <- ds ]
 
-type Robots = Trie C8.ByteString
 
 chunk :: C8.ByteString -> [C8.ByteString]
 chunk = C8.split '/'

@@ -12,10 +12,7 @@ import Graze.Runners (Config (Config), run)
 
 confParser :: Parser Config
 confParser = Config
-    <$> argument (eitherReader $ parse . C8.pack)
-        (metavar "base"
-        <> help "URL to start at")
-    <*> option auto
+    <$> option auto
         (long "depth"
         <> metavar "d"
         <> value 3
@@ -40,6 +37,9 @@ confParser = Config
         <> metavar "l"
         <> value "graze.log"
         <> help "Log file")
+    <*> argument (eitherReader $ parse . C8.pack)
+        (metavar "base"
+        <> help "URL to start at")
 
 confInfo :: ParserInfo Config
 confInfo = info (confParser <**> helper) fullDesc

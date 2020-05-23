@@ -7,7 +7,7 @@ import qualified Data.ByteString.Char8 as C8 (pack)
 import Options.Applicative
 
 import Graze.HttpUrl (parse)
-import Graze.Runners (Config (Config), run)
+import Graze.Main    (Config (Config), run)
 
 
 confParser :: Parser Config

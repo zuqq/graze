@@ -2,6 +2,7 @@ module Graze.Trie
     ( Trie
     , completes
     , fromList
+    , insert
     ) where
 
 import           Data.Hashable       (Hashable)

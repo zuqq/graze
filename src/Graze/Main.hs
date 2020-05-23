@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 
-module Graze.Runners
+module Graze.Main
     ( Config (Config)
     , run
     ) where

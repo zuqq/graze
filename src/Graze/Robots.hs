@@ -47,7 +47,6 @@ group xs = (lefts uas, rights ds) : group xs''
 targeting :: UserAgent -> [Record] -> [Disallow]
 targeting ua rs = [ d | (uas, ds) <- rs, ua `elem` uas, d <- ds ]
 
-
 chunk :: C8.ByteString -> [C8.ByteString]
 chunk = C8.split '/'
 

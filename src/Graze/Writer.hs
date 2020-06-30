@@ -20,12 +20,12 @@ import Graze.SExpr    (SExpr (..), toByteString)
 
 
 data Config = Config
-    { folder  :: FilePath  -- ^ Download folder.
-    , records :: FilePath  -- ^ Page record file.
+    { folder  :: !FilePath  -- ^ Download folder.
+    , records :: !FilePath  -- ^ Page record file.
     }
 
-newtype Chans = Chans
-    { inbox :: TChan WriteCommand
+data Chans = Chans
+    { inbox :: !(TChan WriteCommand)
     }
 
 toSExpr :: Record -> SExpr
@@ -50,7 +50,7 @@ run Config {..} Chans {..} = do
         StopWriting  -> return ()
         Write record -> do
             let url  = jUrl (rJob record)
-            let body = rBody record
+                body = rBody record
             B.writeFile (folder </> hash url) body
             B.appendFile records (toByteString (toSExpr record) <> "\n")
             loop

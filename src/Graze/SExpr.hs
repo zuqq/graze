@@ -8,7 +8,7 @@ module Graze.SExpr
 import qualified Data.ByteString as B (ByteString, intercalate)
 
 
-data SExpr = Leaf B.ByteString | Node [SExpr]
+data SExpr = Leaf !B.ByteString | Node ![SExpr]
 
 parens :: B.ByteString -> B.ByteString
 parens s = "(" <> s <> ")"

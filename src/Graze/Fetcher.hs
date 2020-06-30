@@ -21,9 +21,9 @@ import Graze.Messages
 
 
 data Chans = Chans
-    { inbox  :: TChan FetchCommand
-    , outbox :: TChan FetchResult
-    , logger :: TChan LogCommand
+    { inbox  :: !(TChan FetchCommand)
+    , outbox :: !(TChan FetchResult)
+    , logger :: !(TChan LogCommand)
     }
 
 run :: Chans -> IO ()

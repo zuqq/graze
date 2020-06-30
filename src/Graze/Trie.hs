@@ -1,6 +1,7 @@
 module Graze.Trie
     ( Trie
     , completes
+    , empty
     , fromList
     , insert
     ) where

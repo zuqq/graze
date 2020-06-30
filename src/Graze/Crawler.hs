@@ -25,12 +25,12 @@ data Config = Config
     }
 
 data Chans = Chans
-    { inbox  :: TChan FetchResult
-    , outbox :: TChan FetchCommand
-    , writer :: TChan WriteCommand
+    { inbox  :: !(TChan FetchResult)
+    , outbox :: !(TChan FetchCommand)
+    , writer :: !(TChan WriteCommand)
     }
 
-data LoopState = LoopState
+data Browser = Browser
     { active :: !Int
     , seen   :: !(HS.HashSet HttpUrl)
     }
@@ -40,7 +40,7 @@ run Config {..} Chans {..} = do
     atomically $
         writeTChan outbox $
             Fetch (Job depth base base)
-    evalStateT loop (LoopState 1 (HS.singleton base))
+    evalStateT loop (Browser 1 (HS.singleton base))
   where
     loop = do
         result <- liftIO . atomically $ readTChan inbox
@@ -52,13 +52,13 @@ run Config {..} Chans {..} = do
                     writeTChan writer (Write record)
                 let Job {..} = rJob record
                 unless (jDepth <= 0) $ do
-                    LoopState {..} <- get
+                    Browser {..} <- get
                     let legal' url = legal url && not (url `HS.member` seen)
                         urls = filter legal' (rLinks record)
                         jobs = Job (jDepth - 1) jUrl <$> urls
                     liftIO . atomically $
                         traverse_ (writeTChan outbox . Fetch) jobs
-                    put $ LoopState
+                    put $ Browser
                         (active + length urls)
                         (foldr HS.insert seen urls)
         n <- gets active

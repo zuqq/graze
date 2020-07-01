@@ -11,6 +11,7 @@ data HttpUrl = HttpUrl
     , huDomain :: !B.ByteString
     , huPath   :: !B.ByteString
     }
+    deriving (Read, Show)
 
 instance Eq HttpUrl where
     x == y = (huDomain x, huPath x) == (huDomain y, huPath y)

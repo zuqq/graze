@@ -88,7 +88,7 @@ url = liftA3 HttpUrl scheme domain (path <|> pure "/")
 relPath :: B.ByteString -> A.Parser B.ByteString
 relPath f = normalize <$> liftA2 (<>) (pure f) A.takeByteString
 
--- Map a path @"/a/b/c"@ to @"/a/b/"@.
+-- | Remove the last @'/'@-separated part.
 --
 -- ==== __Examples__
 --

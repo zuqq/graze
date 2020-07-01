@@ -45,7 +45,10 @@ data Level
     | Warning
     | Error
 
-data Message = Message !ZonedTime !Level !B.ByteString
+data Message = Message
+    !ZonedTime
+    !Level
+    !B.ByteString
 
 data LogCommand
     = StopLogging

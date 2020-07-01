@@ -3,6 +3,7 @@
 module Graze.Robots
     ( Robots
     , allowedBy
+    , chunk
     , parse
     ) where
 
@@ -12,6 +13,9 @@ import qualified Data.ByteString.Char8      as C8 (ByteString, lines, split)
 import           Data.Word                  (Word8)
 
 import Graze.Trie (Trie, completes, fromList)
+
+-- $setup
+-- >>> :set -XOverloadedStrings
 
 
 type UserAgent = C8.ByteString
@@ -47,6 +51,20 @@ group xs = (lefts uas, rights ds) : group xs''
 targeting :: UserAgent -> [Record] -> [Disallow]
 targeting ua rs = [ d | (uas, ds) <- rs, ua `elem` uas, d <- ds ]
 
+-- | Split a 'C8.ByteString' into its @'/'@-separated parts.
+--
+-- ==== __Examples__
+--
+-- >>> chunk ""
+-- []
+-- >>> chunk "a"
+-- ["a"]
+-- >>> chunk "/"
+-- ["",""]
+-- >>> chunk "/a"
+-- ["","a"]
+-- >>> chunk "/a/b/c"
+-- ["","a","b","c"]
 chunk :: C8.ByteString -> [C8.ByteString]
 chunk = C8.split '/'
 

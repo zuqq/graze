@@ -4,7 +4,7 @@ module Graze.HttpUrl
     ( HttpUrl (..)
     , hash
     , parse
-    , parseRelTo
+    , parseRel
     , serialize
     ) where
 
@@ -15,7 +15,7 @@ import qualified Crypto.Hash.SHA1       as SHA1   (hash)
 import qualified Data.ByteString.Base16 as Base16 (encode)
 
 import Graze.HttpUrl.Internal (HttpUrl (..))
-import Graze.HttpUrl.Parser   (parse, parseRelTo)
+import Graze.HttpUrl.Parser   (parse, parseRel)
 
 -- $setup
 -- >>> :set -XOverloadedStrings

@@ -12,7 +12,7 @@ import qualified Data.ByteString.Char8 as C8 (ByteString, filter)
 
 import Text.HTML.TagSoup (Tag (TagOpen), parseTags)
 
-import Graze.HttpUrl (HttpUrl (..), parseRelTo)
+import Graze.HttpUrl (HttpUrl (..), parseRel)
 
 
 hrefs :: C8.ByteString -> [C8.ByteString]
@@ -25,5 +25,5 @@ links :: HttpUrl -> C8.ByteString -> [HttpUrl]
 links base = HS.toList
     . HS.fromList
     . rights
-    . fmap (parseRelTo base)
+    . fmap (parseRel base)
     . hrefs

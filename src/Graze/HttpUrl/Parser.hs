@@ -1,16 +1,20 @@
 {-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
+{-# LANGUAGE ViewPatterns      #-}
 
-module Graze.HttpUrl.Parser
-    ( parse
-    , parseRelTo
-    ) where
+-- module Graze.HttpUrl.Parser
+--     ( parse
+--     , parseRel
+--     ) where
+
+module Graze.HttpUrl.Parser where
 
 import           Control.Applicative         ((<|>), liftA2, liftA3)
+import           Control.Monad               ((>=>))
 import qualified Data.Attoparsec.ByteString  as A
 import qualified Data.ByteString             as B
-import           Data.Char                   (ord)
+import           Data.Char                   (chr, ord)
 import           Data.Word                   (Word8)
 
 import Graze.HttpUrl.Internal (HttpUrl (..))
@@ -19,43 +23,63 @@ import Graze.HttpUrl.Internal (HttpUrl (..))
 -- >>> :set -XOverloadedStrings
 
 
+-- Characters ------------------------------------------------------------------
+
+c2w :: Char -> Word8
+c2w = fromIntegral . ord
+
+w2c :: Word8 -> Char
+w2c = chr . fromIntegral
+
 colon, pound, question, slash :: Word8
-colon    = fromIntegral (ord ':')
-pound    = fromIntegral (ord '#')
-question = fromIntegral (ord '?')
-slash    = fromIntegral (ord '/')
+colon    = c2w ':'
+pound    = c2w '#'
+question = c2w '?'
+slash    = c2w '/'
 
-scheme :: A.Parser B.ByteString
-scheme = liftA2 B.snoc (A.takeWhile (/= colon)) (A.word8 colon) >>= \case
-    "http:"  -> return "http:"
-    "https:" -> return "https:"
-    _        -> fail "scheme"
+isAlpha :: Char -> Bool
+isAlpha c = 'A' <= c && c <= 'Z' || 'a' <= c && c <= 'z'
 
-domain :: A.Parser B.ByteString
-domain = liftA2 (<>) (A.string "//") (A.takeWhile (/= slash))
+isNum :: Char -> Bool
+isNum c = '0' <= c && c <= '9'
 
--- | Split a path @"a?b#c"@ into @("a", "?b")@.
+isScheme :: Word8 -> Bool
+isScheme (w2c -> w) = isAlpha w || isNum w || w == '+' || w == '-' || w == '.'
+
+-- Helpers ---------------------------------------------------------------------
+
+-- | Split on the first occurrence of @'?'@.
 --
 -- ==== __Examples__
--- >>> split "a?b#c"
--- ("a","?b")
 -- >>> split "a?b"
 -- ("a","?b")
 -- >>> split "?b"
 -- ("","?b")
--- >>> split "a#c"
--- ("a","")
--- >>> split "#c"
--- ("","")
 -- >>> split "a"
 -- ("a","")
 -- >>> split ""
 -- ("","")
 split :: B.ByteString -> (B.ByteString, B.ByteString)
-split = B.span (/= question) . fst . B.span (/= pound)
+split = B.span (/= question)
 
--- | Remove the fragment and any relative path elements; add an initial slash
--- if not present.
+-- | Remove the last @'/'@-separated part.
+--
+-- ==== __Examples__
+--
+-- >>> folder "/a/b/c"
+-- "/a/b/"
+-- >>> folder "/a/x"
+-- "/a/"
+-- >>> folder "/a/"
+-- "/a/"
+-- >>> folder "/"
+-- "/"
+-- >>> folder ""
+-- ""
+folder :: B.ByteString -> B.ByteString
+folder = fst . B.spanEnd (/= slash) . fst . split
+
+-- | Remove relative path elements.
 --
 -- ==== __Examples__
 -- >>> normalize "../../../g"
@@ -79,42 +103,52 @@ normalize s =
     go xs (y : ys)    = go (y : xs) ys
     go xs []          = reverse xs
 
-path :: A.Parser B.ByteString
-path = normalize <$> liftA2 B.cons (A.word8 slash) A.takeByteString
+-- Parsers ---------------------------------------------------------------------
 
-url :: A.Parser HttpUrl
-url = liftA3 HttpUrl scheme domain (path <|> pure "/")
+-- The definitions are roughly those of RFC 1808.
 
-relPath :: B.ByteString -> A.Parser B.ByteString
-relPath f = normalize <$> liftA2 (<>) (pure f) A.takeByteString
+scheme :: A.Parser B.ByteString
+scheme = liftA2 (<>) (A.takeWhile1 isScheme) (A.string ":")
 
--- | Remove the last @'/'@-separated part.
---
--- ==== __Examples__
---
--- >>> folder "/a/b/c"
--- "/a/b/"
--- >>> folder "/a/x"
--- "/a/"
--- >>> folder "/a/"
--- "/a/"
--- >>> folder "/"
--- "/"
--- >>> folder ""
--- ""
-folder :: B.ByteString -> B.ByteString
-folder = fst . B.spanEnd (/= slash) . fst . split
+netLoc :: A.Parser B.ByteString
+netLoc = liftA2 (<>) (A.string "//") (A.takeWhile (/= slash))
 
-relTo :: HttpUrl -> A.Parser HttpUrl
-relTo HttpUrl {..} = liftA3 HttpUrl
-    (scheme <|> pure huScheme)
-    (domain <|> pure huDomain)
-    (path   <|> relPath (folder huPath))
+relPath :: A.Parser B.ByteString
+relPath = A.takeWhile (/= pound)
+
+absPath :: A.Parser B.ByteString
+absPath = liftA2 (<>) (A.string "/") relPath
+    <|> (A.endOfInput *> pure "/")
+
+type Url = (B.ByteString, B.ByteString, B.ByteString)
+
+absUrl :: A.Parser Url
+absUrl = liftA3 (,,) scheme netLoc absPath
+    -- Hack for filtering out schemes other than HTTP(S) later.
+    <|> liftA3 (,,) scheme nothing nothing
+  where
+    nothing = pure ""
+
+relUrl :: Url -> A.Parser Url
+relUrl (x, y, z) = absUrl
+    <|> liftA2 ((,,) x) netLoc absPath
+    <|> (,,) x y <$> absPath
+    <|> (,,) x y . (folder z <>) <$> relPath
+
+-- Interface -------------------------------------------------------------------
+
+fromUrl :: Url -> Either String HttpUrl
+fromUrl (x, y, z) =
+    if (x == "http:" || x == "https:") && "//" `B.isPrefixOf` y
+        then Right (HttpUrl x y z)
+        else Left "Not a valid HTTP(S) URL."
 
 -- | Parse an absolute HTTP(S) URL.
 parse :: B.ByteString -> Either String HttpUrl
-parse = A.parseOnly url
+parse = A.parseOnly absUrl >=> fromUrl
 
--- | Parse an HTTP(S) URL relative to the first argument.
-parseRelTo :: HttpUrl -> B.ByteString -> Either String HttpUrl
-parseRelTo x = A.parseOnly (relTo x)
+-- | Parse an HTTP(S) URL, with the first argument as the base URL.
+parseRel :: HttpUrl -> B.ByteString -> Either String HttpUrl
+parseRel HttpUrl {..} = A.parseOnly (relUrl base) >=> fromUrl
+  where
+    base = (huScheme, huDomain, huPath)

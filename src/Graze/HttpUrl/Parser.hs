@@ -1,7 +1,6 @@
 {-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
-{-# LANGUAGE ViewPatterns      #-}
 
 -- module Graze.HttpUrl.Parser
 --     ( parse
@@ -14,7 +13,6 @@ import           Control.Applicative         ((<|>), liftA2, liftA3)
 import           Control.Monad               ((>=>))
 import qualified Data.Attoparsec.ByteString  as A
 import qualified Data.ByteString             as B
-import           Data.Char                   (chr, ord)
 import           Data.Word                   (Word8)
 
 import Graze.HttpUrl.Internal (HttpUrl (..))
@@ -25,26 +23,22 @@ import Graze.HttpUrl.Internal (HttpUrl (..))
 
 -- Characters ------------------------------------------------------------------
 
-c2w :: Char -> Word8
-c2w = fromIntegral . ord
+pound, question, slash :: Word8
+pound    = 35  -- '#'
+question = 63  -- '?'
+slash    = 47  -- '/'
 
-w2c :: Word8 -> Char
-w2c = chr . fromIntegral
+isAlpha :: Word8 -> Bool
+isAlpha w = 65 <= w && w <= 90 || 97 <= w && w <= 122
 
-colon, pound, question, slash :: Word8
-colon    = c2w ':'
-pound    = c2w '#'
-question = c2w '?'
-slash    = c2w '/'
-
-isAlpha :: Char -> Bool
-isAlpha c = 'A' <= c && c <= 'Z' || 'a' <= c && c <= 'z'
-
-isNum :: Char -> Bool
-isNum c = '0' <= c && c <= '9'
+isNum :: Word8 -> Bool
+isNum w = 48 <= w && w <= 57
 
 isScheme :: Word8 -> Bool
-isScheme (w2c -> w) = isAlpha w || isNum w || w == '+' || w == '-' || w == '.'
+isScheme w = isAlpha w || isNum w
+    || w == 43  -- '+'
+    || w == 45  -- '-'
+    || w == 46  -- '.'
 
 -- Helpers ---------------------------------------------------------------------
 

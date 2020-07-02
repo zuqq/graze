@@ -59,4 +59,4 @@ completes _ (Trie True _)      = True
 completes [] _                 = False
 completes (x : xs) (Trie _ ts) = case HM.lookup x ts of
     Nothing -> False
-    Just t' -> xs `completes` t'
+    Just t  -> xs `completes` t

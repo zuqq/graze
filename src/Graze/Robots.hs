@@ -26,7 +26,7 @@ type Robots    = Trie C8.ByteString
 
 -- From base's isSpace.
 isSpace :: Word8 -> Bool
-isSpace w = w == 32 || w - 0x9 <= 4 || w == 0xa0
+isSpace w = w == 32 || w - 9 <= 4 || w == 160
 
 userAgent :: A.Parser UserAgent
 userAgent = A.string "User-agent:"

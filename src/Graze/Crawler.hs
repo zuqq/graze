@@ -31,8 +31,8 @@ data Chans = Chans
     }
 
 data Browser = Browser
-    { active :: !Int
-    , seen   :: !(HS.HashSet HttpUrl)
+    { open :: !Int
+    , seen :: !(HS.HashSet HttpUrl)
     }
 
 run :: Config -> Chans -> IO ()
@@ -44,7 +44,7 @@ run Config {..} Chans {..} = do
   where
     loop = do
         result <- liftIO . atomically $ readTChan inbox
-        modify' $ \s -> s {active = active s - 1}
+        modify' $ \s -> s {open = open s - 1}
         case result of
             Failure        -> return ()
             Success record -> do
@@ -59,7 +59,7 @@ run Config {..} Chans {..} = do
                     liftIO . atomically $
                         traverse_ (writeTChan outbox . Fetch) jobs
                     put $ Browser
-                        (active + length urls)
+                        (open + length urls)
                         (foldr HS.insert seen urls)
-        n <- gets active
+        n <- gets open
         unless (n <= 0) loop

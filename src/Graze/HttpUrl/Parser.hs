@@ -2,12 +2,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 
--- module Graze.HttpUrl.Parser
---     ( parse
---     , parseRel
---     ) where
-
-module Graze.HttpUrl.Parser where
+module Graze.HttpUrl.Parser
+    ( parse
+    , parseRel
+    ) where
 
 import           Control.Applicative         ((<|>), liftA2, liftA3)
 import           Control.Monad               ((>=>))
@@ -56,7 +54,7 @@ isScheme w = isAlpha w || isNum w
 split :: B.ByteString -> (B.ByteString, B.ByteString)
 split = B.span (/= question)
 
--- | Remove the last @'/'@-separated part.
+-- | Remove the query and the last @'/'@-separated part of that path.
 --
 -- ==== __Examples__
 --
@@ -75,27 +73,59 @@ folder = fst . B.spanEnd (/= slash) . fst . split
 
 -- | Remove relative path elements.
 --
+-- If the given string doesn't start with a slash, one is added.
+--
 -- ==== __Examples__
--- >>> normalize "../../../g"
--- "/g"
+--
+-- >>> normalize "/b/c/../../../g"
+-- "/../g"
+-- >>> normalize "/b/c/../../../../g"
+-- "/../../g"
 -- >>> normalize "/./g"
--- "/g"
--- >>> normalize "./../g"
--- "/g"
--- >>> normalize "g?y/./x"
--- "/g?y/./x"
+-- "/./g"
+-- >>> normalize "/../g"
+-- "/../g"
+-- >>> normalize "/g."
+-- "/g."
+-- >>> normalize "/.g"
+-- "/.g"
+-- >>> normalize "/..g"
+-- "/..g"
+-- >>> normalize "/g.."
+-- "/g.."
+-- >>> normalize "/b/c/./../g"
+-- "/b/g"
+-- >>> normalize "/b/c/./g/."
+-- "/b/c/g/"
+-- >>> normalize "/b/c/g/./h"
+-- "/b/c/g/h"
+-- >>> normalize "/b/c/g/../h"
+-- "/b/c/h"
 normalize :: B.ByteString -> B.ByteString
 normalize s =
-    let (p, q)  = split s
-        chunks  = filter (not . B.null) . B.split slash $ p
-        suffix  = if "/" `B.isSuffixOf` p && chunks /= [] then "/" else ""
-        chunks' = go [] chunks
-    in "/" <> B.intercalate "/" chunks' <> suffix <> q
+    let (p, q) = split s
+        chunks = case B.split slash p of
+            "" : ys -> ys  -- Remove leading slash.
+            ys      -> ys
+    in "/" <> B.intercalate "/" (go [] chunks) <> q
   where
-    go xs (".." : ys) = go (drop 1 xs) ys
-    go xs ("." : ys)  = go xs ys
-    go xs (y : ys)    = go (y : xs) ys
-    go xs []          = reverse xs
+    -- Base cases.
+    go (".." : xs) [".."] = reverse ("" : ".." : ".." : xs)
+    go (_ : xs) [".."]    = reverse ("" : xs)
+    go xs ["."]           = reverse ("" : xs)
+    go xs [""]            = reverse ("" : xs)
+    go xs []              = reverse xs
+    -- Handle "..".
+    go (".." : xs) (".." : ys) = go (".." : ".." : xs) ys
+    go (_ : xs) (".." : ys)    = go xs ys
+    go [] (".." : ys)          = go [".."] ys
+    -- Handle ".".
+    go [] ("." : ys) = go ["."] ys
+    go xs ("." : ys) = go xs ys
+    -- Handle "".
+    go xs ("" : ys) = go xs ys
+    -- Generic case.
+    go xs (y : ys) = go (y : xs) ys
 
 -- Parsers ---------------------------------------------------------------------
 
@@ -110,31 +140,35 @@ netLoc = liftA2 (<>) (A.string "//") (A.takeWhile (/= slash))
 relPath :: A.Parser B.ByteString
 relPath = A.takeWhile (/= pound)
 
+nothing :: A.Parser B.ByteString
+nothing = pure ""
+
 absPath :: A.Parser B.ByteString
 absPath = liftA2 (<>) (A.string "/") relPath
-    <|> (A.endOfInput *> pure "/")
+    <|> (A.endOfInput *> nothing)
 
 type Url = (B.ByteString, B.ByteString, B.ByteString)
 
 absUrl :: A.Parser Url
 absUrl = liftA3 (,,) scheme netLoc absPath
-    -- Hack for filtering out schemes other than HTTP(S) later.
-    <|> liftA3 (,,) scheme nothing nothing
-  where
-    nothing = pure ""
+    <|> liftA3 (,,) scheme nothing absPath
+    <|> liftA3 (,,) scheme nothing relPath
 
 relUrl :: Url -> A.Parser Url
 relUrl (x, y, z) = absUrl
-    <|> liftA2 ((,,) x) netLoc absPath
-    <|> (,,) x y <$> absPath
-    <|> (,,) x y . (folder z <>) <$> relPath
+    -- Special case: the relative link @""@ should resolve to the base URL.
+    <|> const (x, y, z) <$> (A.endOfInput *> nothing)
+    -- Other relative links.
+    <|> liftA2 ((,,) x) netLoc absPath        -- Matches "//...".
+    <|> (,,) x y <$> absPath                  -- Matches "/...".
+    <|> (,,) x y . (folder z <>) <$> relPath  -- Matches everything.
 
 -- Interface -------------------------------------------------------------------
 
 fromUrl :: Url -> Either String HttpUrl
 fromUrl (x, y, z) =
     if (x == "http:" || x == "https:") && "//" `B.isPrefixOf` y
-        then Right (HttpUrl x y z)
+        then Right (HttpUrl x y (normalize z))
         else Left "Not a valid HTTP(S) URL."
 
 -- | Parse an absolute HTTP(S) URL.

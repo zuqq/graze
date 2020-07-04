@@ -47,7 +47,7 @@ executables:
     - graze
 
 tests:
-  doctest:
+  doc:
     main:                Main.hs
     source-dirs:         test/doc
     ghc-options:
@@ -58,7 +58,7 @@ tests:
     - doctest
     - graze
 
-  unittest:
+  unit:
     main:                Main.hs
     source-dirs:         test/unit
     ghc-options:

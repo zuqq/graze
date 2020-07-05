@@ -47,9 +47,9 @@ executables:
     - graze
 
 tests:
-  doc:
+  doctest:
     main:                Main.hs
-    source-dirs:         test/doc
+    source-dirs:         doctest
     ghc-options:
     - -threaded
     - -rtsopts
@@ -58,9 +58,9 @@ tests:
     - doctest
     - graze
 
-  unit:
+  graze-test:
     main:                Main.hs
-    source-dirs:         test/unit
+    source-dirs:         test
     ghc-options:
     - -threaded
     - -rtsopts

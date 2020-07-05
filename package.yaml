@@ -1,12 +1,10 @@
-name:                graze
-version:             0.1.0.0
-github:              "zuqq/graze"
-author:              "zuqq <noahheld17@gmail.com>"
+name:    graze
+version: 0.1.0.0
+github:  "zuqq/graze"
+author:  "zuqq <noahheld17@gmail.com>"
 
 extra-source-files:
 - README.md
-
-description:         Please see the README on GitHub at <https://github.com/zuqq/graze#readme>
 
 dependencies:
 - attoparsec

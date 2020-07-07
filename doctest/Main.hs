@@ -1,3 +1,7 @@
+module Main
+    ( main
+    ) where
+
 import Test.DocTest (doctest)
 
 

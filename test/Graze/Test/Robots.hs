@@ -16,13 +16,13 @@ import qualified Graze.Robots as Robots
 
 content :: C8.ByteString
 content = C8.unlines
-        [ "User-agent: bot"
-        , "Disallow: /"
-        , ""
-        , "User-agent: *"
-        , "Disallow: /a/b"
-        , "Disallow: /tmp/"
-        ]
+    [ "User-agent: bot"
+    , "Disallow: /"
+    , ""
+    , "User-agent: *"
+    , "Disallow: /a/b"
+    , "Disallow: /tmp/"
+    ]
 
 paths :: [C8.ByteString]
 paths =

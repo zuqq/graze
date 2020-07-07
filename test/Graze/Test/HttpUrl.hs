@@ -63,8 +63,6 @@ relativeValid =
     , ("../.."  , HttpUrl "https:" "//a" "/"      )
     , ("../../" , HttpUrl "https:" "//a" "/"      )
     , ("../../g", HttpUrl "https:" "//a" "/g"     )
-    -- See 'relUrl'.
-    , (""       , base                            )
     ]
 
 testParseRel :: TestTree
@@ -72,6 +70,8 @@ testParseRel = testCaseSteps "relative" $ \step -> do
     for_ relativeValid $ \(x, y) -> do
         step (show x)
         parseRel base x @?= Right y
+    step (show "")
+    parseRel base "" @?= Right base
     step "mailto:"
     assertBool "mailto:" $
         isLeft (parseRel base "mailto:tom@example.com")

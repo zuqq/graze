@@ -4,7 +4,6 @@
 
 module Graze.Logger
     ( Chans (Chans)
-    , Config (Config)
     , run
     ) where
 
@@ -12,11 +11,10 @@ import           Control.Concurrent.STM       (atomically)
 import           Control.Concurrent.STM.TChan (TChan, readTChan)
 import qualified Data.ByteString.Char8        as C8
 import           Data.Time.Format
+import           System.IO                    (stderr)
 
 import Graze.Messages (LogCommand (..), Level (..), Message (..))
 
-
-newtype Config = Config {logFile :: FilePath}
 
 newtype Chans = Chans {inbox :: TChan LogCommand}
 
@@ -31,16 +29,13 @@ tag Error   = "ERROR:"
 
 toByteString :: Message -> C8.ByteString
 toByteString (Message time level body) =
-    C8.intercalate " " [format time, tag level, body] <> "\n"
+    C8.unwords [format time, tag level, body]
 
-run :: Config -> Chans -> IO ()
-run Config {..} Chans {..} = do
-    C8.writeFile logFile ""
-    loop
+run :: Chans -> IO ()
+run Chans {..} = loop
   where
     loop = atomically (readTChan inbox) >>= \case
         StopLogging -> return ()
         Log message -> do
-            C8.appendFile logFile $
-                toByteString message
+            C8.hPutStrLn stderr . toByteString $ message
             loop

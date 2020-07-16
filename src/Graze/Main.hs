@@ -30,7 +30,6 @@ data Config = Config
     { depth   :: !Int       -- ^ Depth of the search.
     , threads :: !Int       -- ^ Number of threads.
     , folder  :: !FilePath  -- ^ Download folder.
-    , logFile :: !FilePath  -- ^ Log file.
     , base    :: !HttpUrl   -- ^ URL to start at.
     }
 
@@ -52,7 +51,6 @@ run Config {..} = do
             return m
 
     lm <- forkChild $ Logger.run
-        (Logger.Config logFile)
         (Logger.Chans logger)
 
     wm <- forkChild $ Writer.run

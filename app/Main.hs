@@ -22,18 +22,13 @@ confParser = Config
         <> metavar "n"
         <> value 10
         <> help "Number of threads")
-    <*> option auto
+    <*> option str
         (long "folder"
-        <> metavar "f"
-        <> value "download"
+        <> metavar "FOLDER"
+        <> value ""
         <> help "Download folder")
-    <*> option auto
-        (long "log"
-        <> metavar "l"
-        <> value "graze.log"
-        <> help "Log file")
     <*> argument (eitherReader $ parse . C8.pack)
-        (metavar "base"
+        (metavar "URL"
         <> help "URL to start at")
 
 confInfo :: ParserInfo Config

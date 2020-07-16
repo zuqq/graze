@@ -30,7 +30,6 @@ data Config = Config
     { depth   :: !Int       -- ^ Depth of the search.
     , threads :: !Int       -- ^ Number of threads.
     , folder  :: !FilePath  -- ^ Download folder.
-    , records :: !FilePath  -- ^ Page record file.
     , logFile :: !FilePath  -- ^ Log file.
     , base    :: !HttpUrl   -- ^ URL to start at.
     }
@@ -57,7 +56,7 @@ run Config {..} = do
         (Logger.Chans logger)
 
     wm <- forkChild $ Writer.run
-        (Writer.Config folder records)
+        (Writer.Config folder)
         (Writer.Chans writer)
 
     ms <- replicateM threads . forkChild $ Fetcher.run

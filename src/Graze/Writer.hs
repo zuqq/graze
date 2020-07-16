@@ -10,9 +10,10 @@ module Graze.Writer
 
 import           Control.Concurrent.STM       (atomically)
 import           Control.Concurrent.STM.TChan (TChan, readTChan)
-import qualified Data.ByteString              as B (appendFile, writeFile)
+import qualified Data.ByteString              as B (writeFile)
 import           System.Directory             (createDirectoryIfMissing)
-import           System.FilePath              ((</>))
+import           System.FilePath              ((<.>), (</>))
+
 
 import Graze.HttpUrl  (hash, serialize)
 import Graze.Messages
@@ -21,7 +22,6 @@ import Graze.SExpr    (SExpr (..), toByteString)
 
 data Config = Config
     { folder  :: !FilePath  -- ^ Download folder.
-    , records :: !FilePath  -- ^ Page record file.
     }
 
 data Chans = Chans
@@ -30,9 +30,9 @@ data Chans = Chans
 
 toSExpr :: Record -> SExpr
 toSExpr record = Node
-    [ Node [Leaf "origin" , Leaf origin]
-    , Node [Leaf "url" , Leaf url]
-    , Node [Leaf "links" , Node links]
+    [ Node [Leaf "origin", Leaf origin]
+    , Node [Leaf "url"   , Leaf url   ]
+    , Node [Leaf "links" , Node links ]
     ]
   where
     job    = rJob record
@@ -43,14 +43,12 @@ toSExpr record = Node
 run :: Config -> Chans -> IO ()
 run Config {..} Chans {..} = do
     createDirectoryIfMissing True folder
-    B.writeFile records ""
     loop
   where
     loop = atomically (readTChan inbox) >>= \case
         StopWriting  -> return ()
         Write record -> do
-            let url  = jUrl (rJob record)
-                body = rBody record
-            B.writeFile (folder </> hash url) body
-            B.appendFile records (toByteString (toSExpr record) <> "\n")
+            let name = hash . jUrl . rJob $ record
+            B.writeFile (folder </> name) (rBody record)
+            B.writeFile (folder </> name <.> "sexp") (toByteString . toSExpr $ record)
             loop

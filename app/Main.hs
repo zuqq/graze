@@ -28,11 +28,6 @@ confParser = Config
         <> value "download"
         <> help "Download folder")
     <*> option auto
-        (long "records"
-        <> metavar "r"
-        <> value "records"
-        <> help "Page record file")
-    <*> option auto
         (long "log"
         <> metavar "l"
         <> value "graze.log"

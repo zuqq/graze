@@ -16,13 +16,9 @@ import           Data.Time.Format
 import Graze.Messages (LogCommand (..), Level (..), Message (..))
 
 
-data Config = Config
-    { logFile :: !FilePath
-    }
+newtype Config = Config {logFile :: FilePath}
 
-data Chans = Chans
-    { inbox :: !(TChan LogCommand)
-    }
+newtype Chans = Chans {inbox :: TChan LogCommand}
 
 format :: FormatTime t => t -> C8.ByteString
 format = C8.pack . formatTime defaultTimeLocale "%H:%M:%S,%3q"

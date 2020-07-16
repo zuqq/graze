@@ -20,13 +20,9 @@ import Graze.Messages
 import Graze.SExpr    (SExpr (..), toByteString)
 
 
-data Config = Config
-    { folder  :: !FilePath  -- ^ Download folder.
-    }
+newtype Config = Config {folder :: FilePath}
 
-data Chans = Chans
-    { inbox :: !(TChan WriteCommand)
-    }
+newtype Chans = Chans {inbox :: TChan WriteCommand}
 
 toSExpr :: Record -> SExpr
 toSExpr record = Node

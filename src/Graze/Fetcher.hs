@@ -14,7 +14,7 @@ import Data.Time.LocalTime          (getZonedTime)
 
 import Network.HTTP.Client (HttpException)
 
-import Graze.Http     (request)
+import Graze.Http     (ContentType (TextHtml), get)
 import Graze.HttpUrl  (serialize)
 import Graze.Links    (links)
 import Graze.Messages
@@ -32,15 +32,19 @@ run Chans {..} = loop
     loop = atomically (readTChan inbox) >>= \case
         StopFetching -> return ()
         Fetch job    -> do
-            t <- getZonedTime
             let url = jUrl job
+            t <- getZonedTime
             atomically $
                 writeTChan logger $
                     Log (Message t Debug (serialize url))
-            try (request url) >>= \case
+            try (get url) >>= \case
                 Left (_ :: HttpException) -> atomically $
                     writeTChan outbox Failure
-                Right content             -> atomically $
-                    writeTChan outbox $
-                        Success (Record job (links url content) content)
+                Right (contentType, body) ->
+                    let ls = case contentType of
+                            TextHtml -> links url body
+                            _        -> []
+                    in atomically $
+                        writeTChan outbox $
+                            Success (Record job ls body)
             loop

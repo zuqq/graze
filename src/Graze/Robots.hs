@@ -3,6 +3,7 @@
 module Graze.Robots
     ( Robots
     , allowedBy
+    , empty
     , parse
     ) where
 
@@ -12,7 +13,7 @@ import qualified Data.ByteString            as B
 import qualified Data.ByteString.Char8      as C8
 import           Data.Word                  (Word8)
 
-import Graze.Trie (Trie, completes, fromList)
+import Graze.Trie (Trie, completes, empty, fromList)
 
 -- $setup
 -- >>> :set -XOverloadedStrings

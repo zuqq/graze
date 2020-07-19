@@ -16,7 +16,7 @@ import           System.FilePath              ((<.>), (</>))
 
 
 import Graze.HttpUrl  (hash, serialize)
-import Graze.Messages
+import Graze.Messages (Job (..), Record (..), WriteCommand (..))
 import Graze.SExpr    (SExpr (..), toByteString)
 
 

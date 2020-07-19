@@ -17,7 +17,7 @@ import Network.HTTP.Client.TLS (newTlsManager, setGlobalManager)
 
 import Graze.Http     (robots)
 import Graze.HttpUrl  (HttpUrl (..), serialize)
-import Graze.Messages
+import Graze.Messages (FetchCommand (..), LogCommand (..), WriteCommand (..))
 import Graze.Robots   (allowedBy)
 
 import qualified Graze.Crawler as Crawler
@@ -75,3 +75,5 @@ run Config {..} = do
         writeTChan logger StopLogging
 
     traverse_ (atomically . takeTMVar) (lm : wm : ms)
+
+    putStrLn "Done"

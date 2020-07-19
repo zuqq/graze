@@ -27,10 +27,11 @@ question = 63  -- '?'
 slash    = 47  -- '/'
 
 isAlpha :: Word8 -> Bool
-isAlpha w = 65 <= w && w <= 90 || 97 <= w && w <= 122
+isAlpha w = 65 <= w && w <= 90  -- 'A'..'Z'
+    || 97 <= w && w <= 122      -- 'a'..'z'
 
 isNum :: Word8 -> Bool
-isNum w = 48 <= w && w <= 57
+isNum w = 48 <= w && w <= 57  -- '0'..'9'
 
 isScheme :: Word8 -> Bool
 isScheme w = isAlpha w || isNum w

@@ -38,12 +38,9 @@ get url = do
     request  <- parseUrlThrow url'
     manager  <- getGlobalManager
     response <- httpLbs request {redirectCount = 0} manager
-    let contentType = response
-            & responseHeaders
-            & lookup "Content-Type"
-            >>= fromByteString
-            & fromMaybe Other
-    return (contentType, LB.toStrict (responseBody response))
+    let contentType = response & responseHeaders & lookup "Content-Type"
+            >>= fromByteString & fromMaybe Other
+    return (contentType, LB.toStrict . responseBody $ response)
   where
     url' = C8.unpack . serialize $ url
 

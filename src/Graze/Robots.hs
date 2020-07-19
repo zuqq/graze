@@ -27,19 +27,24 @@ type Robots    = Trie Word8
 
 -- Parser ----------------------------------------------------------------------
 
--- From base's isSpace.
 isSpace :: Word8 -> Bool
-isSpace w = w == 32 || w - 9 <= 4 || w == 160
+isSpace w = w == 32  -- ' '
+    || w - 9 <= 4    -- '\t', '\n', '\v', '\f', '\r'
+    || w == 160      -- nbsp
+
+isEnd :: Word8 -> Bool
+isEnd w = w == 35  -- '#'
+    || isSpace w
 
 userAgent :: A.Parser UserAgent
 userAgent = A.string "User-agent:"
     *> A.takeWhile isSpace
-    *> A.takeWhile1 (not . isSpace)
+    *> A.takeWhile1 (not . isEnd)
 
 disallow :: A.Parser Disallow
 disallow = A.string "Disallow:"
     *> A.takeWhile isSpace
-    *> A.takeWhile1 (not . isSpace)
+    *> A.takeWhile1 (not . isEnd)
 
 line :: A.Parser Line
 line = A.eitherP userAgent disallow

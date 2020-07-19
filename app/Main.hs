@@ -25,7 +25,6 @@ confParser = Config
     <*> option str
         (long "folder"
         <> metavar "FOLDER"
-        <> value ""
         <> help "Download folder")
     <*> argument (eitherReader $ parse . C8.pack)
         (metavar "URL"

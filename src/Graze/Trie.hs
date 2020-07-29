@@ -15,8 +15,8 @@ import qualified Data.HashMap.Strict as HM
 -- path. Every node carries a boolean flag that indicates whether it marks the
 -- end of an item.
 --
--- A trie lets us efficiently determine whether a given value @ys :: [a]@ is a
--- prefix or suffix of one of the items stored by the trie.
+-- A trie lets us efficiently determine whether one of the items it stores is a
+-- prefix of a given value @ys :: [a]@.
 data Trie a = Trie !Bool !(HM.HashMap a (Trie a))
 
 -- | The empty trie.

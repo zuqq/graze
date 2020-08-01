@@ -7,7 +7,7 @@ module Graze.Trie
     ) where
 
 import           Data.Hashable       (Hashable)
-import qualified Data.HashMap.Strict as HM
+import qualified Data.HashMap.Strict as H
 
 
 -- | A trie @t :: Trie a@ stores items @xs :: [a]@ as paths in a tree emenating
@@ -17,19 +17,19 @@ import qualified Data.HashMap.Strict as HM
 --
 -- A trie lets us efficiently determine whether one of the items it stores is a
 -- prefix of a given value @ys :: [a]@.
-data Trie a = Trie !Bool !(HM.HashMap a (Trie a))
+data Trie a = Trie !Bool !(H.HashMap a (Trie a))
 
 -- | The empty trie.
 empty :: Trie a
-empty = Trie False HM.empty
+empty = Trie False H.empty
 
 -- | Insert an item into the trie.
 insert :: (Eq a, Hashable a) => [a] -> Trie a -> Trie a
 insert [] (Trie _ ts)          = Trie True ts
 insert (x : xs) (Trie flag ts) = Trie flag ts'
   where
-    t   = HM.lookupDefault empty x ts
-    ts' = HM.insert x (insert xs t) ts
+    t   = H.lookupDefault empty x ts
+    ts' = H.insert x (insert xs t) ts
 
 -- | Build a trie from a list of items.
 fromList :: (Eq a, Hashable a) => [[a]] -> Trie a
@@ -57,6 +57,6 @@ fromList = foldr insert empty
 completes :: (Eq a, Hashable a) => [a] -> Trie a -> Bool
 completes _ (Trie True _)      = True
 completes [] _                 = False
-completes (x : xs) (Trie _ ts) = case HM.lookup x ts of
+completes (x : xs) (Trie _ ts) = case H.lookup x ts of
     Nothing -> False
     Just t  -> xs `completes` t

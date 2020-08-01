@@ -18,7 +18,6 @@ import Network.HTTP.Client.TLS (newTlsManager, setGlobalManager)
 import Graze.Http     (robots)
 import Graze.HttpUrl  (HttpUrl (..), serialize)
 import Graze.Messages (FetchCommand (..), LogCommand (..), WriteCommand (..))
-import Graze.Robots   (allowedBy)
 
 import qualified Graze.Crawler as Crawler
 import qualified Graze.Fetcher as Fetcher
@@ -61,9 +60,7 @@ run Config {..} = do
         (Fetcher.Chans fetcher crawler logger)
 
     rs <- robots base
-    let legal url =
-            huDomain url == huDomain base
-            && huPath url `allowedBy` rs
+    let legal url = huDomain url == huDomain base && rs (huPath url)
     Crawler.run
         (Crawler.Config depth base legal)
         (Crawler.Chans crawler fetcher writer)

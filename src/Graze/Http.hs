@@ -20,7 +20,7 @@ import           Network.HTTP.Client
 import           Network.HTTP.Client.TLS   (getGlobalManager)
 
 import Graze.HttpUrl (HttpUrl (..), serialize)
-import Graze.Robots  (Robots, empty, parse)
+import Graze.Robots  (Robots, parse)
 
 
 data ContentType = TextHtml | TextPlain | Other
@@ -46,8 +46,8 @@ get url = do
 
 robots :: HttpUrl -> IO Robots
 robots url = (try (get url') :: IO (Either HttpException Result)) <&> \case
-    Left _                -> empty
-    Right (TextPlain, bs) -> parse "*" bs
-    Right _               -> empty
+    Left _               -> const True
+    Right (TextPlain, s) -> parse "*" s
+    Right _              -> const True
   where
     url' = url {huPath = "/robots.txt"}

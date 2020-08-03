@@ -78,7 +78,7 @@ path :: A.Parser B.ByteString
 path = A.takeWhile isPchar
 
 comment :: A.Parser B.ByteString
-comment = A.satisfy (== POUND) *> A.takeByteString
+comment = A.word8 POUND *> A.takeByteString
 
 userAgent :: A.Parser UserAgent
 userAgent = A.string "User-agent:"
@@ -103,7 +103,7 @@ allow = fmap Allow $
 extension :: A.Parser Rule
 extension = fmap Extension $
     A.takeWhile isTchar
-    *> A.satisfy (== COLON)
+    *> A.word8 COLON
     *> skipSpace
     *> A.takeWhile (/= POUND)
     <* (A.endOfInput <|> skipSpace <* comment)

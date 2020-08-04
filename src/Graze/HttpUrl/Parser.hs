@@ -1,51 +1,39 @@
-{-# LANGUAGE LambdaCase        #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards   #-}
+{-# LANGUAGE CPP, OverloadedStrings, ViewPatterns #-}
 
 module Graze.HttpUrl.Parser
     ( parse
     , parseRel
     ) where
 
-import           Control.Applicative         ((<|>), liftA2, liftA3)
-import           Control.Monad               ((>=>))
+import           Control.Applicative         ((<|>))
+import           Control.Monad               ((<=<))
 import qualified Data.Attoparsec.ByteString  as A
 import qualified Data.ByteString             as B
+import           Data.Functor                (($>))
 import           Data.Word                   (Word8)
 
+import Graze.Internal         (isAlpha, isNum)
 import Graze.HttpUrl.Internal (HttpUrl (..))
 
 -- $setup
 -- >>> :set -XOverloadedStrings
 
 
--- Characters ------------------------------------------------------------------
+-- Path ------------------------------------------------------------------------
 
-pound, question, slash :: Word8
-pound    = 35  -- '#'
-question = 63  -- '?'
-slash    = 47  -- '/'
+#define SLASH 47
+#define SEMIC 59
+#define QUEST 63
 
-isAlpha :: Word8 -> Bool
-isAlpha w = 65 <= w && w <= 90  -- 'A'..'Z'
-    || 97 <= w && w <= 122      -- 'a'..'z'
-
-isNum :: Word8 -> Bool
-isNum w = 48 <= w && w <= 57  -- '0'..'9'
-
-isScheme :: Word8 -> Bool
-isScheme w = isAlpha w || isNum w
-    || w == 43  -- '+'
-    || w == 45  -- '-'
-    || w == 46  -- '.'
-
--- Helpers ---------------------------------------------------------------------
-
--- | Split on the first occurrence of @'?'@.
+-- | Split on the first occurrence of @';'@ or @'?'@.
 --
 -- ==== __Examples__
--- >>> split "a?b"
--- ("a","?b")
+-- >>> split "a;b?c"
+-- ("a",";b?c")
+-- >>> split "a;b"
+-- ("a",";b")
+-- >>> split "a?c"
+-- ("a","?c")
 -- >>> split "?b"
 -- ("","?b")
 -- >>> split "a"
@@ -53,9 +41,9 @@ isScheme w = isAlpha w || isNum w
 -- >>> split ""
 -- ("","")
 split :: B.ByteString -> (B.ByteString, B.ByteString)
-split = B.span (/= question)
+split = B.span (\w -> w /= SEMIC && w /= QUEST)
 
--- | Remove the query and the last @'/'@-separated part of that path.
+-- | Remove parameters, query, and the last @'/'@-separated part of the path.
 --
 -- ==== __Examples__
 --
@@ -70,11 +58,11 @@ split = B.span (/= question)
 -- >>> folder ""
 -- ""
 folder :: B.ByteString -> B.ByteString
-folder = fst . B.spanEnd (/= slash) . fst . split
+folder = fst . B.spanEnd (/= SLASH) . fst . split
 
 -- | Remove relative path elements.
 --
--- If the given string doesn't start with a slash, one is added.
+-- If the input doesn't start with a slash, one is added.
 --
 -- ==== __Examples__
 --
@@ -105,12 +93,13 @@ folder = fst . B.spanEnd (/= slash) . fst . split
 normalize :: B.ByteString -> B.ByteString
 normalize s =
     let (p, q) = split s
-        chunks = case B.split slash p of
+        chunks = case B.split SLASH p of
             "" : ys -> ys  -- Remove leading slash.
             ys      -> ys
     in "/" <> B.intercalate "/" (go [] chunks) <> q
   where
     -- Base cases.
+    -- Trailing ".." needs to be handled separately because it adds '/'.
     go (".." : xs) [".."] = reverse ("" : ".." : ".." : xs)
     go (_ : xs) [".."]    = reverse ("" : xs)
     go xs ["."]           = reverse ("" : xs)
@@ -128,56 +117,70 @@ normalize s =
     -- Generic case.
     go xs (y : ys) = go (y : xs) ys
 
+-- Url -------------------------------------------------------------------------
+
+type Url = (B.ByteString, B.ByteString, B.ByteString)
+
+toUrl :: HttpUrl -> Url
+toUrl (HttpUrl x y z) = (x, y, z)
+
+fromUrl :: Url -> Either String HttpUrl
+fromUrl = fmap pack . (checkNetloc <=< checkScheme)
+  where
+    checkScheme (x, y, z) = if x == "http:" || x == "https:"
+        then Right (x, y, z)
+        else Left "Invalid scheme."
+    checkNetloc (x, y, z) = if "//" `B.isPrefixOf` y
+        then Right (x, y, z)
+        else Left "Invalid netloc."
+    pack (x, y, z) = HttpUrl x y (normalize z)
+
 -- Parsers ---------------------------------------------------------------------
+
+#define COLON 58
+#define POUND 35
+
+isSchar :: Word8 -> Bool
+isSchar w
+    | isAlpha w = True
+    | isNum w   = True
+    | otherwise = case w of
+        43 -> True  -- '+'
+        45 -> True  -- '-'
+        46 -> True  -- '.'
+        _  -> False
 
 -- The definitions are roughly those of RFC 1808.
 
 scheme :: A.Parser B.ByteString
-scheme = liftA2 (<>) (A.takeWhile1 isScheme) (A.string ":")
+scheme = B.snoc <$> A.takeWhile1 isSchar <*> A.word8 COLON
 
 netLoc :: A.Parser B.ByteString
-netLoc = liftA2 (<>) (A.string "//") (A.takeWhile (/= slash))
-
-relPath :: A.Parser B.ByteString
-relPath = A.takeWhile (/= pound)
-
-nothing :: A.Parser B.ByteString
-nothing = pure ""
+netLoc = B.append <$> A.string "//" <*> A.takeWhile (/= SLASH)
 
 absPath :: A.Parser B.ByteString
-absPath = liftA2 (<>) (A.string "/") relPath
-    <|> (A.endOfInput *> nothing)
-
-type Url = (B.ByteString, B.ByteString, B.ByteString)
+absPath = B.cons <$> A.word8 SLASH <*> A.takeByteString
 
 absUrl :: A.Parser Url
-absUrl = liftA3 (,,) scheme netLoc absPath
-    <|> liftA3 (,,) scheme nothing absPath
-    <|> liftA3 (,,) scheme nothing relPath
+absUrl = (,,) <$> scheme <*> A.option "" netLoc <*> A.takeByteString
 
 relUrl :: Url -> A.Parser Url
 relUrl (x, y, z) = absUrl
-    -- Special case: the relative link @""@ should resolve to the base URL.
-    <|> const (x, y, z) <$> (A.endOfInput *> nothing)
-    -- Other relative links.
-    <|> liftA2 ((,,) x) netLoc absPath        -- Matches "//...".
-    <|> (,,) x y <$> absPath                  -- Matches "/...".
-    <|> (,,) x y . (folder z <>) <$> relPath  -- Matches everything.
+    <|> A.endOfInput $> (x, y, z)                      -- Matches "".
+    <|> (,,) x <$> netLoc <*> A.takeByteString         -- Matches "//...".
+    <|> (,,) x y <$> absPath                           -- Matches "/...".
+    <|> (,,) x y . (folder z <>) <$> A.takeByteString  -- Matches everything.
 
 -- Interface -------------------------------------------------------------------
 
-fromUrl :: Url -> Either String HttpUrl
-fromUrl (x, y, z) =
-    if (x == "http:" || x == "https:") && "//" `B.isPrefixOf` y
-        then Right (HttpUrl x y (normalize z))
-        else Left "Not a valid HTTP(S) URL."
+stripFragment :: B.ByteString -> B.ByteString
+stripFragment = B.takeWhile (/= POUND)
 
 -- | Parse an absolute HTTP(S) URL.
 parse :: B.ByteString -> Either String HttpUrl
-parse = A.parseOnly absUrl >=> fromUrl
+parse = fromUrl <=< A.parseOnly absUrl . stripFragment
 
--- | Parse an HTTP(S) URL, with the first argument as the base URL.
+-- | Parse an absolute or relative HTTP(S) URL, with the first argument as the
+-- base URL.
 parseRel :: HttpUrl -> B.ByteString -> Either String HttpUrl
-parseRel HttpUrl {..} = A.parseOnly (relUrl base) >=> fromUrl
-  where
-    base = (huScheme, huDomain, huPath)
+parseRel (toUrl -> x) = fromUrl <=< A.parseOnly (relUrl x) . stripFragment

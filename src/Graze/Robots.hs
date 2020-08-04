@@ -1,6 +1,4 @@
-{-# LANGUAGE CPP               #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ViewPatterns      #-}
+{-# LANGUAGE CPP, OverloadedStrings, ViewPatterns #-}
 
 module Graze.Robots
     ( Robots
@@ -14,7 +12,6 @@ import qualified Data.ByteString.Char8      as C
 import           Data.Either                (isLeft, isRight, lefts, rights)
 import qualified Data.HashSet               as H
 import           Data.List                  (find)
-import           Data.Maybe                 (fromMaybe)
 import           Data.Word                  (Word8)
 
 import Graze.Internal (isPchar)
@@ -137,4 +134,4 @@ parse ua s (B.unpack -> x) = not (x `completes` ds) || x `completes` as
   where
     records  = group . rights . fmap (A.parseOnly line) . C.lines $ s
     for name = find (H.member name . fst) records
-    (ds, as) = fromMaybe (empty, empty) . fmap snd $ for ua <|> for "*"
+    (ds, as) = maybe (empty, empty) snd $ for ua <|> for "*"

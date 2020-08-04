@@ -14,8 +14,8 @@ import qualified Data.HashSet               as H
 import           Data.List                  (find)
 import           Data.Word                  (Word8)
 
-import Graze.Internal (isPchar)
-import Graze.Trie     (Trie, completes, empty, insert)
+import Graze.Word8 (isPchar)
+import Graze.Trie  (Trie, completes, empty, insert)
 
 
 -- Line ------------------------------------------------------------------------

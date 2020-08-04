@@ -12,7 +12,7 @@ import qualified Data.ByteString             as B
 import           Data.Functor                (($>))
 import           Data.Word                   (Word8)
 
-import Graze.Internal         (isAlpha, isNum)
+import Graze.Word8            (isAlpha, isNum)
 import Graze.HttpUrl.Internal (HttpUrl (..))
 
 -- $setup

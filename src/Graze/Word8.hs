@@ -1,4 +1,4 @@
-module Graze.Internal
+module Graze.Word8
     ( isAlpha
     , isNum
     , isPchar

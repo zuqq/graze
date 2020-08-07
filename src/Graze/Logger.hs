@@ -8,7 +8,7 @@ module Graze.Logger
 
 import           Control.Concurrent.STM       (atomically)
 import           Control.Concurrent.STM.TChan (TChan, readTChan)
-import qualified Data.ByteString.Char8        as C8
+import qualified Data.ByteString.Char8        as C
 import           System.IO                    (stderr)
 
 import Graze.Messages (LogCommand (..))
@@ -22,5 +22,5 @@ run Chans {..} = loop
     loop = atomically (readTChan inbox) >>= \case
         StopLogging -> return ()
         Log message -> do
-            C8.hPutStrLn stderr message
+            C.hPutStrLn stderr message
             loop

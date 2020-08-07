@@ -9,8 +9,8 @@ module Graze.Http
     ) where
 
 import           Control.Exception     (try)
-import qualified Data.ByteString.Char8 as C8 (takeWhile, unpack)
 import qualified Data.ByteString       as B (ByteString)
+import qualified Data.ByteString.Char8 as C (takeWhile, unpack)
 import qualified Data.ByteString.Lazy  as L (ByteString, toStrict)
 import           Data.Function         ((&))
 import           Data.Functor          ((<&>))
@@ -30,7 +30,7 @@ data ContentType
     | Other
 
 fromByteString :: B.ByteString -> Maybe ContentType
-fromByteString bs = case CI.mk (C8.takeWhile (/= ';') bs) of
+fromByteString bs = case CI.mk (C.takeWhile (/= ';') bs) of
     "text/html"  -> Just Html
     "text/plain" -> Just Plain
     _            -> Nothing
@@ -46,7 +46,7 @@ get url = do
             >>= fromByteString & fromMaybe Other
     return (contentType, responseBody response)
   where
-    url' = C8.unpack . serialize $ url
+    url' = C.unpack . serialize $ url
 
 robots :: HttpUrl -> IO Robots
 robots url = (try (get url') :: IO (Either HttpException Result)) <&> \case

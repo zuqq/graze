@@ -37,7 +37,7 @@ get :: HttpUrl -> IO Result
 get url = do
     request  <- parseUrlThrow url'
     manager  <- getGlobalManager
-    response <- httpLbs request {redirectCount = 0} manager
+    response <- httpLbs request manager
     let contentType = response & responseHeaders & lookup "Content-Type"
             >>= fromByteString & fromMaybe Other
     return (contentType, LB.toStrict . responseBody $ response)

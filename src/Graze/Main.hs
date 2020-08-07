@@ -6,12 +6,13 @@ module Graze.Main
     , run
     ) where
 
-import Control.Concurrent           (forkFinally)
-import Control.Concurrent.STM       (atomically)
-import Control.Concurrent.STM.TChan (newTChanIO, writeTChan)
-import Control.Concurrent.STM.TMVar
-import Control.Monad                (replicateM, replicateM_)
-import Data.Foldable                (traverse_)
+import           Control.Concurrent           (forkFinally)
+import           Control.Concurrent.STM       (atomically)
+import           Control.Concurrent.STM.TChan (newTChanIO, writeTChan)
+import           Control.Concurrent.STM.TMVar
+import           Control.Monad                (replicateM, replicateM_)
+import qualified Data.ByteString.Char8        as C (unpack)
+import           Data.Foldable                (traverse_)
 
 import Network.HTTP.Client.TLS (newTlsManager, setGlobalManager)
 
@@ -34,7 +35,7 @@ data Config = Config
 
 run :: Config -> IO ()
 run Config {..} = do
-    putStrLn $ "Crawling " <> show (serialize base)
+    putStrLn $ "Crawling " <> C.unpack (serialize base)
 
     tls <- newTlsManager
     setGlobalManager tls
@@ -59,8 +60,8 @@ run Config {..} = do
     ms <- replicateM threads . forkChild $ Fetcher.run
         (Fetcher.Chans fetcher crawler logger)
 
-    rs <- robots base
-    let legal url = huDomain url == huDomain base && rs (huPath url)
+    p <- robots base
+    let legal url = huDomain url == huDomain base && p (huPath url)
     Crawler.run
         (Crawler.Config depth base legal)
         (Crawler.Chans crawler fetcher writer)

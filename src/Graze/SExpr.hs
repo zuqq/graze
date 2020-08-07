@@ -5,7 +5,9 @@ module Graze.SExpr
     , toByteString
     ) where
 
-import qualified Data.ByteString as B (ByteString, intercalate)
+import           Data.ByteString.Builder
+import qualified Data.ByteString         as B
+import qualified Data.ByteString.Lazy    as L
 
 -- $setup
 -- >>> :set -XOverloadedStrings
@@ -15,14 +17,13 @@ import qualified Data.ByteString as B (ByteString, intercalate)
 -- 'B.ByteString' and interior nodes carry no label.
 data SExpr = Leaf !B.ByteString | Node ![SExpr]
 
-parens :: B.ByteString -> B.ByteString
-parens s = "(" <> s <> ")"
-
-doubleQuotes :: B.ByteString -> B.ByteString
-doubleQuotes s = "\"" <> s <> "\""
-
-hsep :: [B.ByteString] -> B.ByteString
-hsep = B.intercalate " "
+toBuilder :: SExpr -> Builder
+toBuilder (Leaf s)        = charUtf8 '"' <> byteString s <> charUtf8 '"'
+toBuilder (Node [])       = stringUtf8 "()"
+toBuilder (Node (x : xs)) = charUtf8 '('
+    <> toBuilder x
+    <> mconcat [charUtf8 ' ' <> toBuilder x' | x' <- xs]
+    <> charUtf8 ')'
 
 -- | Serialize an S-expression.
 --
@@ -38,6 +39,5 @@ hsep = B.intercalate " "
 -- "(\"a\" (\"b\" \"c\"))"
 -- >>> toByteString $ Node [Leaf "a", Node [Leaf "b", Node [Leaf "c"]]]
 -- "(\"a\" (\"b\" (\"c\")))"
-toByteString :: SExpr -> B.ByteString
-toByteString (Leaf s)  = doubleQuotes s
-toByteString (Node xs) = parens . hsep . fmap toByteString $ xs
+toByteString :: SExpr -> L.ByteString
+toByteString = toLazyByteString . toBuilder

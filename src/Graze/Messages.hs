@@ -3,15 +3,12 @@ module Graze.Messages
     , FetchResult (..)
     , Job (..)
     , LogCommand (..)
-    , Level (..)
-    , Message (..)
     , Record (..)
     , WriteCommand (..)
     ) where
 
 import qualified Data.ByteString      as B (ByteString)
 import qualified Data.ByteString.Lazy as L (ByteString)
-import           Data.Time.LocalTime  (ZonedTime)
 
 import Graze.HttpUrl (HttpUrl)
 
@@ -40,17 +37,6 @@ data WriteCommand
     = StopWriting
     | Write !Record
 
-data Level
-    = Debug
-    | Info
-    | Warning
-    | Error
-
-data Message = Message
-    !ZonedTime
-    !Level
-    !B.ByteString
-
 data LogCommand
     = StopLogging
-    | Log !Message
+    | Log !B.ByteString

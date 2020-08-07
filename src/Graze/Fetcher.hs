@@ -1,4 +1,5 @@
 {-# LANGUAGE LambdaCase          #-}
+{-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE RecordWildCards     #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
@@ -11,7 +12,6 @@ import           Control.Concurrent.STM       (atomically)
 import           Control.Concurrent.STM.TChan (TChan, readTChan, writeTChan)
 import           Control.Exception            (try)
 import qualified Data.ByteString.Lazy         as L (toStrict)
-import           Data.Time.LocalTime          (getZonedTime)
 
 import Network.HTTP.Client (HttpException)
 
@@ -34,10 +34,6 @@ run Chans {..} = loop
         StopFetching -> return ()
         Fetch job    -> do
             let url = jUrl job
-            t <- getZonedTime
-            atomically $
-                writeTChan logger $
-                    Log (Message t Debug (serialize url))
             try (get url) >>= \case
                 Left (_ :: HttpException) -> atomically $
                     writeTChan outbox Failure
@@ -45,7 +41,7 @@ run Chans {..} = loop
                     let ls = case contentType of
                             Html -> links url . L.toStrict $ body
                             _    -> []
-                    in atomically $
-                        writeTChan outbox $
-                            Success (Record job ls body)
+                    in atomically $ do
+                        writeTChan outbox $ Success (Record job ls body)
+                        writeTChan logger $ Log ("Got " <> serialize url)
             loop

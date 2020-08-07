@@ -24,12 +24,15 @@ import Graze.HttpUrl (HttpUrl (..), serialize)
 import Graze.Robots  (Robots, parse)
 
 
-data ContentType = TextHtml | TextPlain | Other
+data ContentType
+    = Html   -- ^ text/html
+    | Plain  -- ^ text/plain
+    | Other
 
 fromByteString :: B.ByteString -> Maybe ContentType
 fromByteString bs = case CI.mk (C8.takeWhile (/= ';') bs) of
-    "text/html"  -> Just TextHtml
-    "text/plain" -> Just TextPlain
+    "text/html"  -> Just Html
+    "text/plain" -> Just Plain
     _            -> Nothing
 
 type Result = (ContentType, L.ByteString)
@@ -47,8 +50,8 @@ get url = do
 
 robots :: HttpUrl -> IO Robots
 robots url = (try (get url') :: IO (Either HttpException Result)) <&> \case
-    Left _               -> const True
-    Right (TextPlain, s) -> parse "*" . L.toStrict $ s
-    Right _              -> const True
+    Left _           -> const True
+    Right (Plain, s) -> parse "*" . L.toStrict $ s
+    Right _          -> const True
   where
     url' = url {huPath = "/robots.txt"}

@@ -15,7 +15,7 @@ import           Data.Time.LocalTime          (getZonedTime)
 
 import Network.HTTP.Client (HttpException)
 
-import Graze.Http     (ContentType (TextHtml), get)
+import Graze.Http     (ContentType (Html), get)
 import Graze.HttpUrl  (serialize)
 import Graze.Links    (links)
 import Graze.Messages
@@ -43,8 +43,8 @@ run Chans {..} = loop
                     writeTChan outbox Failure
                 Right (contentType, body) ->
                     let ls = case contentType of
-                            TextHtml -> links url . L.toStrict $ body
-                            _        -> []
+                            Html -> links url . L.toStrict $ body
+                            _    -> []
                     in atomically $
                         writeTChan outbox $
                             Success (Record job ls body)

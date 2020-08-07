@@ -7,10 +7,11 @@ module Graze.Fetcher
     , run
     ) where
 
-import Control.Concurrent.STM       (atomically)
-import Control.Concurrent.STM.TChan (TChan, readTChan, writeTChan)
-import Control.Exception            (try)
-import Data.Time.LocalTime          (getZonedTime)
+import           Control.Concurrent.STM       (atomically)
+import           Control.Concurrent.STM.TChan (TChan, readTChan, writeTChan)
+import           Control.Exception            (try)
+import qualified Data.ByteString.Lazy         as L (toStrict)
+import           Data.Time.LocalTime          (getZonedTime)
 
 import Network.HTTP.Client (HttpException)
 
@@ -42,7 +43,7 @@ run Chans {..} = loop
                     writeTChan outbox Failure
                 Right (contentType, body) ->
                     let ls = case contentType of
-                            TextHtml -> links url body
+                            TextHtml -> links url . L.toStrict $ body
                             _        -> []
                     in atomically $
                         writeTChan outbox $

@@ -10,7 +10,6 @@ module Graze.Writer
 
 import           Control.Concurrent.STM       (atomically)
 import           Control.Concurrent.STM.TChan (TChan, readTChan)
-import qualified Data.ByteString              as B (writeFile)
 import qualified Data.ByteString.Lazy         as L (writeFile)
 import           System.Directory             (createDirectoryIfMissing)
 import           System.FilePath              ((<.>), (</>))
@@ -46,6 +45,6 @@ run Config {..} Chans {..} = do
         StopWriting  -> return ()
         Write record -> do
             let name = hash . jUrl . rJob $ record
-            B.writeFile (folder </> name) (rBody record)
+            L.writeFile (folder </> name) (rBody record)
             L.writeFile (folder </> name <.> "sexp") (toByteString . toSExpr $ record)
             loop

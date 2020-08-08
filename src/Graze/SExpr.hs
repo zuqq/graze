@@ -1,13 +1,11 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 module Graze.SExpr
     ( SExpr (..)
-    , toByteString
+    , toLazyText
     ) where
 
-import           Data.ByteString.Builder
-import qualified Data.ByteString         as B
-import qualified Data.ByteString.Lazy    as L
+import qualified Data.Text              as T
+import qualified Data.Text.Lazy         as TL
+import qualified Data.Text.Lazy.Builder as TLB
 
 -- $setup
 -- >>> :set -XOverloadedStrings
@@ -15,29 +13,34 @@ import qualified Data.ByteString.Lazy    as L
 
 -- | An S-expression is a tree in which leaves are labeled with values of type
 -- 'B.ByteString' and interior nodes carry no label.
-data SExpr = Leaf !B.ByteString | Node ![SExpr]
+data SExpr = Leaf !T.Text | Node ![SExpr]
 
-toBuilder :: SExpr -> Builder
-toBuilder (Leaf s)        = charUtf8 '"' <> byteString s <> charUtf8 '"'
-toBuilder (Node [])       = stringUtf8 "()"
-toBuilder (Node (x : xs)) = charUtf8 '('
-    <> toBuilder x
-    <> mconcat [charUtf8 ' ' <> toBuilder x' | x' <- xs]
-    <> charUtf8 ')'
+parens :: TLB.Builder -> TLB.Builder
+parens b = TLB.singleton '(' <> b <> TLB.singleton ')'
+
+doubleQuotes :: TLB.Builder -> TLB.Builder
+doubleQuotes b = TLB.singleton '"' <> b <> TLB.singleton '"'
+
+toBuilder :: SExpr -> TLB.Builder
+toBuilder (Leaf s)  = doubleQuotes $ TLB.fromText s
+toBuilder (Node xs) = parens $ case xs of
+    []        -> mempty
+    (x : xs') -> toBuilder x
+        <> mconcat [TLB.singleton ' ' <> toBuilder x' | x' <- xs']
 
 -- | Serialize an S-expression.
 --
 -- ==== __Examples__
 --
--- >>> toByteString $ Leaf ""
+-- >>> toLazyText $ Leaf ""
 -- "\"\""
--- >>> toByteString $ Leaf "a"
+-- >>> toLazyText $ Leaf "a"
 -- "\"a\""
--- >>> toByteString $ Node [Leaf "a", Leaf "b"]
+-- >>> toLazyText $ Node [Leaf "a", Leaf "b"]
 -- "(\"a\" \"b\")"
--- >>> toByteString $ Node [Leaf "a", Node [Leaf "b", Leaf "c"]]
+-- >>> toLazyText $ Node [Leaf "a", Node [Leaf "b", Leaf "c"]]
 -- "(\"a\" (\"b\" \"c\"))"
--- >>> toByteString $ Node [Leaf "a", Node [Leaf "b", Node [Leaf "c"]]]
+-- >>> toLazyText $ Node [Leaf "a", Node [Leaf "b", Node [Leaf "c"]]]
 -- "(\"a\" (\"b\" (\"c\")))"
-toByteString :: SExpr -> L.ByteString
-toByteString = toLazyByteString . toBuilder
+toLazyText :: SExpr -> TL.Text
+toLazyText = TLB.toLazyText . toBuilder

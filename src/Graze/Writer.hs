@@ -10,14 +10,15 @@ module Graze.Writer
 
 import           Control.Concurrent.STM       (atomically)
 import           Control.Concurrent.STM.TChan (TChan, readTChan)
-import qualified Data.ByteString.Lazy         as L (writeFile)
+import qualified Data.ByteString.Lazy         as BL (writeFile)
+import qualified Data.Text.Lazy.Encoding      as TL (encodeUtf8)
 import           System.Directory             (createDirectoryIfMissing)
 import           System.FilePath              ((<.>), (</>))
 
 
 import Graze.HttpUrl  (hash, serialize)
 import Graze.Messages (Job (..), Record (..), WriteCommand (..))
-import Graze.SExpr    (SExpr (..), toByteString)
+import Graze.SExpr    (SExpr (..), toLazyText)
 
 
 newtype Config = Config {folder :: FilePath}
@@ -25,16 +26,15 @@ newtype Config = Config {folder :: FilePath}
 newtype Chans = Chans {inbox :: TChan WriteCommand}
 
 toSExpr :: Record -> SExpr
-toSExpr record = Node
-    [ Node [Leaf "origin", Leaf origin]
-    , Node [Leaf "url"   , Leaf url   ]
-    , Node [Leaf "links" , Node links ]
+toSExpr r = Node
+    [ Node [Leaf "origin", origin]
+    , Node [Leaf "url"   , url   ]
+    , Node [Leaf "links" , links ]
     ]
   where
-    job    = rJob record
-    origin = serialize (jOrigin job)
-    url    = serialize (jUrl job)
-    links  = Leaf . serialize <$> rLinks record
+    origin = Leaf . serialize . jOrigin . rJob $ r
+    url    = Leaf . serialize . jUrl . rJob $ r
+    links  = Node . fmap (Leaf . serialize) . rLinks $ r
 
 run :: Config -> Chans -> IO ()
 run Config {..} Chans {..} = do
@@ -45,6 +45,8 @@ run Config {..} Chans {..} = do
         StopWriting  -> return ()
         Write record -> do
             let name = hash . jUrl . rJob $ record
-            L.writeFile (folder </> name) (rBody record)
-            L.writeFile (folder </> name <.> "sexp") (toByteString . toSExpr $ record)
+            BL.writeFile (folder </> name) (rBody record)
+            BL.writeFile
+                (folder </> name <.> "sexp")
+                (TL.encodeUtf8 . toLazyText . toSExpr $ record)
             loop

@@ -1,81 +1,116 @@
-{-# LANGUAGE CPP, OverloadedStrings, ViewPatterns #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ViewPatterns      #-}
 
 module Graze.Robots
     ( Robots
     , parse
     ) where
 
-import           Control.Applicative        ((<|>))
-import qualified Data.Attoparsec.ByteString as A
-import qualified Data.ByteString            as B
-import qualified Data.ByteString.Char8      as C
-import           Data.Either                (isLeft, isRight, lefts, rights)
-import qualified Data.HashSet               as H
-import           Data.List                  (find)
-import           Data.Word                  (Word8)
+import           Control.Applicative      ((<|>))
+import qualified Data.Attoparsec.Text     as A
+import qualified Data.ByteString          as B (ByteString)
+import           Data.Char                (isAscii)
+import           Data.Either              (isLeft, isRight, lefts, rights)
+import           Data.Function            ((&))
+import qualified Data.HashSet             as H (HashSet, fromList, member)
+import           Data.List                (find)
+import qualified Data.Text                as T (Text, lines, unpack)
+import qualified Data.Text.Encoding       as T (decodeUtf8With)
+import qualified Data.Text.Encoding.Error as T (lenientDecode)
 
-import Graze.Word8 (isPchar)
-import Graze.Trie  (Trie, completes, empty, insert)
+import Graze.Trie (Trie, completes, empty, insert)
 
 
 -- Line ------------------------------------------------------------------------
 
-type UserAgent = B.ByteString
+type UserAgent = T.Text
 
 data Rule
-    = Disallow  !B.ByteString
-    | Allow     !B.ByteString
-    | Extension !B.ByteString
+    = Disallow  !T.Text
+    | Allow     !T.Text
+    | Extension !T.Text
 
 type Line = Either UserAgent Rule
 
 -- Predicates ------------------------------------------------------------------
 
-isSpace :: Word8 -> Bool
-isSpace w = w == 9 || w == 32
+isSpace :: Char -> Bool
+isSpace w = w == ' ' || w == '\t'
 
-isCtl :: Word8 -> Bool
-isCtl w = w < 32 || w == 127
-
-isTspecial :: Word8 -> Bool
-isTspecial w = case w of
-    40  -> True  -- '('
-    41  -> True  -- ')'
-    60  -> True  -- '<'
-    62  -> True  -- '>'
-    64  -> True  -- '@'
-    44  -> True  -- ','
-    59  -> True  -- ';'
-    58  -> True  -- ':'
-    92  -> True  -- '\\'
-    34  -> True  -- '"'
-    47  -> True  -- '/'
-    91  -> True  -- '['
-    93  -> True  -- ']'
-    63  -> True  -- '?'
-    61  -> True  -- '='
-    123 -> True  -- '{'
-    125 -> True  -- '}'
-    32  -> True  -- ' '
-    9   -> True  -- '\t'
+isSafe :: Char -> Bool
+isSafe w = case w of
+    '$' -> True
+    '-' -> True
+    '_' -> True
+    '.' -> True
+    '+' -> True
     _   -> False
 
-isTchar :: Word8 -> Bool
-isTchar w = not (isCtl w || isTspecial w)
+isExtra :: Char -> Bool
+isExtra w = case w of
+    '!'  -> True
+    '*'  -> True
+    '\'' -> True
+    '('  -> True
+    ')'  -> True
+    ','  -> True
+    _    -> False
+
+isUchar :: Char -> Bool
+isUchar w = w == '%'  -- Treat escaped characters by just allowing '%'.
+    || 'a' <= w && w <= 'z'
+    || 'A' <= w && w <= 'Z'
+    || '0' <= w && w <= '9'
+    || isSafe w
+    || isExtra w
+
+isPchar :: Char -> Bool
+isPchar w = w == '/'  -- Just allow '/' instead of parsing segments.
+    || isUchar w
+    || w == ':'
+    || w == '@'
+    || w == '&'
+    || w == '='
+
+isCtl :: Char -> Bool
+isCtl w = w < '\32' || w == '\127'
+
+isTspecial :: Char -> Bool
+isTspecial w = case w of
+    '('  -> True
+    ')'  -> True
+    '<'  -> True
+    '>'  -> True
+    '@'  -> True
+    ','  -> True
+    ';'  -> True
+    ':'  -> True
+    '\\' -> True
+    '"'  -> True
+    '/'  -> True
+    '['  -> True
+    ']'  -> True
+    '?'  -> True
+    '='  -> True
+    '{'  -> True
+    '}'  -> True
+    ' '  -> True
+    '\t' -> True
+    _    -> False
+
+isTchar :: Char -> Bool
+isTchar w = isAscii w && not (isCtl w || isTspecial w)
 
 -- Parser ----------------------------------------------------------------------
-
-#define POUND 35
-#define COLON 58
 
 skipSpace :: A.Parser ()
 skipSpace = A.skipWhile isSpace
 
-path :: A.Parser B.ByteString
+path :: A.Parser T.Text
 path = A.takeWhile isPchar
 
-comment :: A.Parser B.ByteString
-comment = A.word8 POUND *> A.takeByteString
+comment :: A.Parser T.Text
+comment = A.char '#' *> A.takeText
 
 userAgent :: A.Parser UserAgent
 userAgent = A.string "User-agent:"
@@ -100,9 +135,9 @@ allow = fmap Allow $
 extension :: A.Parser Rule
 extension = fmap Extension $
     A.takeWhile isTchar
-    *> A.word8 COLON
+    *> A.char ':'
     *> skipSpace
-    *> A.takeWhile (/= POUND)
+    *> A.takeWhile (/= '#')
     <* (A.endOfInput <|> skipSpace <* comment)
 
 line :: A.Parser Line
@@ -110,7 +145,7 @@ line = A.eitherP userAgent (disallow <|> allow <|> extension)
 
 -- Record ----------------------------------------------------------------------
 
-type Record = (H.HashSet UserAgent, (Trie Word8, Trie Word8))
+type Record = (H.HashSet UserAgent, (Trie Char, Trie Char))
 
 group :: [Line] -> [Record]
 group [] = []
@@ -120,18 +155,23 @@ group xs = (H.fromList . lefts $ uas, (ds, as)) : group xs''
     (rs, xs'') = span isRight xs'
     f r (u, v) = case r of
         Disallow "" -> (u, v)
-        Disallow d  -> (insert (B.unpack d) u, v)
-        Allow a     -> (u, insert (B.unpack a) v)
+        Disallow d  -> (insert (T.unpack d) u, v)
+        Allow a     -> (u, insert (T.unpack a) v)
         Extension _ -> (u, v)
     (ds, as)   = foldr f (empty, empty) . rights $ rs
 
 -- Robots ----------------------------------------------------------------------
 
-type Robots = B.ByteString -> Bool
+type Robots = T.Text -> Bool
 
 parse :: UserAgent -> B.ByteString -> Robots
-parse ua s (B.unpack -> x) = not (x `completes` ds) || x `completes` as
+parse ua s (T.unpack -> x) = not (x `completes` ds) || x `completes` as
   where
-    records  = group . rights . fmap (A.parseOnly line) . C.lines $ s
+    records  = s
+        & T.decodeUtf8With T.lenientDecode
+        & T.lines
+        & fmap (A.parseOnly line)
+        & rights
+        & group
     for name = find (H.member name . fst) records
     (ds, as) = maybe (empty, empty) snd $ for ua <|> for "*"

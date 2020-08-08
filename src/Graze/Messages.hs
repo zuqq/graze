@@ -7,8 +7,8 @@ module Graze.Messages
     , WriteCommand (..)
     ) where
 
-import qualified Data.ByteString      as B (ByteString)
 import qualified Data.ByteString.Lazy as L (ByteString)
+import qualified Data.Text            as T (Text)
 
 import Graze.HttpUrl (HttpUrl)
 
@@ -39,4 +39,4 @@ data WriteCommand
 
 data LogCommand
     = StopLogging
-    | Log !B.ByteString
+    | Log !T.Text

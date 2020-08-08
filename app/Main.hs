@@ -1,8 +1,6 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 module Main (main) where
 
-import qualified Data.ByteString.Char8 as C8 (pack)
+import qualified Data.Text as T (pack)
 
 import Options.Applicative
 
@@ -26,7 +24,7 @@ confParser = Config
         (long "folder"
         <> metavar "FOLDER"
         <> help "Download folder")
-    <*> argument (eitherReader $ parse . C8.pack)
+    <*> argument (eitherReader $ parse . T.pack)
         (metavar "URL"
         <> help "URL to start at")
 

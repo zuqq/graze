@@ -10,11 +10,12 @@ module Graze.Http
 
 import           Control.Exception     (try)
 import qualified Data.ByteString       as B (ByteString)
-import qualified Data.ByteString.Char8 as C (takeWhile, unpack)
+import qualified Data.ByteString.Char8 as C (takeWhile)
 import qualified Data.ByteString.Lazy  as L (ByteString, toStrict)
 import           Data.Function         ((&))
 import           Data.Functor          ((<&>))
 import           Data.Maybe            (fromMaybe)
+import qualified Data.Text             as T (unpack)
 
 import qualified Data.CaseInsensitive      as CI (mk)
 import           Network.HTTP.Client
@@ -22,7 +23,6 @@ import           Network.HTTP.Client.TLS   (getGlobalManager)
 
 import Graze.HttpUrl (HttpUrl (..), serialize)
 import Graze.Robots  (Robots, parse)
-
 
 data ContentType
     = Html   -- ^ text/html
@@ -46,12 +46,12 @@ get url = do
             >>= fromByteString & fromMaybe Other
     return (contentType, responseBody response)
   where
-    url' = C.unpack . serialize $ url
+    url' = T.unpack . serialize $ url
 
 robots :: HttpUrl -> IO Robots
 robots url = (try (get url') :: IO (Either HttpException Result)) <&> \case
     Left _           -> const True
-    Right (Plain, s) -> parse "*" . L.toStrict $ s
+    Right (Plain, s) -> parse "graze" . L.toStrict $ s
     Right _          -> const True
   where
     url' = url {huPath = "/robots.txt"}

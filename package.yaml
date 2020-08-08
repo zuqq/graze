@@ -21,6 +21,7 @@ dependencies:
 - optparse-applicative
 - stm
 - tagsoup
+- text
 - transformers
 - unordered-containers
 

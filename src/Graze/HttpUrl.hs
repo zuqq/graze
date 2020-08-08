@@ -15,7 +15,7 @@ import           Control.Monad          ((<=<))
 import qualified Crypto.Hash.SHA1       as SHA1   (hash)
 import qualified Data.Attoparsec.Text   as A
 import qualified Data.ByteString.Base16 as Base16 (encode)
-import qualified Data.ByteString.Char8  as C (unpack)
+import qualified Data.ByteString.Char8  as BC (unpack)
 import           Data.Char              (isAlphaNum)
 import           Data.Functor           (($>))
 import           Data.Hashable          (Hashable (hashWithSalt))
@@ -56,7 +56,7 @@ serialize HttpUrl {..} = huScheme <> huDomain <> huPath
 -- >>> hash $ HttpUrl "http:" "//www.example.com" "/"
 -- "89e6a0649e06d83370cdf2cbfb05f363934a8d0c"
 hash :: HttpUrl -> String
-hash = C.unpack . Base16.encode . SHA1.hash . T.encodeUtf8 . serialize
+hash = BC.unpack . Base16.encode . SHA1.hash . T.encodeUtf8 . serialize
 
 -- Path ------------------------------------------------------------------------
 

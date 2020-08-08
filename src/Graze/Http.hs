@@ -10,8 +10,8 @@ module Graze.Http
 
 import           Control.Exception     (try)
 import qualified Data.ByteString       as B (ByteString)
-import qualified Data.ByteString.Char8 as C (takeWhile)
-import qualified Data.ByteString.Lazy  as L (ByteString, toStrict)
+import qualified Data.ByteString.Char8 as BC (takeWhile)
+import qualified Data.ByteString.Lazy  as BL (ByteString, toStrict)
 import           Data.Function         ((&))
 import           Data.Functor          ((<&>))
 import           Data.Maybe            (fromMaybe)
@@ -30,12 +30,12 @@ data ContentType
     | Other
 
 fromByteString :: B.ByteString -> Maybe ContentType
-fromByteString bs = case CI.mk (C.takeWhile (/= ';') bs) of
+fromByteString bs = case CI.mk (BC.takeWhile (/= ';') bs) of
     "text/html"  -> Just Html
     "text/plain" -> Just Plain
     _            -> Nothing
 
-type Result = (ContentType, L.ByteString)
+type Result = (ContentType, BL.ByteString)
 
 get :: HttpUrl -> IO Result
 get url = do
@@ -51,7 +51,7 @@ get url = do
 robots :: HttpUrl -> IO Robots
 robots url = (try (get url') :: IO (Either HttpException Result)) <&> \case
     Left _           -> const True
-    Right (Plain, s) -> parse "graze" . L.toStrict $ s
+    Right (Plain, s) -> parse "graze" . BL.toStrict $ s
     Right _          -> const True
   where
     url' = url {huPath = "/robots.txt"}

@@ -11,7 +11,7 @@ module Graze.Fetcher
 import           Control.Concurrent.STM       (atomically)
 import           Control.Concurrent.STM.TChan (TChan, readTChan, writeTChan)
 import           Control.Exception            (try)
-import qualified Data.ByteString.Lazy         as L (toStrict)
+import qualified Data.ByteString.Lazy         as BL (toStrict)
 
 import Network.HTTP.Client (HttpException)
 
@@ -39,7 +39,7 @@ run Chans {..} = loop
                     writeTChan outbox Failure
                 Right (contentType, body) ->
                     let ls = case contentType of
-                            Html -> links url . L.toStrict $ body
+                            Html -> links url . BL.toStrict $ body
                             _    -> []
                     in atomically $ do
                         writeTChan outbox $ Success (Record job ls body)

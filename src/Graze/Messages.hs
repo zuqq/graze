@@ -7,7 +7,7 @@ module Graze.Messages
     , WriteCommand (..)
     ) where
 
-import qualified Data.ByteString.Lazy as L (ByteString)
+import qualified Data.ByteString.Lazy as BL (ByteString)
 import qualified Data.Text            as T (Text)
 
 import Graze.HttpUrl (HttpUrl)
@@ -26,7 +26,7 @@ data FetchCommand
 data Record = Record
     { rJob   :: !Job
     , rLinks :: ![HttpUrl]
-    , rBody  :: !L.ByteString
+    , rBody  :: !BL.ByteString
     }
 
 data FetchResult

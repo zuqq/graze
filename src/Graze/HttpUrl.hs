@@ -13,6 +13,7 @@ module Graze.HttpUrl
 import           Control.Applicative    ((<|>))
 import           Control.Monad          ((<=<))
 import qualified Crypto.Hash.SHA1       as SHA1   (hash)
+import           Data.Aeson             (ToJSON (..))
 import qualified Data.Attoparsec.Text   as A
 import qualified Data.ByteString.Base16 as Base16 (encode)
 import qualified Data.ByteString.Char8  as BC (unpack)
@@ -49,6 +50,10 @@ instance Hashable HttpUrl where
 -- "http://www.example.com/"
 serialize :: HttpUrl -> T.Text
 serialize HttpUrl {..} = huScheme <> huDomain <> huPath
+
+instance ToJSON HttpUrl where
+    toJSON     = toJSON . serialize
+    toEncoding = toEncoding . serialize
 
 -- | Map an 'HttpUrl' to the base16-encoded SHA-1 digest of its serialization.
 --

@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Graze.Messages
     ( FetchCommand (..)
     , FetchResult (..)
@@ -7,6 +9,7 @@ module Graze.Messages
     , WriteCommand (..)
     ) where
 
+import           Data.Aeson           ((.=), ToJSON (..), object, pairs)
 import qualified Data.ByteString.Lazy as BL (ByteString)
 import qualified Data.Text            as T (Text)
 
@@ -28,6 +31,12 @@ data Record = Record
     , rLinks :: ![HttpUrl]
     , rBody  :: !BL.ByteString
     }
+
+instance ToJSON Record where
+    toJSON (Record (Job _ origin url) links _)     =
+        object ["origin" .= origin, "url" .= url, "links" .= links]
+    toEncoding (Record (Job _ origin url) links _) =
+        pairs $ "origin" .= origin <> "url" .= url <> "links" .= links
 
 data FetchResult
     = Failure

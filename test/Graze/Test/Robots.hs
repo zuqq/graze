@@ -7,6 +7,7 @@ module Graze.Test.Robots
 import qualified Data.ByteString.Char8 as C8
 import           Data.Foldable         (for_)
 import           Data.Functor          ((<&>))
+import qualified Data.Text             as T
 
 import Test.Tasty       (TestTree, testGroup)
 import Test.Tasty.HUnit ((@?=), testCaseSteps)
@@ -32,7 +33,7 @@ content = C8.unlines
     , "Allow: /serv"
     ]
 
-paths :: [C8.ByteString]
+paths :: [T.Text]
 paths =
     [ "/"
     , "/index.html"
@@ -41,7 +42,7 @@ paths =
     , "/org/about.html"
     ]
 
-cases :: [(C8.ByteString, [Bool])]
+cases :: [(T.Text, [Bool])]
 cases =
     [ ("unhipbot"  , [False, False, False, False, False])
     , ("webcrawler", [True , True , True , True , True ])
@@ -53,7 +54,7 @@ tests :: TestTree
 tests = testGroup "Robots" $
     cases <&> \(ua, results) ->
         let rs = parse ua content
-        in testCaseSteps (C8.unpack ua) $ \step ->
+        in testCaseSteps (T.unpack ua) $ \step ->
             for_ (zip paths results) $ \(path, result) -> do
-                step (C8.unpack path)
+                step (T.unpack path)
                 rs path @?= result

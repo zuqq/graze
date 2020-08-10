@@ -4,9 +4,9 @@ module Graze.Test.HttpUrl
     ( tests
     ) where
 
-import qualified Data.ByteString as B (ByteString)
 import           Data.Either     (isLeft)
 import           Data.Foldable   (for_)
+import qualified Data.Text       as T
 
 import Test.Tasty       (TestTree, testGroup)
 import Test.Tasty.HUnit ((@?=), assertBool, testCaseSteps)
@@ -15,7 +15,7 @@ import Graze.HttpUrl (HttpUrl (HttpUrl), parse, parseRel)
 
 -- parse -----------------------------------------------------------------------
 
-absoluteValid :: [(B.ByteString, HttpUrl)]
+absoluteValid :: [(T.Text, HttpUrl)]
 absoluteValid =
     [ ( "http://www.example.com"
       , HttpUrl "http:" "//www.example.com" "/"
@@ -25,7 +25,7 @@ absoluteValid =
       )
     ]
 
-absoluteInvalid :: [(String, B.ByteString)]
+absoluteInvalid :: [(String, T.Text)]
 absoluteInvalid =
     [ (""         , ""                      )
     , ("mailto:"  , "mailto:tom@example.com")
@@ -48,7 +48,7 @@ base :: HttpUrl
 base = HttpUrl "https:" "//a" "/b/c/d?q"
 
 -- Examples from RFC 1808, section 5.1.
-relativeValid :: [(B.ByteString, HttpUrl)]
+relativeValid :: [(T.Text, HttpUrl)]
 relativeValid =
     [ ("g"      , HttpUrl "https:" "//a" "/b/c/g" )
     , ("./g"    , HttpUrl "https:" "//a" "/b/c/g" )

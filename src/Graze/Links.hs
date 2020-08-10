@@ -4,17 +4,17 @@ module Graze.Links
     ( links
     ) where
 
-import           Control.Applicative      ((<|>))
-import qualified Data.Attoparsec.Text     as A
-import qualified Data.ByteString          as B (ByteString)
-import           Data.Char                (isSpace)
-import           Data.Either              (fromRight, rights)
-import           Data.Functor             (($>))
-import qualified Data.HashSet             as H (fromList, toList)
-import           Data.Maybe               (mapMaybe)
-import qualified Data.Text                as T (Text)
-import qualified Data.Text.Encoding       as T (decodeUtf8With)
-import qualified Data.Text.Encoding.Error as T (lenientDecode)
+import           Control.Applicative       ((<|>))
+import qualified Data.Attoparsec.Text.Lazy as A
+import qualified Data.ByteString.Lazy      as BL (ByteString)
+import           Data.Char                 (isSpace)
+import           Data.Either               (fromRight, rights)
+import           Data.Functor              (($>))
+import qualified Data.HashSet              as H (fromList, toList)
+import           Data.Maybe                (mapMaybe)
+import qualified Data.Text                 as T (Text)
+import qualified Data.Text.Lazy.Encoding   as TL (decodeUtf8With)
+import           Data.Text.Encoding.Error  (lenientDecode)
 
 import Graze.HttpUrl (HttpUrl (..), parseRel)
 
@@ -67,11 +67,12 @@ hrefs = mapMaybe (lookup "href") <$> go
 
 -- | The expression @links base html@ is a list of the URLs of all links in the
 -- HTML document @html@, with @base@ serving as the base URL for relative links.
-links :: HttpUrl -> B.ByteString -> [HttpUrl]
+links :: HttpUrl -> BL.ByteString -> [HttpUrl]
 links base = H.toList
     . H.fromList
     . rights
     . fmap (parseRel base)
     . fromRight []
-    . A.parseOnly hrefs
-    . T.decodeUtf8With T.lenientDecode
+    . A.eitherResult
+    . A.parse hrefs
+    . TL.decodeUtf8With lenientDecode

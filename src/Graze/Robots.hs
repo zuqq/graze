@@ -6,17 +6,18 @@ module Graze.Robots
     , parse
     ) where
 
-import           Control.Applicative      ((<|>))
-import qualified Data.Attoparsec.Text     as A
-import qualified Data.ByteString          as B (ByteString)
-import           Data.Char                (isAscii)
-import           Data.Either              (isLeft, isRight, lefts, rights)
-import           Data.Function            ((&))
-import qualified Data.HashSet             as H (HashSet, fromList, member)
-import           Data.List                (find)
-import qualified Data.Text                as T (Text, lines, unpack)
-import qualified Data.Text.Encoding       as T (decodeUtf8With)
-import qualified Data.Text.Encoding.Error as T (lenientDecode)
+import           Control.Applicative       ((<|>))
+import qualified Data.Attoparsec.Text.Lazy as A
+import qualified Data.ByteString.Lazy      as BL (ByteString)
+import           Data.Char                 (isAscii)
+import           Data.Either               (isLeft, isRight, lefts, rights)
+import           Data.Function             ((&))
+import qualified Data.HashSet              as H (HashSet, fromList, member)
+import           Data.List                 (find)
+import qualified Data.Text                 as T (Text, unpack)
+import qualified Data.Text.Lazy            as TL (lines)
+import qualified Data.Text.Lazy.Encoding   as TL (decodeUtf8With)
+import           Data.Text.Encoding.Error  (lenientDecode)
 
 import Graze.Trie (Trie, completes, empty, insert)
 
@@ -164,13 +165,13 @@ group xs = (H.fromList . lefts $ uas, (ds, as)) : group xs''
 
 type Robots = T.Text -> Bool
 
-parse :: UserAgent -> B.ByteString -> Robots
+parse :: UserAgent -> BL.ByteString -> Robots
 parse ua s (T.unpack -> x) = not (x `completes` ds) || x `completes` as
   where
     records  = s
-        & T.decodeUtf8With T.lenientDecode
-        & T.lines
-        & fmap (A.parseOnly line)
+        & TL.decodeUtf8With lenientDecode
+        & TL.lines
+        & fmap (A.eitherResult . A.parse line)
         & rights
         & group
     for name = find (H.member name . fst) records

@@ -4,10 +4,10 @@ module Graze.Test.Robots
     ( tests
     ) where
 
-import qualified Data.ByteString.Char8 as C8
-import           Data.Foldable         (for_)
-import           Data.Functor          ((<&>))
-import qualified Data.Text             as T
+import qualified Data.ByteString.Lazy.Char8 as BLC
+import           Data.Foldable              (for_)
+import           Data.Functor               ((<&>))
+import qualified Data.Text                  as T
 
 import Test.Tasty       (TestTree, testGroup)
 import Test.Tasty.HUnit ((@?=), testCaseSteps)
@@ -15,8 +15,8 @@ import Test.Tasty.HUnit ((@?=), testCaseSteps)
 import Graze.Robots (parse)
 
 
-content :: C8.ByteString
-content = C8.unlines
+content :: BLC.ByteString
+content = BLC.unlines
     [ "# /robots.txt for http://www.fict.org/"
     , "# comments to webmaster@fict.org"
     , ""

@@ -39,19 +39,16 @@ type Result = (ContentType, BL.ByteString)
 
 get :: HttpUrl -> IO Result
 get url = do
-    request  <- parseUrlThrow url'
+    request  <- parseUrlThrow . T.unpack . serialize $ url
     manager  <- getGlobalManager
     response <- httpLbs request manager
     let contentType = response & responseHeaders & lookup "Content-Type"
             >>= fromByteString & fromMaybe Other
     return (contentType, responseBody response)
-  where
-    url' = T.unpack . serialize $ url
 
 robots :: HttpUrl -> IO Robots
 robots url = (try (get url') :: IO (Either HttpException Result)) <&> \case
-    Left _           -> const True
     Right (Plain, s) -> parse "graze" s
-    Right _          -> const True
+    _                -> const True
   where
     url' = url {huPath = "/robots.txt"}

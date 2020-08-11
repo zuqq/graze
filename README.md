@@ -13,13 +13,12 @@ Follow the usual [stack](https://www.haskellstack.org) workflow.
 ## Usage
 
 ```
-Usage: graze-exe [--workers n] [--depth d] [--folder f] [--records r] base
+Usage: graze-exe [--depth d] [--threads n] --folder FOLDER URL
 
 Available options:
-  --workers n              Number of worker threads
   --depth d                Depth of the search
-  --folder f               Download folder
-  --records r              Page record file
-  base                     URL to start at
+  --threads n              Number of threads
+  --folder FOLDER          Download folder
+  URL                      URL to start at
   -h,--help                Show this help text
 ```

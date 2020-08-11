@@ -8,7 +8,7 @@ module Graze.Trie
     ) where
 
 import           Data.Hashable       (Hashable)
-import qualified Data.HashMap.Strict as H
+import qualified Data.HashMap.Strict as HM
 
 -- $setup
 -- >>> :set -XScopedTypeVariables
@@ -22,7 +22,7 @@ import qualified Data.HashMap.Strict as H
 --
 -- A trie lets us efficiently determine whether one of the items it stores is a
 -- prefix of a given value @ys :: [a]@.
-data Trie a = Trie !Bool !(H.HashMap a (Trie a))
+data Trie a = Trie !Bool !(HM.HashMap a (Trie a))
 
 -- | The empty trie.
 --
@@ -30,15 +30,15 @@ data Trie a = Trie !Bool !(H.HashMap a (Trie a))
 --
 -- prop> \(xs :: [String]) -> map (`completes` empty) xs == map (const False) xs
 empty :: Trie a
-empty = Trie False H.empty
+empty = Trie False HM.empty
 
 -- | Insert an item into the trie.
 insert :: (Eq a, Hashable a) => [a] -> Trie a -> Trie a
 insert [] (Trie _ ts)          = Trie True ts
 insert (x : xs) (Trie flag ts) = Trie flag ts'
   where
-    t   = H.lookupDefault empty x ts
-    ts' = H.insert x (insert xs t) ts
+    t   = HM.lookupDefault empty x ts
+    ts' = HM.insert x (insert xs t) ts
 
 -- | Build a trie from a list of items.
 fromList :: (Eq a, Hashable a) => [[a]] -> Trie a
@@ -52,7 +52,7 @@ fromList = foldr insert empty
 toList :: Trie a -> [[a]]
 toList = go [] []
   where
-    go acc path (Trie flag ts) = H.foldrWithKey
+    go acc path (Trie flag ts) = HM.foldrWithKey
         (\k v xs -> go xs (k : path) v)
         (if flag then reverse path : acc else acc)
         ts
@@ -83,6 +83,6 @@ toList = go [] []
 completes :: (Eq a, Hashable a) => [a] -> Trie a -> Bool
 completes _ (Trie True _)      = True
 completes [] _                 = False
-completes (x : xs) (Trie _ ts) = case H.lookup x ts of
+completes (x : xs) (Trie _ ts) = case HM.lookup x ts of
     Nothing -> False
     Just t  -> xs `completes` t

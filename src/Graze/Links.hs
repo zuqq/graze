@@ -10,7 +10,7 @@ import qualified Data.ByteString.Lazy      as BL (ByteString)
 import           Data.Char                 (isSpace)
 import           Data.Either               (fromRight, rights)
 import           Data.Functor              (($>))
-import qualified Data.HashSet              as H (fromList, toList)
+import qualified Data.HashSet              as HS (fromList, toList)
 import           Data.Maybe                (mapMaybe)
 import qualified Data.Text                 as T (Text)
 import qualified Data.Text.Lazy.Encoding   as TL (decodeUtf8With)
@@ -68,8 +68,8 @@ hrefs = mapMaybe (lookup "href") <$> go
 -- | The expression @links base html@ is a list of the URLs of all links in the
 -- HTML document @html@, with @base@ serving as the base URL for relative links.
 links :: HttpUrl -> BL.ByteString -> [HttpUrl]
-links base = H.toList
-    . H.fromList
+links base = HS.toList
+    . HS.fromList
     . rights
     . fmap (parseRel base)
     . fromRight []

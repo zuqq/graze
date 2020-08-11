@@ -4,7 +4,7 @@ module Graze.Test.Links
     ( tests
     ) where
 
-import qualified Data.HashSet     as H (fromList)
+import qualified Data.HashSet     as HS (fromList)
 import           Test.Tasty       (TestTree, testGroup)
 import           Test.Tasty.HUnit ((@?=), testCase)
 
@@ -13,14 +13,14 @@ import Graze.Links   (links)
 
 testLinks :: TestTree
 testLinks = testCase "links" $ do
-    H.fromList (links base $ header <> a <> footer)
-        @?= H.fromList [HttpUrl "http:" "//www.example.com" "/a"]
-    H.fromList (links base $ header <> b <> footer)
-        @?= H.fromList [HttpUrl "http:" "//www.example.com" "/a/b"]
-    H.fromList (links base $ header <> haskell <> footer)
-        @?= H.fromList [HttpUrl "http:" "//www.haskell.org" "/"]
-    H.fromList (links base $ header <> a <> b <> haskell <> footer)
-        @?= H.fromList
+    HS.fromList (links base $ header <> a <> footer)
+        @?= HS.fromList [HttpUrl "http:" "//www.example.com" "/a"]
+    HS.fromList (links base $ header <> b <> footer)
+        @?= HS.fromList [HttpUrl "http:" "//www.example.com" "/a/b"]
+    HS.fromList (links base $ header <> haskell <> footer)
+        @?= HS.fromList [HttpUrl "http:" "//www.haskell.org" "/"]
+    HS.fromList (links base $ header <> a <> b <> haskell <> footer)
+        @?= HS.fromList
                 [ HttpUrl "http:" "//www.example.com" "/a"
                 , HttpUrl "http:" "//www.example.com" "/a/b"
                 , HttpUrl "http:" "//www.haskell.org" "/"

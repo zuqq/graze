@@ -12,7 +12,7 @@ import qualified Data.ByteString.Lazy      as BL (ByteString)
 import           Data.Char                 (isAscii)
 import           Data.Either               (isLeft, isRight, lefts, rights)
 import           Data.Function             ((&))
-import qualified Data.HashSet              as H (HashSet, fromList, member)
+import qualified Data.HashSet              as HS (HashSet, fromList, member)
 import           Data.List                 (find)
 import qualified Data.Text                 as T (Text, unpack)
 import qualified Data.Text.Lazy            as TL (lines)
@@ -146,11 +146,11 @@ line = A.eitherP userAgent (disallow <|> allow <|> extension)
 
 -- Record ----------------------------------------------------------------------
 
-type Record = (H.HashSet UserAgent, (Trie Char, Trie Char))
+type Record = (HS.HashSet UserAgent, (Trie Char, Trie Char))
 
 group :: [Line] -> [Record]
 group [] = []
-group xs = (H.fromList . lefts $ uas, (ds, as)) : group xs''
+group xs = (HS.fromList . lefts $ uas, (ds, as)) : group xs''
   where
     (uas, xs') = span isLeft xs
     (rs, xs'') = span isRight xs'
@@ -174,5 +174,5 @@ parse ua s (T.unpack -> x) = not (x `completes` ds) || x `completes` as
         & fmap (A.eitherResult . A.parse line)
         & rights
         & group
-    for name = find (H.member name . fst) records
+    for name = find (HS.member name . fst) records
     (ds, as) = maybe (empty, empty) snd $ for ua <|> for "*"

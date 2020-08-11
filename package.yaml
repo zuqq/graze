@@ -68,3 +68,4 @@ tests:
     - graze
     - tasty
     - tasty-hunit
+    - unordered-containers

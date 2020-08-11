@@ -11,7 +11,6 @@ import           Data.Hashable       (Hashable)
 import qualified Data.HashMap.Strict as HM
 
 -- $setup
--- >>> :set -XScopedTypeVariables
 -- >>> import qualified Data.HashSet as HS (fromList)
 
 
@@ -28,7 +27,7 @@ data Trie a = Trie !Bool !(HM.HashMap a (Trie a))
 --
 -- ==== __Properties__
 --
--- prop> \(xs :: [String]) -> map (`completes` empty) xs == map (const False) xs
+-- prop> map (`completes` empty) (xs :: [String]) == map (const False) xs
 empty :: Trie a
 empty = Trie False HM.empty
 
@@ -48,7 +47,7 @@ fromList = foldr insert empty
 --
 -- ==== __Properties__
 --
--- prop> \(xs :: [String]) -> (HS.fromList . toList . fromList $ xs) == HS.fromList xs
+-- prop> (HS.fromList . toList . fromList) (xs :: [String]) == HS.fromList xs
 toList :: Trie a -> [[a]]
 toList = go [] []
   where
@@ -79,7 +78,7 @@ toList = go [] []
 --
 -- ==== __Properties__
 --
--- prop> \(xs :: [String]) -> map (`completes` fromList xs) xs == map (const True) xs
+-- prop> map (`completes` fromList xs) (xs :: [String]) == map (const True) xs
 completes :: (Eq a, Hashable a) => [a] -> Trie a -> Bool
 completes _ (Trie True _)      = True
 completes [] _                 = False

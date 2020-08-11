@@ -10,6 +10,10 @@ module Graze.Trie
 import           Data.Hashable       (Hashable)
 import qualified Data.HashMap.Strict as H
 
+-- $setup
+-- >>> :set -XScopedTypeVariables
+-- >>> import qualified Data.HashSet as HS (fromList)
+
 
 -- | A trie @t :: Trie a@ stores items @xs :: [a]@ as paths in a tree emenating
 -- from the root, with elements of @xs@ becoming labels of the edges on the
@@ -21,6 +25,10 @@ import qualified Data.HashMap.Strict as H
 data Trie a = Trie !Bool !(H.HashMap a (Trie a))
 
 -- | The empty trie.
+--
+-- ==== __Properties__
+--
+-- prop> \(xs :: [String]) -> map (`completes` empty) xs == map (const False) xs
 empty :: Trie a
 empty = Trie False H.empty
 
@@ -37,6 +45,10 @@ fromList :: (Eq a, Hashable a) => [[a]] -> Trie a
 fromList = foldr insert empty
 
 -- | Build a list of items from a trie.
+--
+-- ==== __Properties__
+--
+-- prop> \(xs :: [String]) -> (HS.fromList . toList . fromList $ xs) == HS.fromList xs
 toList :: Trie a -> [[a]]
 toList = go [] []
   where
@@ -64,6 +76,10 @@ toList = go [] []
 -- >>> t' = insert "nano" t
 -- >>> "nanoparticle" `completes` t'
 -- True
+--
+-- ==== __Properties__
+--
+-- prop> \(xs :: [String]) -> map (`completes` fromList xs) xs == map (const True) xs
 completes :: (Eq a, Hashable a) => [a] -> Trie a -> Bool
 completes _ (Trie True _)      = True
 completes [] _                 = False

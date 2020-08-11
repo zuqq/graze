@@ -4,6 +4,7 @@ module Graze.Trie
     , empty
     , fromList
     , insert
+    , toList
     ) where
 
 import           Data.Hashable       (Hashable)
@@ -34,6 +35,15 @@ insert (x : xs) (Trie flag ts) = Trie flag ts'
 -- | Build a trie from a list of items.
 fromList :: (Eq a, Hashable a) => [[a]] -> Trie a
 fromList = foldr insert empty
+
+-- | Build a list of items from a trie.
+toList :: Trie a -> [[a]]
+toList = go [] []
+  where
+    go acc path (Trie flag ts) = H.foldrWithKey
+        (\k v xs -> go xs (k : path) v)
+        (if flag then reverse path : acc else acc)
+        ts
 
 -- | The expression @xs `completes` t@ is @True@ if and only if @t@ contains a
 -- prefix of @xs@.

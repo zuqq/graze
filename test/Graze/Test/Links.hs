@@ -4,34 +4,34 @@ module Graze.Test.Links
     ( tests
     ) where
 
-import qualified Data.HashSet     as HS (fromList)
-import           Test.Tasty       (TestTree, testGroup)
-import           Test.Tasty.HUnit ((@?=), testCase)
+import           Data.Foldable (for_)
+import           Data.Function (on)
+import qualified Data.HashSet  as HS (fromList)
+
+import Test.Tasty       (TestTree, testGroup)
+import Test.Tasty.HUnit ((@?=), testCase)
 
 import Graze.HttpUrl (HttpUrl (HttpUrl))
 import Graze.Links   (links)
 
+
 testLinks :: TestTree
 testLinks = testCase "links" $ do
-    HS.fromList (links base $ header <> a <> footer)
-        @?= HS.fromList [HttpUrl "http:" "//www.example.com" "/a"]
-    HS.fromList (links base $ header <> b <> footer)
-        @?= HS.fromList [HttpUrl "http:" "//www.example.com" "/a/b"]
-    HS.fromList (links base $ header <> haskell <> footer)
-        @?= HS.fromList [HttpUrl "http:" "//www.haskell.org" "/"]
-    HS.fromList (links base $ header <> a <> b <> haskell <> footer)
-        @?= HS.fromList
-                [ HttpUrl "http:" "//www.example.com" "/a"
-                , HttpUrl "http:" "//www.example.com" "/a/b"
-                , HttpUrl "http:" "//www.haskell.org" "/"
-                ]
+    for_ examples $ \(x, ys) ->
+        ((@?=) `on` HS.fromList) (links base $ header <> x <> footer) ys
   where
     base = HttpUrl "http:" "//www.example.com" "/"
     header = "<!DOCTYPE html><body>"
     footer = "</body>"
-    a = "<a href=\"a\">a</a>"
-    b = "<a href=\"a/b\">b</a>"
-    haskell = "<a href=\"http://www.haskell.org\">haskell</a>"
+    xa = "<a href=\"a\">a</a>"
+    xb = "<a href=\"a/b\">a/b</a>"
+    ya = HttpUrl "http:" "//www.example.com" "/a"
+    yb = HttpUrl "http:" "//www.example.com" "/a/b"
+    examples =
+        [ (xa      , [ya]    )
+        , (xb      , [yb]    )
+        , (xa <> xb, [ya, yb])
+        ]
 
 tests :: TestTree
 tests = testGroup "Links" [testLinks]

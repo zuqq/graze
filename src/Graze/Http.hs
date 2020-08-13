@@ -17,9 +17,9 @@ import           Data.Functor          ((<&>))
 import           Data.Maybe            (fromMaybe)
 import qualified Data.Text             as T (unpack)
 
-import qualified Data.CaseInsensitive      as CI (mk)
+import qualified Data.CaseInsensitive    as CI (mk)
 import           Network.HTTP.Client
-import           Network.HTTP.Client.TLS   (getGlobalManager)
+import           Network.HTTP.Client.TLS (getGlobalManager)
 
 import Graze.HttpUrl (HttpUrl (..), serialize)
 import Graze.Robots  (Robots, parse)

@@ -10,10 +10,11 @@ module Graze.Writer
 
 import           Control.Concurrent.STM       (atomically)
 import           Control.Concurrent.STM.TChan (TChan, readTChan)
-import           Data.Aeson                   (encode)
 import qualified Data.ByteString.Lazy         as BL (writeFile)
 import           System.Directory             (createDirectoryIfMissing)
 import           System.FilePath              ((<.>), (</>))
+
+import Data.Aeson (encode)
 
 import Graze.HttpUrl  (hash)
 import Graze.Messages (Job (..), Record (..), WriteCommand (..))

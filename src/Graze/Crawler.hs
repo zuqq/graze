@@ -6,13 +6,14 @@ module Graze.Crawler
     , run
     ) where
 
-import           Control.Concurrent.STM           (atomically)
-import           Control.Concurrent.STM.TChan     (TChan, readTChan, writeTChan)
-import           Control.Monad                    (unless)
-import           Control.Monad.IO.Class           (liftIO)
-import           Control.Monad.Trans.State.Strict
-import           Data.Foldable                    (traverse_)
-import qualified Data.HashSet                     as HS
+import Control.Concurrent.STM           (atomically)
+import Control.Concurrent.STM.TChan     (TChan, readTChan, writeTChan)
+import Control.Monad                    (unless)
+import Control.Monad.IO.Class           (liftIO)
+import Control.Monad.Trans.State.Strict (evalStateT, get, gets, modify', put)
+import Data.Foldable                    (traverse_)
+
+import qualified Data.HashSet as HS (HashSet, insert, member, singleton)
 
 import Graze.HttpUrl  (HttpUrl)
 import Graze.Messages

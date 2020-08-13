@@ -12,8 +12,6 @@ module Graze.HttpUrl
 
 import           Control.Applicative    ((<|>))
 import           Control.Monad          ((<=<))
-import qualified Crypto.Hash.SHA1       as SHA1   (hash)
-import           Data.Aeson             (ToJSON (..))
 import qualified Data.Attoparsec.Text   as A
 import qualified Data.ByteString.Base16 as Base16 (encode)
 import qualified Data.ByteString.Char8  as BC (unpack)
@@ -22,6 +20,9 @@ import           Data.Functor           (($>))
 import           Data.Hashable          (Hashable (hashWithSalt))
 import qualified Data.Text              as T
 import qualified Data.Text.Encoding     as T (encodeUtf8)
+
+import qualified Crypto.Hash.SHA1 as SHA1 (hash)
+import           Data.Aeson       (ToJSON (..))
 
 -- $setup
 -- >>> :set -XOverloadedStrings

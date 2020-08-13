@@ -9,9 +9,10 @@ module Graze.Messages
     , WriteCommand (..)
     ) where
 
-import           Data.Aeson           ((.=), ToJSON (..), object, pairs)
 import qualified Data.ByteString.Lazy as BL (ByteString)
 import qualified Data.Text            as T (Text)
+
+import Data.Aeson ((.=), ToJSON (..), object, pairs)
 
 import Graze.HttpUrl (HttpUrl)
 

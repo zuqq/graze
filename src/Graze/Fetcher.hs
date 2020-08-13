@@ -8,9 +8,9 @@ module Graze.Fetcher
     , run
     ) where
 
-import           Control.Concurrent.STM       (atomically)
-import           Control.Concurrent.STM.TChan (TChan, readTChan, writeTChan)
-import           Control.Exception            (try)
+import Control.Concurrent.STM       (atomically)
+import Control.Concurrent.STM.TChan (TChan, readTChan, writeTChan)
+import Control.Exception            (try)
 
 import Network.HTTP.Client (HttpException)
 

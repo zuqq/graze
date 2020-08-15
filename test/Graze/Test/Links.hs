@@ -23,15 +23,11 @@ testLinks = testCase "links" $ do
     base = HttpUrl "http:" "//www.example.com" "/"
     header = "<!DOCTYPE html><body>"
     footer = "</body>"
-    xa = "<a href=\"a\">a</a>"
-    xb = "<a href=\"a/b\">a/b</a>"
-    ya = HttpUrl "http:" "//www.example.com" "/a"
-    yb = HttpUrl "http:" "//www.example.com" "/a/b"
-    examples =
-        [ (xa      , [ya]    )
-        , (xb      , [yb]    )
-        , (xa <> xb, [ya, yb])
-        ]
+    a   = "<a href=a>a</a>"
+    a'  = "<a href='a'>a</a>"
+    a'' = "<a href=\"a\">a</a>"
+    y   = HttpUrl "http:" "//www.example.com" "/a"
+    examples = [(a, [y]), (a', [y]), (a'', [y])]
 
 tests :: TestTree
 tests = testGroup "Links" [testLinks]

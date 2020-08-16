@@ -68,11 +68,12 @@ hrefs = mapMaybe (lookup "href") <$> go
 -- | The expression @links base html@ is a list of the URLs of all links in the
 -- HTML document @html@, with @base@ serving as the base URL for relative links.
 links :: HttpUrl -> BL.ByteString -> [HttpUrl]
-links base = HS.toList
-    . HS.fromList
+links base = unstableNub
     . rights
     . fmap (parseRel base)
     . fromRight []
-    . A.eitherResult
-    . A.parse hrefs
+    . parseLazy hrefs
     . TL.decodeUtf8With lenientDecode
+  where
+    unstableNub = HS.toList . HS.fromList
+    parseLazy p = A.eitherResult . A.parse p

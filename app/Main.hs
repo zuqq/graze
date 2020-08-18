@@ -22,13 +22,12 @@ confParser = Config
         <> metavar "n"
         <> value 10
         <> help "Number of threads")
-    <*> option str
-        (long "folder"
-        <> metavar "FOLDER"
-        <> help "Download folder")
     <*> argument (eitherReader $ parse . T.pack)
         (metavar "URL"
         <> help "URL to start at")
+    <*> argument str
+        (metavar "FOLDER"
+        <> help "Download folder")
 
 confInfo :: ParserInfo Config
 confInfo = info (confParser <**> helper) fullDesc

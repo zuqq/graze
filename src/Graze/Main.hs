@@ -29,8 +29,8 @@ import qualified Graze.Writer  as Writer
 data Config = Config
     { depth   :: !Int       -- ^ Depth of the search.
     , threads :: !Int       -- ^ Number of threads.
-    , folder  :: !FilePath  -- ^ Download folder.
     , base    :: !HttpUrl   -- ^ URL to start at.
+    , folder  :: !FilePath  -- ^ Download folder.
     }
 
 run :: Config -> IO ()

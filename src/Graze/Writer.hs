@@ -26,13 +26,16 @@ newtype Chans = Chans {inbox :: TChan WriteCommand}
 
 run :: Config -> Chans -> IO ()
 run Config {..} Chans {..} = do
-    createDirectoryIfMissing True folder
+    createDirectoryIfMissing True bytes
+    createDirectoryIfMissing True json
     loop
   where
-    loop = atomically (readTChan inbox) >>= \case
+    bytes = folder </> "bytes"
+    json  = folder </> "json"
+    loop  = atomically (readTChan inbox) >>= \case
         StopWriting  -> return ()
         Write record -> do
             let name = hash . jUrl . rJob $ record
-            BL.writeFile (folder </> name) (rBody record)
-            BL.writeFile (folder </> name <.> "json") (encode record)
+            BL.writeFile (bytes </> name) (rBody record)
+            BL.writeFile (json </> name <.> "json") (encode record)
             loop

@@ -4,14 +4,15 @@ module Graze.Test.HttpUrl
     ( tests
     ) where
 
-import           Data.Either     (isLeft)
-import           Data.Foldable   (for_)
-import qualified Data.Text       as T
+import           Data.Either   (isLeft)
+import           Data.Foldable (for_)
+import qualified Data.Text     as T
 
 import Test.Tasty       (TestTree, testGroup)
 import Test.Tasty.HUnit ((@?=), assertBool, testCaseSteps)
 
 import Graze.HttpUrl (HttpUrl (HttpUrl), parse, parseRel)
+
 
 -- parse -----------------------------------------------------------------------
 

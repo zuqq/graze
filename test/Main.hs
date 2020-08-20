@@ -10,8 +10,4 @@ import qualified Graze.Test.Robots  as Robots
 
 
 main :: IO ()
-main = defaultMain $ testGroup "Graze"
-    [ HttpUrl.tests
-    , Links.tests
-    , Robots.tests
-    ]
+main = defaultMain $ testGroup "Graze" [HttpUrl.tests, Links.tests, Robots.tests]

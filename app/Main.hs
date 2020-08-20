@@ -16,12 +16,14 @@ confParser = Config
         (long "depth"
         <> metavar "d"
         <> value 3
-        <> help "Depth of the search")
+        <> help "Depth of the search"
+        <> showDefault)
     <*> option auto
         (long "threads"
         <> metavar "n"
         <> value 10
-        <> help "Number of threads")
+        <> help "Number of threads"
+        <> showDefault)
     <*> argument (eitherReader $ parse . T.pack)
         (metavar "URL"
         <> help "URL to start at")

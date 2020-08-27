@@ -33,9 +33,9 @@ run Config {..} Chans {..} = do
     bytes = folder </> "bytes"
     json  = folder </> "json"
     loop  = atomically (readTChan inbox) >>= \case
-        StopWriting  -> return ()
-        Write record -> do
-            let name = hashUrl . jUrl . rJob $ record
-            BL.writeFile (bytes </> name) (rBody record)
+        StopWriting       -> return ()
+        Write record body -> do
+            let name = hashUrl . rUrl $ record
+            BL.writeFile (bytes </> name) body
             BL.writeFile (json </> name <.> "json") (encode record)
             loop

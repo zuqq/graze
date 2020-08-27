@@ -28,24 +28,24 @@ data FetchCommand
     | Fetch !Job
 
 data Record = Record
-    { rJob   :: !Job
-    , rLinks :: ![HttpUrl]
-    , rBody  :: !BL.ByteString
+    { rOrigin :: !HttpUrl
+    , rUrl    :: !HttpUrl
+    , rLinks  :: ![HttpUrl]
     }
 
 instance ToJSON Record where
-    toJSON (Record (Job _ origin url) links _)     =
+    toJSON (Record origin url links)     =
         object ["origin" .= origin, "url" .= url, "links" .= links]
-    toEncoding (Record (Job _ origin url) links _) =
+    toEncoding (Record origin url links) =
         pairs $ "origin" .= origin <> "url" .= url <> "links" .= links
 
 data FetchResult
     = Failure
-    | Success !Record
+    | Success !Job !Record !BL.ByteString
 
 data WriteCommand
     = StopWriting
-    | Write !Record
+    | Write !Record !BL.ByteString
 
 data LogCommand
     = StopLogging

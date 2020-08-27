@@ -47,11 +47,9 @@ run Config {..} Chans {..} = do
         result <- liftIO . atomically $ readTChan inbox
         modify' $ \s -> s {open = open s - 1}
         case result of
-            Failure        -> return ()
-            Success record -> do
-                liftIO . atomically $
-                    writeTChan writer (Write record)
-                let Job {..} = rJob record
+            Failure                      -> return ()
+            Success Job {..} record body -> do
+                liftIO . atomically $ writeTChan writer (Write record body)
                 unless (jDepth <= 0) $ do
                     Browser {..} <- get
                     let legal' url = legal url && not (url `HS.member` seen)

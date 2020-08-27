@@ -16,7 +16,7 @@ import           System.FilePath              ((<.>), (</>))
 
 import Data.Aeson (encode)
 
-import Graze.HttpUrl  (hash)
+import Graze.HttpUrl  (hashUrl)
 import Graze.Messages (Job (..), Record (..), WriteCommand (..))
 
 
@@ -35,7 +35,7 @@ run Config {..} Chans {..} = do
     loop  = atomically (readTChan inbox) >>= \case
         StopWriting  -> return ()
         Write record -> do
-            let name = hash . jUrl . rJob $ record
+            let name = hashUrl . jUrl . rJob $ record
             BL.writeFile (bytes </> name) (rBody record)
             BL.writeFile (json </> name <.> "json") (encode record)
             loop

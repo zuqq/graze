@@ -3,7 +3,7 @@
 
 module Graze.Robots
     ( Robots
-    , parse
+    , parseRobots
     ) where
 
 import           Control.Applicative       ((<|>))
@@ -165,8 +165,8 @@ group xs = (HS.fromList . lefts $ uas, (ds, as)) : group xs''
 
 type Robots = T.Text -> Bool
 
-parse :: UserAgent -> BL.ByteString -> Robots
-parse ua s (T.unpack -> x) = not (x `completes` ds) || x `completes` as
+parseRobots :: UserAgent -> BL.ByteString -> Robots
+parseRobots ua s (T.unpack -> x) = not (x `completes` ds) || x `completes` as
   where
     records  = s
         & TL.decodeUtf8With lenientDecode

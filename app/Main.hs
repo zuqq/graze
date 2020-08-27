@@ -6,7 +6,7 @@ import qualified Data.Text as T (pack)
 
 import Options.Applicative
 
-import Graze.HttpUrl (parse)
+import Graze.HttpUrl (parseUrl)
 import Graze.Main    (Config (Config), run)
 
 
@@ -24,7 +24,7 @@ confParser = Config
         <> value 10
         <> help "Number of threads"
         <> showDefault)
-    <*> argument (eitherReader $ parse . T.pack)
+    <*> argument (eitherReader $ parseUrl . T.pack)
         (metavar "URL"
         <> help "URL to start at")
     <*> argument str

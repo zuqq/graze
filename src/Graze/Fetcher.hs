@@ -14,9 +14,9 @@ import Control.Exception            (try)
 
 import Network.HTTP.Client (HttpException)
 
-import Graze.Http     (ContentType (Html), get)
-import Graze.HttpUrl  (serialize)
-import Graze.Links    (links)
+import Graze.Http     (ContentType (TextHtml), get)
+import Graze.HttpUrl  (serializeUrl)
+import Graze.Links    (parseLinks)
 import Graze.Messages
 
 
@@ -37,10 +37,10 @@ run Chans {..} = loop
                 Left (_ :: HttpException) -> atomically $
                     writeTChan outbox Failure
                 Right (contentType, body) ->
-                    let ls = case contentType of
-                            Html -> links url body
-                            _    -> []
+                    let links = case contentType of
+                            TextHtml -> parseLinks url body
+                            _        -> []
                     in atomically $ do
-                        writeTChan outbox $ Success (Record job ls body)
-                        writeTChan logger $ Log ("Got " <> serialize url)
+                        writeTChan outbox $ Success (Record job links body)
+                        writeTChan logger $ Log ("Got " <> serializeUrl url)
             loop

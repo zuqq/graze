@@ -4,10 +4,10 @@
 
 module Graze.HttpUrl
     ( HttpUrl (..)
-    , hash
-    , parse
-    , parseRel
-    , serialize
+    , hashUrl
+    , parseUrl
+    , parseRelUrl
+    , serializeUrl
     ) where
 
 import           Control.Applicative    ((<|>))
@@ -49,20 +49,20 @@ instance Hashable HttpUrl where
 --
 -- >>> serialize $ HttpUrl "http:" "//www.example.com" "/"
 -- "http://www.example.com/"
-serialize :: HttpUrl -> T.Text
-serialize HttpUrl {..} = huScheme <> huDomain <> huPath
+serializeUrl :: HttpUrl -> T.Text
+serializeUrl HttpUrl {..} = huScheme <> huDomain <> huPath
 
 instance ToJSON HttpUrl where
-    toJSON     = toJSON . serialize
-    toEncoding = toEncoding . serialize
+    toJSON     = toJSON . serializeUrl
+    toEncoding = toEncoding . serializeUrl
 
 -- | Map an 'HttpUrl' to the base16-encoded SHA-1 digest of its serialization.
 --
 -- ==== __Examples__
--- >>> hash $ HttpUrl "http:" "//www.example.com" "/"
+-- >>> hashUrl $ HttpUrl "http:" "//www.example.com" "/"
 -- "89e6a0649e06d83370cdf2cbfb05f363934a8d0c"
-hash :: HttpUrl -> String
-hash = BC.unpack . Base16.encode . SHA1.hash . T.encodeUtf8 . serialize
+hashUrl :: HttpUrl -> String
+hashUrl = BC.unpack . Base16.encode . SHA1.hash . T.encodeUtf8 . serializeUrl
 
 -- Path ------------------------------------------------------------------------
 
@@ -208,10 +208,10 @@ stripFragment :: T.Text -> T.Text
 stripFragment = T.takeWhile (/= '#')
 
 -- | Parse an absolute HTTP(S) URL.
-parse :: T.Text -> Either String HttpUrl
-parse = fromUrl <=< A.parseOnly absUrl . stripFragment
+parseUrl :: T.Text -> Either String HttpUrl
+parseUrl = fromUrl <=< A.parseOnly absUrl . stripFragment
 
 -- | Parse an absolute or relative HTTP(S) URL, with the first argument as the
 -- base URL.
-parseRel :: HttpUrl -> T.Text -> Either String HttpUrl
-parseRel (toUrl -> x) = fromUrl <=< A.parseOnly (relUrl x) . stripFragment
+parseRelUrl :: HttpUrl -> T.Text -> Either String HttpUrl
+parseRelUrl (toUrl -> x) = fromUrl <=< A.parseOnly (relUrl x) . stripFragment

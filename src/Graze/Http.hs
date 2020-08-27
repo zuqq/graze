@@ -5,7 +5,7 @@
 module Graze.Http
     ( ContentType (..)
     , get
-    , robots
+    , getRobots
     ) where
 
 import           Control.Exception     (try)
@@ -21,34 +21,34 @@ import qualified Data.CaseInsensitive    as CI (mk)
 import           Network.HTTP.Client
 import           Network.HTTP.Client.TLS (getGlobalManager)
 
-import Graze.HttpUrl (HttpUrl (..), serialize)
-import Graze.Robots  (Robots, parse)
+import Graze.HttpUrl (HttpUrl (..), serializeUrl)
+import Graze.Robots  (Robots, parseRobots)
 
 data ContentType
-    = Html   -- ^ text/html
-    | Plain  -- ^ text/plain
+    = TextHtml
+    | TextPlain
     | Other
 
 fromByteString :: B.ByteString -> Maybe ContentType
 fromByteString bs = case CI.mk (BC.takeWhile (/= ';') bs) of
-    "text/html"  -> Just Html
-    "text/plain" -> Just Plain
+    "text/html"  -> Just TextHtml
+    "text/plain" -> Just TextPlain
     _            -> Nothing
 
 type Result = (ContentType, BL.ByteString)
 
 get :: HttpUrl -> IO Result
 get url = do
-    request  <- parseUrlThrow . T.unpack . serialize $ url
+    request  <- parseUrlThrow . T.unpack . serializeUrl $ url
     manager  <- getGlobalManager
     response <- httpLbs request manager
     let contentType = response & responseHeaders & lookup "Content-Type"
             >>= fromByteString & fromMaybe Other
     return (contentType, responseBody response)
 
-robots :: HttpUrl -> IO Robots
-robots url = (try (get url') :: IO (Either HttpException Result)) <&> \case
-    Right (Plain, s) -> parse "graze" s
-    _                -> const True
+getRobots :: HttpUrl -> IO Robots
+getRobots url = (try (get url') :: IO (Either HttpException Result)) <&> \case
+    Right (TextPlain, s) -> parseRobots "graze" s
+    _                    -> const True
   where
     url' = url {huPath = "/robots.txt"}

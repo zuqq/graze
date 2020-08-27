@@ -16,8 +16,8 @@ import qualified Data.Text                    as T (unpack)
 
 import Network.HTTP.Client.TLS (newTlsManager, setGlobalManager)
 
-import Graze.Http     (robots)
-import Graze.HttpUrl  (HttpUrl (..), serialize)
+import Graze.Http     (getRobots)
+import Graze.HttpUrl  (HttpUrl (..), serializeUrl)
 import Graze.Messages (FetchCommand (..), LogCommand (..), WriteCommand (..))
 
 import qualified Graze.Crawler as Crawler
@@ -35,7 +35,7 @@ data Config = Config
 
 run :: Config -> IO ()
 run Config {..} = do
-    putStrLn $ "Crawling " <> T.unpack (serialize base)
+    putStrLn $ "Crawling " <> T.unpack (serializeUrl base)
 
     tls <- newTlsManager
     setGlobalManager tls
@@ -60,7 +60,7 @@ run Config {..} = do
     ms <- replicateM threads . forkChild $ Fetcher.run
         (Fetcher.Chans fetcher crawler logger)
 
-    p <- robots base
+    p <- getRobots base
     let legal url = huDomain url == huDomain base && p (huPath url)
     Crawler.run
         (Crawler.Config depth base legal)

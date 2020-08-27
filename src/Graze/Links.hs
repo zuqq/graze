@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Graze.Links
-    ( links
+    ( parseLinks
     ) where
 
 import           Control.Applicative       ((<|>))
@@ -16,7 +16,7 @@ import qualified Data.Text                 as T (Text)
 import qualified Data.Text.Lazy.Encoding   as TL (decodeUtf8With)
 import           Data.Text.Encoding.Error  (lenientDecode)
 
-import Graze.HttpUrl (HttpUrl (..), parseRel)
+import Graze.HttpUrl (HttpUrl (..), parseRelUrl)
 
 
 -- Predicates ------------------------------------------------------------------
@@ -67,10 +67,10 @@ hrefs = mapMaybe (lookup "href") <$> go
 
 -- | The expression @links base html@ is a list of the URLs of all links in the
 -- HTML document @html@, with @base@ serving as the base URL for relative links.
-links :: HttpUrl -> BL.ByteString -> [HttpUrl]
-links base = unstableNub
+parseLinks :: HttpUrl -> BL.ByteString -> [HttpUrl]
+parseLinks base = unstableNub
     . rights
-    . fmap (parseRel base)
+    . fmap (parseRelUrl base)
     . fromRight []
     . parseLazy hrefs
     . TL.decodeUtf8With lenientDecode

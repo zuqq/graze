@@ -11,10 +11,10 @@ import qualified Data.Text     as T
 import Test.Tasty       (TestTree, testGroup)
 import Test.Tasty.HUnit ((@?=), assertBool, testCaseSteps)
 
-import Graze.HttpUrl (HttpUrl (HttpUrl), parse, parseRel)
+import Graze.HttpUrl (HttpUrl (HttpUrl), parseUrl, parseRelUrl)
 
 
--- parse -----------------------------------------------------------------------
+-- parseUrl --------------------------------------------------------------------
 
 absoluteValid :: [(T.Text, HttpUrl)]
 absoluteValid =
@@ -34,16 +34,16 @@ absoluteInvalid =
     , ("http:/...", "http:/www.example.com" )
     ]
 
-testParse :: TestTree
-testParse = testCaseSteps "absolute" $ \step -> do
+testParseUrl :: TestTree
+testParseUrl = testCaseSteps "absolute" $ \step -> do
     for_ absoluteValid $ \(x, y) -> do
         step (show x)
-        parse x @?= Right y
+        parseUrl x @?= Right y
     for_ absoluteInvalid $ \(s, x) -> do
         step (show s)
-        assertBool s (isLeft (parse x))
+        assertBool s (isLeft (parseUrl x))
 
--- parseRel --------------------------------------------------------------------
+-- parseRelUrl -----------------------------------------------------------------
 
 base :: HttpUrl
 base = HttpUrl "https:" "//a" "/b/c/d?q"
@@ -66,18 +66,18 @@ relativeValid =
     , ("../../g", HttpUrl "https:" "//a" "/g"     )
     ]
 
-testParseRel :: TestTree
-testParseRel = testCaseSteps "relative" $ \step -> do
+testParseRelUrl :: TestTree
+testParseRelUrl = testCaseSteps "relative" $ \step -> do
     for_ relativeValid $ \(x, y) -> do
         step (show x)
-        parseRel base x @?= Right y
+        parseRelUrl base x @?= Right y
     step (show "")
-    parseRel base "" @?= Right base
+    parseRelUrl base "" @?= Right base
     step "mailto:"
     assertBool "mailto:" $
-        isLeft (parseRel base "mailto:tom@example.com")
+        isLeft (parseRelUrl base "mailto:tom@example.com")
 
 -- Interface -------------------------------------------------------------------
 
 tests :: TestTree
-tests = testGroup "HttpUrl" [testParse, testParseRel]
+tests = testGroup "HttpUrl" [testParseUrl, testParseRelUrl]

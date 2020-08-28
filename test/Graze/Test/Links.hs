@@ -12,13 +12,13 @@ import Test.Tasty       (TestTree, testGroup)
 import Test.Tasty.HUnit ((@?=), testCase)
 
 import Graze.HttpUrl (HttpUrl (HttpUrl))
-import Graze.Links   (links)
+import Graze.Links   (parseLinks)
 
 
-testLinks :: TestTree
-testLinks = testCase "links" $ do
+testParseLinks :: TestTree
+testParseLinks = testCase "parseLinks" $ do
     for_ examples $ \(x, ys) ->
-        ((@?=) `on` HS.fromList) (links base $ header <> x <> footer) ys
+        ((@?=) `on` HS.fromList) (parseLinks base $ header <> x <> footer) ys
   where
     base = HttpUrl "http:" "//www.example.com" "/"
     header = "<!DOCTYPE html><body>"
@@ -30,4 +30,4 @@ testLinks = testCase "links" $ do
     examples = [(a, [y]), (a', [y]), (a'', [y])]
 
 tests :: TestTree
-tests = testGroup "Links" [testLinks]
+tests = testGroup "Links" [testParseLinks]

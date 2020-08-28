@@ -12,7 +12,7 @@ import qualified Data.Text                  as T
 import Test.Tasty       (TestTree, testGroup)
 import Test.Tasty.HUnit ((@?=), testCaseSteps)
 
-import Graze.Robots (parse)
+import Graze.Robots (parseRobots)
 
 
 content :: BLC.ByteString
@@ -53,7 +53,7 @@ cases =
 tests :: TestTree
 tests = testGroup "Robots" $
     cases <&> \(ua, results) ->
-        let rs = parse ua content
+        let rs = parseRobots ua content
         in testCaseSteps (T.unpack ua) $ \step ->
             for_ (zip paths results) $ \(path, result) -> do
                 step (T.unpack path)

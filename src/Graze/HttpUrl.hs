@@ -47,7 +47,7 @@ instance Hashable HttpUrl where
 --
 -- ==== __Examples__
 --
--- >>> serialize $ HttpUrl "http:" "//www.example.com" "/"
+-- >>> serializeUrl $ HttpUrl "http:" "//www.example.com" "/"
 -- "http://www.example.com/"
 serializeUrl :: HttpUrl -> T.Text
 serializeUrl HttpUrl {..} = huScheme <> huDomain <> huPath

@@ -19,6 +19,8 @@ dependencies:
 - hashable
 - http-client
 - http-client-tls
+- microlens
+- microlens-mtl
 - optparse-applicative
 - stm
 - text

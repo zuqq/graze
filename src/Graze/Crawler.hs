@@ -37,7 +37,7 @@ process s xs = done $ foldl' step (Triple s 0 id) xs
   where
     step (Triple s' i ys) x = if x `HS.member` s'
         then Triple s' i ys
-        else Triple (x `HS.insert` s') (i + 1) ((x :) . ys)
+        else Triple (x `HS.insert` s') (i + 1) (ys . (x :))
     done (Triple s' i ys)   = (s', i, ys [])
 
 -- CrawlerConfig ---------------------------------------------------------------

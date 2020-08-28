@@ -49,11 +49,11 @@ fromList = foldr insert empty
 --
 -- prop> (HS.fromList . toList . fromList) (xs :: [String]) == HS.fromList xs
 toList :: Trie a -> [[a]]
-toList = go [] []
+toList = go [] id
   where
     go acc path (Trie flag ts) = HM.foldrWithKey
-        (\k v xs -> go xs (k : path) v)
-        (if flag then reverse path : acc else acc)
+        (\k v xs -> go xs (path . (k :)) v)
+        (if flag then path [] : acc else acc)
         ts
 
 -- | The expression @xs `completes` t@ is @True@ if and only if @t@ contains a

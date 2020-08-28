@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE RecordWildCards   #-}
 
 module Graze.Crawler
@@ -54,25 +55,23 @@ process s xs = done $ foldl' step (Triple s 0 id) xs
 
 run :: Config -> Chans -> IO ()
 run Config {..} Chans {..} = do
-    atomically $
-        writeTChan outbox $
-            Fetch (Job depth base base)
+    atomically $ writeTChan outbox (Fetch (Job base base depth))
     evalStateT loop (Browser 1 (HS.singleton base))
   where
     loop = do
-        result <- liftIO . atomically $ readTChan inbox
-        modify' $ \s -> s {open = open s - 1}
-        case result of
-            Failure                      -> return ()
-            Success Job {..} record body -> do
-                liftIO . atomically $ writeTChan writer (Write record body)
-                unless (jDepth <= 0) $ do
+        (liftIO . atomically $ readTChan inbox) >>= \case
+            Failure                     -> return ()
+            Success Job {..} links body -> do
+                liftIO . atomically $
+                    writeTChan writer (Write (Record origin url links) body)
+                unless (depth <= 0) $ do
                     Browser n s <- get
-                    let (s', i, links') = process s . filter legal $ rLinks record
+                    let (s', i, links') = process s . filter legal $ links
                     liftIO . atomically $
                         traverse_
                             (writeTChan outbox . Fetch)
-                            (Job (jDepth - 1) jUrl <$> links')
+                            [Job url link (depth - 1) | link <- links']
                     put $! Browser (n + i) s'
         n <- gets open
-        unless (n <= 0) loop
+        modify' $ \s -> s {open = n - 1}
+        unless (n <= 1) loop

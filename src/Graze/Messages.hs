@@ -1,4 +1,6 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedStrings     #-}
 
 module Graze.Messages
     ( FetchCommand (..)
@@ -11,37 +13,36 @@ module Graze.Messages
 
 import qualified Data.ByteString.Lazy as BL (ByteString)
 import qualified Data.Text            as T (Text)
+import           GHC.Generics         (Generic)
 
-import Data.Aeson ((.=), ToJSON (..), object, pairs)
+import Data.Aeson (ToJSON (..), defaultOptions, genericToEncoding)
 
 import Graze.HttpUrl (HttpUrl)
 
 
 data Job = Job
-    { jDepth  :: !Int      -- ^ Remaining depth of the search.
-    , jOrigin :: !HttpUrl
-    , jUrl    :: !HttpUrl
+    { origin :: !HttpUrl
+    , url    :: !HttpUrl
+    , depth  :: !Int      -- ^ Remaining depth of the search.
     }
 
 data FetchCommand
     = StopFetching
     | Fetch !Job
 
-data Record = Record
-    { rOrigin :: !HttpUrl
-    , rUrl    :: !HttpUrl
-    , rLinks  :: ![HttpUrl]
-    }
-
-instance ToJSON Record where
-    toJSON (Record origin url links)     =
-        object ["origin" .= origin, "url" .= url, "links" .= links]
-    toEncoding (Record origin url links) =
-        pairs $ "origin" .= origin <> "url" .= url <> "links" .= links
-
 data FetchResult
     = Failure
-    | Success !Job !Record !BL.ByteString
+    | Success !Job ![HttpUrl] !BL.ByteString
+
+data Record = Record
+    { origin :: !HttpUrl
+    , url    :: !HttpUrl
+    , links  :: ![HttpUrl]
+    }
+    deriving Generic
+
+instance ToJSON Record where
+    toEncoding = genericToEncoding defaultOptions
 
 data WriteCommand
     = StopWriting

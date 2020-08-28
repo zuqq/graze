@@ -17,7 +17,7 @@ import           System.FilePath              ((<.>), (</>))
 import Data.Aeson (encode)
 
 import Graze.HttpUrl  (hashUrl)
-import Graze.Messages (Job (..), Record (..), WriteCommand (..))
+import Graze.Messages (Record (..), WriteCommand (..))
 
 
 newtype Config = Config {folder :: FilePath}
@@ -26,16 +26,16 @@ newtype Chans = Chans {inbox :: TChan WriteCommand}
 
 run :: Config -> Chans -> IO ()
 run Config {..} Chans {..} = do
-    createDirectoryIfMissing True bytes
     createDirectoryIfMissing True json
+    createDirectoryIfMissing True bytes
     loop
   where
-    bytes = folder </> "bytes"
     json  = folder </> "json"
+    bytes = folder </> "bytes"
     loop  = atomically (readTChan inbox) >>= \case
         StopWriting       -> return ()
         Write record body -> do
-            let name = hashUrl . rUrl $ record
-            BL.writeFile (bytes </> name) body
+            let name = hashUrl . url $ record
             BL.writeFile (json </> name <.> "json") (encode record)
+            BL.writeFile (bytes </> name) body
             loop

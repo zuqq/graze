@@ -30,7 +30,7 @@ data ContentType
     | Other
 
 fromByteString :: B.ByteString -> Maybe ContentType
-fromByteString bs = case CI.mk (BC.takeWhile (/= ';') bs) of
+fromByteString s = case CI.mk (BC.takeWhile (/= ';') s) of
     "text/html"  -> Just TextHtml
     "text/plain" -> Just TextPlain
     _            -> Nothing

@@ -32,16 +32,14 @@ run Chans {..} = loop
     loop = atomically (readTChan inbox) >>= \case
         StopFetching         -> return ()
         Fetch job @ Job {..} -> do
-            try (get jUrl) >>= \case
+            try (get url) >>= \case
                 Left (_ :: HttpException) -> atomically $
                     writeTChan outbox Failure
                 Right (contentType, body) ->
                     let links = case contentType of
-                            TextHtml -> parseLinks jUrl body
+                            TextHtml -> parseLinks url body
                             _        -> []
                     in atomically $ do
-                        writeTChan outbox $
-                            Success job (Record jOrigin jUrl links) body
-                        writeTChan logger $
-                            Log ("Got " <> serializeUrl jUrl)
+                        writeTChan outbox $ Success job links body
+                        writeTChan logger $ Log ("Got " <> serializeUrl url)
             loop

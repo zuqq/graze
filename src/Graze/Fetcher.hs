@@ -8,7 +8,7 @@ module Graze.Fetcher
     ) where
 
 import Control.Concurrent.STM       (atomically)
-import Control.Concurrent.STM.TChan (TChan, readTChan, writeTChan)
+import Control.Concurrent.STM.TChan (readTChan, writeTChan)
 import Control.Exception            (try)
 
 import Network.HTTP.Client (HttpException)
@@ -17,13 +17,12 @@ import Graze.Http     (ContentType (TextHtml), get)
 import Graze.HttpUrl  (serializeUrl)
 import Graze.Links    (parseLinks)
 import Graze.Messages
-import Graze.Util     (readFrom)
 
 
 runFetcher :: Chans -> IO ()
 runFetcher Chans {..} = loop
   where
-    loop = readFrom fetcherChan >>= \case
+    loop = (atomically . readTChan $ fetcherChan) >>= \case
         StopFetching         -> return ()
         Fetch job @ Job {..} -> do
             try (get url) >>= \case

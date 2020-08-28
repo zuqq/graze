@@ -4,8 +4,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Graze.Fetcher
-    ( Chans (Chans)
-    , run
+    ( runFetcher
     ) where
 
 import Control.Concurrent.STM       (atomically)
@@ -18,28 +17,23 @@ import Graze.Http     (ContentType (TextHtml), get)
 import Graze.HttpUrl  (serializeUrl)
 import Graze.Links    (parseLinks)
 import Graze.Messages
+import Graze.Util     (readFrom)
 
 
-data Chans = Chans
-    { inbox  :: !(TChan FetchCommand)
-    , outbox :: !(TChan FetchResult)
-    , logger :: !(TChan LogCommand)
-    }
-
-run :: Chans -> IO ()
-run Chans {..} = loop
+runFetcher :: Chans -> IO ()
+runFetcher Chans {..} = loop
   where
-    loop = atomically (readTChan inbox) >>= \case
+    loop = readFrom fetcherChan >>= \case
         StopFetching         -> return ()
         Fetch job @ Job {..} -> do
             try (get url) >>= \case
                 Left (_ :: HttpException) -> atomically $
-                    writeTChan outbox Failure
+                    writeTChan resultChan Failure
                 Right (contentType, body) ->
                     let links = case contentType of
                             TextHtml -> parseLinks url body
                             _        -> []
                     in atomically $ do
-                        writeTChan outbox $ Success job links body
-                        writeTChan logger $ Log ("Got " <> serializeUrl url)
+                        writeTChan resultChan $ Success job links body
+                        writeTChan loggerChan $ Log ("Got " <> serializeUrl url)
             loop

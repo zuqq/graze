@@ -2,7 +2,7 @@
 {-# LANGUAGE RecordWildCards   #-}
 
 module Graze.Main
-    ( Config (Config)
+    ( Config (..)
     , run
     ) where
 
@@ -18,12 +18,12 @@ import Network.HTTP.Client.TLS (newTlsManager, setGlobalManager)
 
 import Graze.Http     (getRobots)
 import Graze.HttpUrl  (HttpUrl (..), serializeUrl)
-import Graze.Messages (FetchCommand (..), LogCommand (..), WriteCommand (..))
+import Graze.Messages
 
-import qualified Graze.Crawler as Crawler
-import qualified Graze.Fetcher as Fetcher
-import qualified Graze.Logger  as Logger
-import qualified Graze.Writer  as Writer
+import Graze.Crawler
+import Graze.Fetcher
+import Graze.Logger
+import Graze.Writer
 
 
 data Config = Config
@@ -34,43 +34,38 @@ data Config = Config
     }
 
 run :: Config -> IO ()
-run Config {..} = do
+run config @ Config {..} = do
     putStrLn $ "Crawling " <> T.unpack (serializeUrl base)
 
     tls <- newTlsManager
     setGlobalManager tls
 
-    fetcher <- newTChanIO
-    crawler <- newTChanIO
-    writer  <- newTChanIO
-    logger  <- newTChanIO
+    fetcherChan <- newTChanIO
+    resultChan  <- newTChanIO
+    writerChan  <- newTChanIO
+    loggerChan  <- newTChanIO
+
+    let chans = Chans {..}
 
     let forkChild x = do
             m <- atomically newEmptyTMVar
             _ <- forkFinally x (\_ -> atomically $ putTMVar m ())
             return m
 
-    lm <- forkChild $ Logger.run
-        (Logger.Chans logger)
+    lm <- forkChild $ runLogger chans
 
-    wm <- forkChild $ Writer.run
-        (Writer.Config folder)
-        (Writer.Chans writer)
+    wm <- forkChild $ runWriter folder chans
 
-    ms <- replicateM threads . forkChild $ Fetcher.run
-        (Fetcher.Chans fetcher crawler logger)
+    ms <- replicateM threads . forkChild $ runFetcher chans
 
     p <- getRobots base
     let legal url = huDomain url == huDomain base && p (huPath url)
-    Crawler.run
-        (Crawler.Config depth base legal)
-        (Crawler.Chans crawler fetcher writer)
+    runCrawler CrawlerConfig {..} chans
 
     atomically $ do
-        replicateM_ threads $
-            writeTChan fetcher StopFetching
-        writeTChan writer StopWriting
-        writeTChan logger StopLogging
+        replicateM_ threads $ writeTChan fetcherChan StopFetching
+        writeTChan writerChan StopWriting
+        writeTChan loggerChan StopLogging
 
     traverse_ (atomically . takeTMVar) (lm : wm : ms)
 

@@ -2,8 +2,7 @@
 {-# LANGUAGE RecordWildCards #-}
 
 module Graze.Logger
-    ( Chans (Chans)
-    , run
+    ( runLogger
     ) where
 
 import           Control.Concurrent.STM       (atomically)
@@ -11,15 +10,14 @@ import           Control.Concurrent.STM.TChan (TChan, readTChan)
 import qualified Data.Text                    as T (unpack)
 import           System.IO                    (hPutStrLn, stderr)
 
-import Graze.Messages (LogCommand (..))
+import Graze.Messages
+import Graze.Util     (readFrom)
 
 
-newtype Chans = Chans {inbox :: TChan LogCommand}
-
-run :: Chans -> IO ()
-run Chans {..} = loop
+runLogger :: Chans -> IO ()
+runLogger Chans {..} = loop
   where
-    loop = atomically (readTChan inbox) >>= \case
+    loop = readFrom loggerChan >>= \case
         StopLogging -> return ()
         Log message -> do
             hPutStrLn stderr . T.unpack $ message

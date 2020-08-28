@@ -59,7 +59,7 @@ run config @ Config {..} = do
     ms <- replicateM threads . forkChild $ runFetcher chans
 
     p <- getRobots base
-    let legal url = huDomain url == huDomain base && p (huPath url)
+    let legal url = domain url == domain base && p (path url)
     runCrawler CrawlerConfig {..} chans
 
     atomically $ do

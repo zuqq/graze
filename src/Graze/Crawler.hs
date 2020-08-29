@@ -1,5 +1,5 @@
-{-# LANGUAGE LambdaCase        #-}
-{-# LANGUAGE RecordWildCards   #-}
+{-# LANGUAGE LambdaCase      #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Graze.Crawler
     ( CrawlerConfig (..)
@@ -50,9 +50,8 @@ data CrawlerConfig = CrawlerConfig
 -- CrawlerState ----------------------------------------------------------------
 
 data CrawlerState = CrawlerState
-    { _seen :: !(HS.HashSet HttpUrl)
-    , _open :: !Int
-    }
+    !(HS.HashSet HttpUrl)
+    !Int
 
 seen :: Lens' CrawlerState (HS.HashSet HttpUrl)
 seen p (CrawlerState s i) = fmap (`CrawlerState` i) (p s)
@@ -69,11 +68,6 @@ evalCrawler = evalStateT
 
 writeTo :: MonadIO m => TChan a -> a -> m ()
 writeTo chan = liftIO . atomically . writeTChan chan
-
-runCrawler :: CrawlerConfig -> Chans -> IO ()
-runCrawler CrawlerConfig {..} chans = do
-    writeTo (fetcherChan chans) $ Fetch (Job base base depth)
-    evalCrawler (defaultCrawler legal chans) (CrawlerState (HS.singleton base) 1)
 
 defaultCrawler :: (HttpUrl -> Bool) -> Chans -> Crawler ()
 defaultCrawler legal Chans {..} = loop
@@ -93,3 +87,10 @@ defaultCrawler legal Chans {..} = loop
         open -= 1
         n <- use open
         unless (n <= 0) loop
+
+runCrawler :: CrawlerConfig -> Chans -> IO ()
+runCrawler CrawlerConfig {..} chans = do
+    writeTo (fetcherChan chans) $ Fetch (Job base base depth)
+    evalCrawler
+        (defaultCrawler legal chans)
+        (CrawlerState (HS.singleton base) 1)

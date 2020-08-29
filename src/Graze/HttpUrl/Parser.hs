@@ -97,14 +97,14 @@ normalize s =
     -- Base cases.
     -- Trailing ".." needs to be handled separately because it adds '/'.
     go (".." : xs) [".."] = reverse ("" : ".." : ".." : xs)
-    go (_ : xs) [".."]    = reverse ("" : xs)
-    go xs ["."]           = reverse ("" : xs)
-    go xs [""]            = reverse ("" : xs)
-    go xs []              = reverse xs
+    go (_ : xs)    [".."] = reverse ("" : xs)
+    go xs          ["."]  = reverse ("" : xs)
+    go xs          [""]   = reverse ("" : xs)
+    go xs          []     = reverse xs
     -- Handle "..".
     go (".." : xs) (".." : ys) = go (".." : ".." : xs) ys
-    go (_ : xs) (".." : ys)    = go xs ys
-    go [] (".." : ys)          = go [".."] ys
+    go (_ : xs)    (".." : ys) = go xs ys
+    go []          (".." : ys) = go [".."] ys
     -- Handle ".".
     go [] ("." : ys) = go ["."] ys
     go xs ("." : ys) = go xs ys
@@ -121,12 +121,12 @@ toUrl :: HttpUrl -> Url
 toUrl (HttpUrl x y z) = (x, y, z)
 
 fromUrl :: Url -> Either String HttpUrl
-fromUrl = fmap pack . (checkNetloc <=< checkScheme)
+fromUrl = fmap pack . (checkDomain <=< checkScheme)
   where
     checkScheme (x, y, z) = if x == "http:" || x == "https:"
         then Right (x, y, z)
         else Left "Invalid scheme."
-    checkNetloc (x, y, z) = if "//" `T.isPrefixOf` y
+    checkDomain (x, y, z) = if "//" `T.isPrefixOf` y
         then Right (x, y, z)
         else Left "Invalid netloc."
     pack (x, y, z) = HttpUrl x y (normalize z)
@@ -136,25 +136,23 @@ fromUrl = fmap pack . (checkNetloc <=< checkScheme)
 isSchar :: Char -> Bool
 isSchar w = isAlphaNum w || w == '+' || w == '-' || w == '.'
 
--- The definitions are roughly those of RFC 1808.
-
 scheme :: A.Parser T.Text
 scheme = T.snoc <$> A.takeWhile1 isSchar <*> A.char ':'
 
-netLoc :: A.Parser T.Text
-netLoc = T.append <$> A.string "//" <*> A.takeWhile (/= '/')
+domain :: A.Parser T.Text
+domain = T.append <$> A.string "//" <*> A.takeWhile (/= '/')
 
-absPath :: A.Parser T.Text
-absPath = T.cons <$> A.char '/' <*> A.takeText
+path :: A.Parser T.Text
+path = T.cons <$> A.char '/' <*> A.takeText
 
 absUrl :: A.Parser Url
-absUrl = (,,) <$> scheme <*> A.option "" netLoc <*> A.takeText
+absUrl = (,,) <$> scheme <*> A.option "" domain <*> A.takeText
 
 relUrl :: Url -> A.Parser Url
 relUrl (x, y, z) = absUrl
     <|> A.endOfInput $> (x, y, z)                -- Matches "".
-    <|> (,,) x <$> netLoc <*> A.takeText         -- Matches "//...".
-    <|> (,,) x y <$> absPath                     -- Matches "/...".
+    <|> (,,) x <$> domain <*> A.takeText         -- Matches "//...".
+    <|> (,,) x y <$> path                        -- Matches "/...".
     <|> (,,) x y . (folder z <>) <$> A.takeText  -- Matches everything.
 
 -- Interface -------------------------------------------------------------------

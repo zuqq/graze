@@ -3,7 +3,7 @@
 
 module Graze.Main
     ( Config (..)
-    , run
+    , runMain
     ) where
 
 import           Control.Concurrent           (forkFinally)
@@ -33,8 +33,8 @@ data Config = Config
     , threads :: !Int       -- ^ Number of threads.
     }
 
-run :: Config -> IO ()
-run config @ Config {..} = do
+runMain :: Config -> IO ()
+runMain Config {..} = do
     putStrLn $ "Crawling " <> T.unpack (serializeUrl base)
 
     tls <- newTlsManager

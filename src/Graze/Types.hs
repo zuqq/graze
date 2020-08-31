@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 
-module Graze.Messages
+module Graze.Types
     ( Chans (..)
     , FetcherCommand (..)
     , Job (..)

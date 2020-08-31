@@ -14,8 +14,8 @@ import           System.FilePath              ((<.>), (</>))
 
 import Data.Aeson (encode)
 
-import Graze.HttpUrl  (hashUrl)
-import Graze.Messages (Chans (..), Record (..), WriterCommand (..))
+import Graze.HttpUrl (hashUrl)
+import Graze.Types   (Chans (..), Record (..), WriterCommand (..))
 
 
 runWriter :: FilePath -> Chans -> IO ()

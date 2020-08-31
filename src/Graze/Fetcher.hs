@@ -13,10 +13,10 @@ import Control.Exception            (try)
 
 import Network.HTTP.Client (HttpException)
 
-import Graze.Http     (ContentType (TextHtml), get)
-import Graze.HttpUrl  (serializeUrl)
-import Graze.Links    (parseLinks)
-import Graze.Messages
+import Graze.Http    (ContentType (TextHtml), get)
+import Graze.HttpUrl (serializeUrl)
+import Graze.Links   (parseLinks)
+import Graze.Types
 
 
 runFetcher :: Chans -> IO ()

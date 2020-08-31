@@ -10,7 +10,7 @@ import           Control.Concurrent.STM.TChan (readTChan)
 import qualified Data.Text                    as T (unpack)
 import           System.IO                    (hPutStrLn, stderr)
 
-import Graze.Messages (Chans (..), LoggerCommand (..))
+import Graze.Types (Chans (..), LoggerCommand (..))
 
 
 runLogger :: Chans -> IO ()

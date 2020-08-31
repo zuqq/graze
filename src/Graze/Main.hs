@@ -16,14 +16,13 @@ import qualified Data.Text                    as T (unpack)
 
 import Network.HTTP.Client.TLS (newTlsManager, setGlobalManager)
 
-import Graze.Http     (getRobots)
-import Graze.HttpUrl  (HttpUrl (..), serializeUrl)
-import Graze.Messages
-
-import Graze.Crawler
-import Graze.Fetcher
-import Graze.Logger
-import Graze.Writer
+import Graze.Crawler (CrawlerConfig (..), runCrawler)
+import Graze.Fetcher (runFetcher)
+import Graze.Http    (getRobots)
+import Graze.HttpUrl (HttpUrl (..), serializeUrl)
+import Graze.Logger  (runLogger)
+import Graze.Types
+import Graze.Writer  (runWriter)
 
 
 data Config = Config

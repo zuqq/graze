@@ -17,8 +17,8 @@ import qualified Data.HashSet   as HS (HashSet, insert, member, singleton)
 import           Lens.Micro     (Lens')
 import           Lens.Micro.Mtl ((+=), (-=), (.=), use)
 
-import Graze.HttpUrl  (HttpUrl)
-import Graze.Messages
+import Graze.HttpUrl (HttpUrl)
+import Graze.Types
 
 
 -- process ---------------------------------------------------------------------

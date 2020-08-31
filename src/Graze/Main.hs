@@ -6,13 +6,14 @@ module Graze.Main
     , runMain
     ) where
 
-import           Control.Concurrent           (forkFinally)
-import           Control.Concurrent.STM       (atomically)
-import           Control.Concurrent.STM.TChan (newTChanIO, writeTChan)
+import           Control.Concurrent             (forkFinally)
+import           Control.Concurrent.STM         (atomically)
+import           Control.Concurrent.STM.TQueue  (newTQueueIO)
+import           Control.Concurrent.STM.TBQueue (newTBQueueIO, writeTBQueue)
 import           Control.Concurrent.STM.TMVar
-import           Control.Monad                (replicateM, replicateM_)
-import           Data.Foldable                (traverse_)
-import qualified Data.Text                    as T (unpack)
+import           Control.Monad                  (replicateM, replicateM_)
+import           Data.Foldable                  (traverse_)
+import qualified Data.Text                      as T (unpack)
 
 import Network.HTTP.Client.TLS (newTlsManager, setGlobalManager)
 
@@ -39,12 +40,13 @@ runMain Config {..} = do
     tls <- newTlsManager
     setGlobalManager tls
 
-    fetcherChan <- newTChanIO
-    resultChan  <- newTChanIO
-    writerChan  <- newTChanIO
-    loggerChan  <- newTChanIO
+    let n = fromIntegral threads
+    fetcherQueue <- newTBQueueIO n
+    writerQueue  <- newTBQueueIO n
+    loggerQueue  <- newTBQueueIO n
+    resultQueue  <- newTQueueIO
 
-    let chans = Chans {..}
+    let chans = Queues {..}
 
     let forkChild x = do
             m <- atomically newEmptyTMVar
@@ -62,9 +64,9 @@ runMain Config {..} = do
     runCrawler CrawlerConfig {..} chans
 
     atomically $ do
-        replicateM_ threads $ writeTChan fetcherChan StopFetching
-        writeTChan writerChan StopWriting
-        writeTChan loggerChan StopLogging
+        replicateM_ threads $ writeTBQueue fetcherQueue StopFetching
+        writeTBQueue writerQueue StopWriting
+        writeTBQueue loggerQueue StopLogging
 
     traverse_ (atomically . takeTMVar) (lm : wm : ms)
 

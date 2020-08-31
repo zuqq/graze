@@ -7,7 +7,8 @@ module Graze.Crawler
     ) where
 
 import Control.Concurrent.STM           (atomically)
-import Control.Concurrent.STM.TChan     (TChan, readTChan, writeTChan)
+import Control.Concurrent.STM.TQueue    (readTQueue)
+import Control.Concurrent.STM.TBQueue   (TBQueue, writeTBQueue)
 import Control.Monad                    (unless)
 import Control.Monad.IO.Class           (MonadIO (liftIO))
 import Control.Monad.Trans.State.Strict (StateT, evalStateT)
@@ -66,21 +67,21 @@ type Crawler a = StateT CrawlerState IO a
 evalCrawler :: Crawler a -> CrawlerState -> IO a
 evalCrawler = evalStateT
 
-writeTo :: MonadIO m => TChan a -> a -> m ()
-writeTo chan = liftIO . atomically . writeTChan chan
+writeTo :: MonadIO m => TBQueue a -> a -> m ()
+writeTo chan = liftIO . atomically . writeTBQueue chan
 
-defaultCrawler :: (HttpUrl -> Bool) -> Chans -> Crawler ()
-defaultCrawler legal Chans {..} = loop
+defaultCrawler :: (HttpUrl -> Bool) -> Queues -> Crawler ()
+defaultCrawler legal Queues {..} = loop
   where
     loop = do
-        (liftIO . atomically . readTChan $ resultChan) >>= \case
+        (liftIO . atomically . readTQueue $ resultQueue) >>= \case
             Failure                     -> return ()
             Success Job {..} links body -> do
-                writeTo writerChan $ Write (Record origin url links) body
+                writeTo writerQueue $ Write (Record origin url links) body
                 unless (depth <= 0) $ do
                     s <- use seen
                     let (s', i, links') = process s . filter legal $ links
-                    liftIO . atomically . traverse_ (writeTChan fetcherChan) $
+                    traverse_ (writeTo fetcherQueue)
                         [Fetch (Job url link (depth - 1)) | link <- links']
                     seen .= s'
                     open += i
@@ -88,9 +89,9 @@ defaultCrawler legal Chans {..} = loop
         n <- use open
         unless (n <= 0) loop
 
-runCrawler :: CrawlerConfig -> Chans -> IO ()
+runCrawler :: CrawlerConfig -> Queues -> IO ()
 runCrawler CrawlerConfig {..} chans = do
-    writeTo (fetcherChan chans) $ Fetch (Job base base depth)
+    writeTo (fetcherQueue chans) $ Fetch (Job base base depth)
     evalCrawler
         (defaultCrawler legal chans)
         (CrawlerState (HS.singleton base) 1)

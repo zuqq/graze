@@ -2,19 +2,20 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 
 module Graze.Types
-    ( Chans (..)
-    , FetcherCommand (..)
+    ( FetcherCommand (..)
     , Job (..)
     , LoggerCommand (..)
+    , Queues (..)
     , Record (..)
     , Result (..)
     , WriterCommand (..)
     ) where
 
-import           Control.Concurrent.STM.TChan (TChan)
-import qualified Data.ByteString.Lazy         as BL (ByteString)
-import qualified Data.Text                    as T (Text)
-import           GHC.Generics                 (Generic)
+import           Control.Concurrent.STM.TQueue  (TQueue)
+import           Control.Concurrent.STM.TBQueue (TBQueue)
+import qualified Data.ByteString.Lazy           as BL (ByteString)
+import qualified Data.Text                      as T (Text)
+import           GHC.Generics                   (Generic)
 
 import Data.Aeson (ToJSON (..), defaultOptions, genericToEncoding)
 
@@ -53,9 +54,9 @@ data LoggerCommand
     = StopLogging
     | Log !T.Text
 
-data Chans = Chans
-    { fetcherChan :: TChan FetcherCommand
-    , resultChan  :: TChan Result
-    , writerChan  :: TChan WriterCommand
-    , loggerChan  :: TChan LoggerCommand
+data Queues = Queues
+    { fetcherQueue :: TBQueue FetcherCommand
+    , writerQueue  :: TBQueue WriterCommand
+    , loggerQueue  :: TBQueue LoggerCommand
+    , resultQueue  :: TQueue Result
     }

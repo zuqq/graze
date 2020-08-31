@@ -1,3 +1,5 @@
+{-# LANGUAGE BangPatterns #-}
+
 module Graze.Trie
     ( Trie
     , completes
@@ -7,6 +9,7 @@ module Graze.Trie
     , toList
     ) where
 
+import           Data.Foldable       (foldl')
 import           Data.Hashable       (Hashable)
 import qualified Data.HashMap.Strict as HM
 
@@ -41,7 +44,7 @@ insert (x : xs) (Trie flag ts) = Trie flag ts'
 
 -- | Build a trie from a list of items.
 fromList :: (Eq a, Hashable a) => [[a]] -> Trie a
-fromList = foldr insert empty
+fromList = foldl' (flip insert) empty
 
 -- | Build a list of items from a trie.
 --
@@ -51,8 +54,8 @@ fromList = foldr insert empty
 toList :: Trie a -> [[a]]
 toList = go [] id
   where
-    go acc path (Trie flag ts) = HM.foldrWithKey
-        (\k v xs -> go xs (path . (k :)) v)
+    go !acc !path (Trie flag ts) = HM.foldlWithKey'
+        (\acc' k v -> go acc' (path . (k :)) v)
         (if flag then path [] : acc else acc)
         ts
 

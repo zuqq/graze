@@ -68,7 +68,7 @@ evalCrawler :: Crawler a -> CrawlerState -> IO a
 evalCrawler = evalStateT
 
 writeTo :: MonadIO m => TBQueue a -> a -> m ()
-writeTo chan = liftIO . atomically . writeTBQueue chan
+writeTo queue = liftIO . atomically . writeTBQueue queue
 
 defaultCrawler :: (HttpUrl -> Bool) -> Queues -> Crawler ()
 defaultCrawler legal Queues {..} = loop
@@ -90,8 +90,8 @@ defaultCrawler legal Queues {..} = loop
         unless (n <= 0) loop
 
 runCrawler :: CrawlerConfig -> Queues -> IO ()
-runCrawler CrawlerConfig {..} chans = do
-    writeTo (fetcherQueue chans) $ Fetch (Job base base depth)
+runCrawler CrawlerConfig {..} queues = do
+    writeTo (fetcherQueue queues) $ Fetch (Job base base depth)
     evalCrawler
-        (defaultCrawler legal chans)
+        (defaultCrawler legal queues)
         (CrawlerState (HS.singleton base) 1)

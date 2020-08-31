@@ -46,22 +46,22 @@ runMain Config {..} = do
     loggerQueue  <- newTBQueueIO n
     resultQueue  <- newTQueueIO
 
-    let chans = Queues {..}
+    let queues = Queues {..}
 
     let forkChild x = do
             m <- atomically newEmptyTMVar
             _ <- forkFinally x (\_ -> atomically $ putTMVar m ())
             return m
 
-    lm <- forkChild $ runLogger chans
+    lm <- forkChild $ runLogger queues
 
-    wm <- forkChild $ runWriter folder chans
+    wm <- forkChild $ runWriter folder queues
 
-    ms <- replicateM threads . forkChild $ runFetcher chans
+    ms <- replicateM threads . forkChild $ runFetcher queues
 
     p <- getRobots base
     let legal url = domain url == domain base && p (path url)
-    runCrawler CrawlerConfig {..} chans
+    runCrawler CrawlerConfig {..} queues
 
     atomically $ do
         replicateM_ threads $ writeTBQueue fetcherQueue StopFetching

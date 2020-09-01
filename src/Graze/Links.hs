@@ -57,10 +57,10 @@ a = A.string "<a"
     <* A.char '>'
 
 hrefs :: A.Parser [T.Text]
-hrefs = mapMaybe (lookup "href") <$> go
+hrefs = mapMaybe (lookup "href") . ($ []) <$> go
   where
     go = A.takeWhile (/= '<') *>
-        (A.endOfInput $> [] <|> (:) <$> a <*> go <|> A.char '<' *> go)
+        (A.endOfInput $> id <|> (.) . (:) <$> a <*> go <|> A.char '<' *> go)
 
 -- Interface -------------------------------------------------------------------
 

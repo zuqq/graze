@@ -11,6 +11,7 @@ import qualified Data.Attoparsec.Text.Lazy as A
 import qualified Data.ByteString.Lazy      as BL (ByteString)
 import           Data.Char                 (isAscii)
 import           Data.Either               (isLeft, isRight, lefts, rights)
+import           Data.Foldable             (foldl')
 import           Data.Function             ((&))
 import qualified Data.HashSet              as HS (HashSet, fromList, member)
 import           Data.List                 (find)
@@ -154,12 +155,12 @@ group xs = (HS.fromList . lefts $ uas, (ds, as)) : group xs''
   where
     (uas, xs') = span isLeft xs
     (rs, xs'') = span isRight xs'
-    f r (u, v) = case r of
+    f (u, v) r = case r of
         Disallow "" -> (u, v)
         Disallow d  -> (insert (T.unpack d) u, v)
         Allow a     -> (u, insert (T.unpack a) v)
         Extension _ -> (u, v)
-    (ds, as)   = foldr f (empty, empty) . rights $ rs
+    (ds, as)   = foldl' f (empty, empty) . rights $ rs
 
 -- Robots ----------------------------------------------------------------------
 

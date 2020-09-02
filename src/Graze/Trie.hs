@@ -52,11 +52,11 @@ fromList = foldl' (flip insert) empty
 --
 -- prop> (HS.fromList . toList . fromList) (xs :: [String]) == HS.fromList xs
 toList :: Trie a -> [[a]]
-toList = go [] id
+toList = ($ []) . go id id
   where
-    go !acc !path (Trie flag ts) = HM.foldlWithKey'
-        (\acc' k v -> go acc' (path . (k :)) v)
-        (if flag then path [] : acc else acc)
+    go !xs !path (Trie flag ts) = HM.foldlWithKey'
+        (\xs' k v -> go xs' (path . (k :)) v)
+        (if flag then xs . (path [] :) else xs)
         ts
 
 -- | The expression @xs `completes` t@ is @True@ if and only if @t@ contains a

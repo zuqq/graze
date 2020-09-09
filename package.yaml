@@ -1,7 +1,7 @@
-name:    graze
+name: graze
 version: 0.1.0.0
-github:  "zuqq/graze"
-author:  "zuqq <noahheld17@gmail.com>"
+github: "zuqq/graze"
+author: "zuqq"
 
 extra-source-files:
 - README.md
@@ -38,8 +38,8 @@ library:
 
 executables:
   graze-exe:
-    main:                Main.hs
-    source-dirs:         app
+    main: Main.hs
+    source-dirs: app
     ghc-options:
     - -threaded
     - -rtsopts
@@ -49,8 +49,8 @@ executables:
 
 tests:
   doctest:
-    main:                Main.hs
-    source-dirs:         doctest
+    main: Main.hs
+    source-dirs: doctest
     ghc-options:
     - -threaded
     - -rtsopts
@@ -61,8 +61,8 @@ tests:
     - graze
 
   graze-test:
-    main:                Main.hs
-    source-dirs:         test
+    main: Main.hs
+    source-dirs: test
     ghc-options:
     - -threaded
     - -rtsopts

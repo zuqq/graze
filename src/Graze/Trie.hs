@@ -1,5 +1,11 @@
 {-# LANGUAGE BangPatterns #-}
 
+--------------------------------------------------------------------------------
+-- | Module: Graze.Trie
+--
+-- A generic trie implementation for lists of 'Hashable' values.
+--------------------------------------------------------------------------------
+
 module Graze.Trie
     ( Trie
     , completes
@@ -59,7 +65,7 @@ toList = ($ []) . go id id
         (if flag then xs . (path [] :) else xs)
         ts
 
--- | The expression @xs `completes` t@ is @True@ if and only if @t@ contains a
+-- | The expression @xs \`completes\` t@ is @True@ if and only if @t@ contains a
 -- prefix of @xs@.
 --
 -- ==== __Examples__

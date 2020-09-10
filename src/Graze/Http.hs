@@ -4,6 +4,7 @@
 
 module Graze.Http
     ( ContentType (..)
+    , Result
     , get
     , getRobots
     ) where
@@ -34,6 +35,7 @@ import Graze.Robots  (Robots, parseRobots)
 
 -- ContentType -----------------------------------------------------------------
 
+-- | A partial representation of the \"Content-Type\" response header.
 data ContentType
     = TextHtml
     | TextPlain

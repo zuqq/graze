@@ -21,9 +21,10 @@ import Graze.HttpUrl.Internal (HttpUrl (HttpUrl))
 
 -- Path ------------------------------------------------------------------------
 
--- | Split on the first occurrence of @';'@ or @'?'@.
+-- | Split on the first occurrence of @\';\'@ or @\'?\'@.
 --
 -- ==== __Examples__
+--
 -- >>> split "a;b?c"
 -- ("a",";b?c")
 -- >>> split "a;b"
@@ -39,7 +40,7 @@ import Graze.HttpUrl.Internal (HttpUrl (HttpUrl))
 split :: T.Text -> (T.Text, T.Text)
 split = T.span (\w -> w /= ';' && w /= '?')
 
--- | Remove parameters, query, and the last @'/'@-separated part of the path.
+-- | Remove parameters, query, and the last @\'/\'@-separated part of the path.
 --
 -- ==== __Examples__
 --

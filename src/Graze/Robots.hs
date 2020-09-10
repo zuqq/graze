@@ -1,8 +1,26 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ViewPatterns      #-}
 
+--------------------------------------------------------------------------------
+-- | Module: Graze.Robots
+--
+-- This module contains a best-effort parser for the original robots.txt
+-- <https://www.robotstxt.org/norobots-rfc.txt standard>.
+--
+-- The parser deviates from the standard in (at least) the following points:
+--
+--     * User agents are matched exactly, not in a case-insensitive way.
+--     * There is no special handling of @\"/robots.txt\"@.
+--     * There is no special handling of URL-encoded paths.
+--     * Paths aren't required to be absolute.
+--     * If a path is affected by both an \"Allow\" and a \"Disallow\", then the
+--       \"Allow\" wins out; the standard intends the rule that occurs first to
+--       be decisive.
+--------------------------------------------------------------------------------
+
 module Graze.Robots
     ( Robots
+    , UserAgent
     , parseRobots
     ) where
 
@@ -166,6 +184,8 @@ group xs = (HS.fromList . lefts $ uas, (ds, as)) : group xs''
 
 type Robots = T.Text -> Bool
 
+-- | The expression @parseRobots ua s@ is a predicate that reflects the
+-- robots.txt file @s@ as it applies to @ua@.
 parseRobots :: UserAgent -> BL.ByteString -> Robots
 parseRobots ua s (T.unpack -> x) = not (x `completes` ds) || x `completes` as
   where

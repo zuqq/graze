@@ -45,14 +45,14 @@ process s xs = done $ foldl' step (Triple s 0 id) xs
 data CrawlerConfig = CrawlerConfig
     { base  :: !HttpUrl            -- ^ Base URL.
     , depth :: !Int                -- ^ Depth of the search.
-    , legal :: !(HttpUrl -> Bool)  -- ^ Predicate for selecting URLs to crawl.
+    , legal :: !(HttpUrl -> Bool)  -- ^ Predicate that selects URLs to crawl.
     }
 
 -- CrawlerState ----------------------------------------------------------------
 
 data CrawlerState = CrawlerState
-    !(HS.HashSet HttpUrl)
-    !Int
+    !(HS.HashSet HttpUrl)  -- ^ Seen URLs.
+    !Int                   -- ^ Number of open jobs.
 
 seen :: Lens' CrawlerState (HS.HashSet HttpUrl)
 seen p (CrawlerState s i) = fmap (`CrawlerState` i) (p s)

@@ -26,9 +26,11 @@ data HttpUrl = HttpUrl
     }
     deriving (Read, Show)
 
+-- | Ignores 'scheme'.
 instance Eq HttpUrl where
     x == y = (domain x, path x) == (domain y, path y)
 
+-- | Ignores 'scheme'.
 instance Hashable HttpUrl where
     hashWithSalt salt x = hashWithSalt salt (domain x <> path x)
 
@@ -45,7 +47,7 @@ instance ToJSON HttpUrl where
     toJSON     = toJSON . serializeUrl
     toEncoding = toEncoding . serializeUrl
 
--- | Map an 'HttpUrl' to the base16-encoded SHA-1 digest of its serialization.
+-- | Map an 'HttpUrl' to the Base16-encoded SHA-1 digest of its serialization.
 --
 -- ==== __Examples__
 -- >>> hashUrl $ HttpUrl "http:" "//www.example.com" "/"

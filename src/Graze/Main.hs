@@ -1,6 +1,26 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 
+--------------------------------------------------------------------------------
+-- | Module: Graze.Main
+--
+-- This module ties together the different components of the system.
+--
+-- Concurrency is achieved through the creation of multiple threads that
+-- communicate through queues. The main thread spawns
+--
+--     * a logger thread,
+--     * a writer thread,
+--     * and 'threads' fetcher threads.
+--
+-- The fetcher threads retrieve jobs from a shared job queue. A unit of work for
+-- a fetcher thread consists of downloading a page and parsing it; the fetcher
+-- thread then passes the result back to the main thread, where the page is
+-- entered into the set of visited pages and new jobs are created from its
+-- outgoing links. The main thread also dispatches to the writer thread, which
+-- writes the page and its metadata to the filesystem.
+--------------------------------------------------------------------------------
+
 module Graze.Main
     ( Config (..)
     , runMain

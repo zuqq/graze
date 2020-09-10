@@ -67,8 +67,8 @@ type Crawler a = StateT CrawlerState IO a
 evalCrawler :: Crawler a -> CrawlerState -> IO a
 evalCrawler = evalStateT
 
-defaultCrawler :: (HttpUrl -> Bool) -> Queues -> Crawler ()
-defaultCrawler legal Queues {..} = loop
+crawler :: (HttpUrl -> Bool) -> Queues -> Crawler ()
+crawler legal Queues {..} = loop
   where
     loop = do
         (liftIO . atomically . readTBQueue $ resultQueue) >>= \case
@@ -86,8 +86,5 @@ defaultCrawler legal Queues {..} = loop
 
 runCrawler :: CrawlerConfig -> Queues -> IO ()
 runCrawler CrawlerConfig {..} queues = do
-    liftIO . atomically . writeTQueue (fetcherQueue queues) $
-        Fetch (Job base base depth)
-    evalCrawler
-        (defaultCrawler legal queues)
-        (CrawlerState (HS.singleton base) 1)
+    atomically . writeTQueue (fetcherQueue queues) $ Fetch (Job base base depth)
+    evalCrawler (crawler legal queues) (CrawlerState (HS.singleton base) 1)

@@ -43,7 +43,7 @@ data FetcherCommand
 -- | The result of a page visit that a fetcher passes back to the main thread.
 data Result
     = Failure
-    | Success !Job ![HttpUrl] !BL.ByteString
+    | Success !Job ![HttpUrl]
 
 -- | Metadata for a visited page.
 data Record = Record
@@ -70,8 +70,8 @@ data LoggerCommand
 
 -- | Queues that the different threads use to communicate.
 data Queues = Queues
-    { fetcherQueue :: TBQueue FetcherCommand
+    { fetcherQueue :: TQueue FetcherCommand
     , writerQueue  :: TBQueue WriterCommand
     , loggerQueue  :: TBQueue LoggerCommand
-    , resultQueue  :: TQueue Result
+    , resultQueue  :: TBQueue Result
     }

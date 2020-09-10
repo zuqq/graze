@@ -8,8 +8,8 @@ module Graze.Fetcher
     ) where
 
 import Control.Concurrent.STM         (atomically)
-import Control.Concurrent.STM.TQueue  (writeTQueue)
-import Control.Concurrent.STM.TBQueue (readTBQueue, writeTBQueue)
+import Control.Concurrent.STM.TQueue  (readTQueue)
+import Control.Concurrent.STM.TBQueue (writeTBQueue)
 import Control.Exception              (try)
 
 import Network.HTTP.Client (HttpException)
@@ -23,18 +23,20 @@ import Graze.Types
 runFetcher :: Queues -> IO ()
 runFetcher Queues {..} = loop
   where
-    loop = (atomically . readTBQueue $ fetcherQueue) >>= \case
+    loop = (atomically . readTQueue $ fetcherQueue) >>= \case
         StopFetching         -> return ()
         Fetch job @ Job {..} -> do
             try (get url) >>= \case
                 Left (_ :: HttpException) -> atomically $
-                    writeTQueue resultQueue Failure
+                    writeTBQueue resultQueue Failure
                 Right (contentType, body) -> do
                     let links = case contentType of
                             TextHtml -> parseLinks url body
                             _        -> []
-                    atomically . writeTQueue resultQueue $
-                        Success job links body
+                    atomically . writeTBQueue writerQueue $
+                        Write (Record origin url links) body
                     atomically . writeTBQueue loggerQueue $
                         Log ("Got " <> serializeUrl url)
+                    atomically . writeTBQueue resultQueue $
+                        Success job links
             loop

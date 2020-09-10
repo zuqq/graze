@@ -7,10 +7,10 @@ module Graze.Crawler
     ) where
 
 import Control.Concurrent.STM           (atomically)
-import Control.Concurrent.STM.TQueue    (readTQueue)
-import Control.Concurrent.STM.TBQueue   (TBQueue, writeTBQueue)
+import Control.Concurrent.STM.TQueue    (writeTQueue)
+import Control.Concurrent.STM.TBQueue   (readTBQueue)
 import Control.Monad                    (unless)
-import Control.Monad.IO.Class           (MonadIO (liftIO))
+import Control.Monad.IO.Class           (liftIO)
 import Control.Monad.Trans.State.Strict (StateT, evalStateT)
 import Data.Foldable                    (foldl', traverse_)
 
@@ -67,31 +67,27 @@ type Crawler a = StateT CrawlerState IO a
 evalCrawler :: Crawler a -> CrawlerState -> IO a
 evalCrawler = evalStateT
 
-writeTo :: MonadIO m => TBQueue a -> a -> m ()
-writeTo queue = liftIO . atomically . writeTBQueue queue
-
 defaultCrawler :: (HttpUrl -> Bool) -> Queues -> Crawler ()
 defaultCrawler legal Queues {..} = loop
   where
     loop = do
-        (liftIO . atomically . readTQueue $ resultQueue) >>= \case
-            Failure                     -> return ()
-            Success Job {..} links body -> do
-                writeTo writerQueue $ Write (Record origin url links) body
-                unless (depth <= 0) $ do
-                    s <- use seen
-                    let (s', i, links') = process s . filter legal $ links
-                    traverse_ (writeTo fetcherQueue)
-                        [Fetch (Job url link (depth - 1)) | link <- links']
-                    seen .= s'
-                    open += i
+        (liftIO . atomically . readTBQueue $ resultQueue) >>= \case
+            Failure                -> return ()
+            Success Job {..} links -> unless (depth <= 0) $ do
+                s <- use seen
+                let (s', i, links') = process s . filter legal $ links
+                traverse_ (liftIO . atomically . writeTQueue fetcherQueue)
+                    [Fetch (Job url link (depth - 1)) | link <- links']
+                seen .= s'
+                open += i
         open -= 1
         n <- use open
         unless (n <= 0) loop
 
 runCrawler :: CrawlerConfig -> Queues -> IO ()
 runCrawler CrawlerConfig {..} queues = do
-    writeTo (fetcherQueue queues) $ Fetch (Job base base depth)
+    liftIO . atomically . writeTQueue (fetcherQueue queues) $
+        Fetch (Job base base depth)
     evalCrawler
         (defaultCrawler legal queues)
         (CrawlerState (HS.singleton base) 1)

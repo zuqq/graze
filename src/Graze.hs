@@ -17,8 +17,8 @@
 -- a fetcher thread consists of downloading a page and parsing it; the fetcher
 -- thread then passes the result back to the main thread, where the page is
 -- entered into the set of visited pages and new jobs are created from its
--- outgoing links. The main thread also dispatches to the writer thread, which
--- writes the page and its metadata to the filesystem.
+-- outgoing links. The fetcher thread also dispatches to the writer thread,
+-- which writes the page and its metadata to the filesystem.
 --------------------------------------------------------------------------------
 
 module Graze
@@ -28,7 +28,7 @@ module Graze
 
 import           Control.Concurrent             (forkFinally)
 import           Control.Concurrent.STM         (atomically)
-import           Control.Concurrent.STM.TQueue  (newTQueueIO)
+import           Control.Concurrent.STM.TQueue  (newTQueueIO, writeTQueue)
 import           Control.Concurrent.STM.TBQueue (newTBQueueIO, writeTBQueue)
 import           Control.Concurrent.STM.TMVar
 import           Control.Monad                  (replicateM, replicateM_)
@@ -63,10 +63,10 @@ run Config {..} = do
     setGlobalManager tls
 
     let n = fromIntegral threads
-    fetcherQueue <- newTBQueueIO n
+    fetcherQueue <- newTQueueIO
     writerQueue  <- newTBQueueIO n
     loggerQueue  <- newTBQueueIO n
-    resultQueue  <- newTQueueIO
+    resultQueue  <- newTBQueueIO n
 
     let queues = Queues {..}
 
@@ -86,7 +86,7 @@ run Config {..} = do
     runCrawler CrawlerConfig {..} queues
 
     atomically $ do
-        replicateM_ threads $ writeTBQueue fetcherQueue StopFetching
+        replicateM_ threads $ writeTQueue fetcherQueue StopFetching
         writeTBQueue writerQueue StopWriting
         writeTBQueue loggerQueue StopLogging
 

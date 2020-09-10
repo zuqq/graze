@@ -2,6 +2,12 @@
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
+--------------------------------------------------------------------------------
+-- | Module: Graze.Http
+--
+-- Functions for making GET requests, based on "Network.HTTP.Client".
+--------------------------------------------------------------------------------
+
 module Graze.Http
     ( ContentType (..)
     , Result
@@ -33,6 +39,7 @@ import Network.HTTP.Client.TLS
 import Graze.HttpUrl (HttpUrl (..), serializeUrl)
 import Graze.Robots  (Robots, parseRobots)
 
+
 -- ContentType -----------------------------------------------------------------
 
 -- | A partial representation of the \"Content-Type\" response header.
@@ -49,8 +56,12 @@ fromByteString s = case CI.mk (BC.takeWhile (/= ';') s) of
 
 -- get -------------------------------------------------------------------------
 
+-- | The 'ContentType' of the response and its body.
 type Result = (ContentType, BL.ByteString)
 
+-- | Sends a GET request for the given URL and returns the result.
+--
+-- Throws 'HttpException' if the URL is invalid or the request is unsuccessful.
 get :: HttpUrl -> IO Result
 get url = do
     request  <- parseUrlThrow . T.unpack . serializeUrl $ url
@@ -62,6 +73,10 @@ get url = do
 
 -- getRobots -------------------------------------------------------------------
 
+-- | Sends a GET request for the robots.txt file of the given URL's host and
+-- returns the parsed result.
+--
+-- Throws 'HttpException' if the URL is invalid or the request is unsuccessful.
 getRobots :: HttpUrl -> IO Robots
 getRobots url = (try (get url') :: IO (Either HttpException Result)) <&> \case
     Right (TextPlain, s) -> parseRobots "graze" s

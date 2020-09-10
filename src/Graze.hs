@@ -7,7 +7,7 @@
 -- This module ties together the different components of the system.
 --
 -- Concurrency is achieved through the creation of multiple threads that
--- communicate through queues. The main thread spawns
+-- use queues to communicate. The main thread spawns
 --
 --     * a logger thread,
 --     * a writer thread,
@@ -46,6 +46,7 @@ import Graze.Types
 import Graze.Writer  (runWriter)
 
 
+-- | Configuration for the main thread.
 data Config = Config
     { base    :: !HttpUrl   -- ^ URL to start at.
     , folder  :: !FilePath  -- ^ Download folder.
@@ -53,6 +54,7 @@ data Config = Config
     , threads :: !Int       -- ^ Number of threads.
     }
 
+-- | Run the main thread.
 run :: Config -> IO ()
 run Config {..} = do
     putStrLn $ "Crawling " <> T.unpack (serializeUrl base)

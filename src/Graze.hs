@@ -2,7 +2,7 @@
 {-# LANGUAGE RecordWildCards   #-}
 
 --------------------------------------------------------------------------------
--- | Module: Graze.Main
+-- | Module: Graze
 --
 -- This module ties together the different components of the system.
 --
@@ -21,9 +21,9 @@
 -- writes the page and its metadata to the filesystem.
 --------------------------------------------------------------------------------
 
-module Graze.Main
+module Graze
     ( Config (..)
-    , runMain
+    , run
     ) where
 
 import           Control.Concurrent             (forkFinally)
@@ -53,8 +53,8 @@ data Config = Config
     , threads :: !Int       -- ^ Number of threads.
     }
 
-runMain :: Config -> IO ()
-runMain Config {..} = do
+run :: Config -> IO ()
+run Config {..} = do
     putStrLn $ "Crawling " <> T.unpack (serializeUrl base)
 
     tls <- newTlsManager

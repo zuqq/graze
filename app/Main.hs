@@ -7,7 +7,7 @@ import qualified Data.Text as T (pack)
 import Options.Applicative
 
 import Graze.HttpUrl (parseUrl)
-import Graze.Main    (Config (Config), runMain)
+import Graze         (Config (Config), run)
 
 
 main :: IO ()
@@ -34,4 +34,4 @@ main = do
                     <> showDefault
                     <> help "Number of threads")
     config <- execParser $ info (parser <**> helper) fullDesc
-    runMain config
+    run config

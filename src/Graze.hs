@@ -64,10 +64,12 @@ run Config {..} = do
 
     let n = fromIntegral threads
     fetcherQueue <- newTQueueIO
+    -- These queues are bounded in order to provide sufficient backpressure.
+    -- If any of them is full, all fetcher threads block. This gives the other
+    -- threads a chance to catch up.
     writerQueue  <- newTBQueueIO n
     loggerQueue  <- newTBQueueIO n
     resultQueue  <- newTBQueueIO n
-
     let queues = Queues {..}
 
     let forkChild x = do
@@ -82,14 +84,17 @@ run Config {..} = do
     ms <- replicateM threads . forkChild $ runFetcher queues
 
     p <- getRobots base
+    -- Note that we only follow links that don't leave the domain.
     let legal url = domain url == domain base && p (path url)
     runCrawler CrawlerConfig {..} queues
 
+    -- Tell the threads to shut down.
     atomically $ do
         replicateM_ threads $ writeTQueue fetcherQueue StopFetching
         writeTBQueue writerQueue StopWriting
         writeTBQueue loggerQueue StopLogging
 
+    -- Wait for the threads to shut down.
     traverse_ (atomically . takeTMVar) (lm : wm : ms)
 
     putStrLn "Done"

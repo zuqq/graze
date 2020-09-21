@@ -20,16 +20,13 @@ import Graze.Types   (Queues (..), Record (..), WriterCommand (..))
 
 runWriter :: FilePath -> Queues -> IO ()
 runWriter folder Queues {..} = do
-    createDirectoryIfMissing True json
-    createDirectoryIfMissing True bytes
+    createDirectoryIfMissing True (folder </> "records")
     loop
   where
-    json  = folder </> "json"
-    bytes = folder </> "bytes"
     loop  = (atomically . readTBQueue $ writerQueue) >>= \case
         StopWriting       -> return ()
         Write record body -> do
             let name = hashUrl . url $ record
-            BL.writeFile (json </> name <.> "json") (encode record)
-            BL.writeFile (bytes </> name) body
+            BL.writeFile (folder </> "records" </> name <.> "json") (encode record)
+            BL.writeFile (folder </> name) body
             loop

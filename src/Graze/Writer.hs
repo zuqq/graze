@@ -8,10 +8,9 @@ module Graze.Writer
 
 import           Control.Concurrent.STM         (atomically)
 import           Control.Concurrent.STM.TBQueue (readTBQueue)
-import qualified Data.ByteString.Lazy           as BL
+import qualified Data.ByteString.Lazy           as BL (writeFile)
 import           System.Directory               (createDirectoryIfMissing)
-import           System.FilePath                ((</>))
-import           System.IO                      (IOMode (WriteMode), withBinaryFile)
+import           System.FilePath                ((<.>), (</>))
 
 import Data.Aeson (encode)
 
@@ -21,14 +20,16 @@ import Graze.Types   (Queues (..), Record (..), WriterCommand (..))
 
 runWriter :: FilePath -> Queues -> IO ()
 runWriter folder Queues {..} = do
-    let objects = folder </> "objects"
-    createDirectoryIfMissing True objects
-    withBinaryFile (folder </> "index") WriteMode $ \index -> do
-        let loop = (atomically . readTBQueue $ writerQueue) >>= \case
-                StopWriting       -> return ()
-                Write record body -> do
-                    BL.writeFile (objects </> (hashUrl . url) record) body
-                    BL.hPut index (encode record)
-                    BL.hPut index (BL.singleton 0x0a)  -- From 'BL.putStrLn'.
-                    loop
-        loop
+    createDirectoryIfMissing True json
+    createDirectoryIfMissing True bytes
+    loop
+  where
+    json  = folder </> "json"
+    bytes = folder </> "bytes"
+    loop  = (atomically . readTBQueue $ writerQueue) >>= \case
+        StopWriting       -> return ()
+        Write record body -> do
+            let name = hashUrl . url $ record
+            BL.writeFile (json </> name <.> "json") (encode record)
+            BL.writeFile (bytes </> name) body
+            loop

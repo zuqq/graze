@@ -10,7 +10,7 @@ import           Control.Concurrent.STM.TBQueue (readTBQueue)
 import qualified Data.Text                      as T (unpack)
 import           System.IO                      (hPutStrLn, stderr)
 
-import Graze.Types (Queues (..), LoggerCommand (..))
+import Graze.Types (LoggerCommand (..), Queues (..))
 
 
 runLogger :: Queues -> IO ()

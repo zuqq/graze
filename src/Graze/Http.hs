@@ -29,6 +29,7 @@ import Network.HTTP.Client
     ( HttpException
     , httpLbs
     , parseUrlThrow
+    , requestHeaders
     , responseBody
     , responseHeaders
     )
@@ -66,7 +67,9 @@ get :: HttpUrl -> IO Result
 get url = do
     request  <- parseUrlThrow . T.unpack . serializeUrl $ url
     manager  <- getGlobalManager
-    response <- httpLbs request manager
+    response <- httpLbs
+        request {requestHeaders = [("User-Agent", "graze/0.1.0.0")]}
+        manager
     let contentType = response & responseHeaders & lookup "Content-Type"
             >>= fromByteString & fromMaybe Other
     return (contentType, responseBody response)

@@ -24,10 +24,10 @@ import Graze.Types
 
 -- process ---------------------------------------------------------------------
 
--- Auxiliary triple type that is strict in every argument.
+-- | An auxiliary triple type that is strict in every argument.
 data Triple a b c = Triple !a !b !c
 
--- Process a list of links in a single pass. The third component of the
+-- | Process a list of links in a single pass. The third component of the
 -- accumulator is a difference list; it is converted to an ordinary list in the
 -- last step.
 process
@@ -54,7 +54,7 @@ data CrawlerConfig = CrawlerConfig
 
 -- CrawlerState ----------------------------------------------------------------
 
--- Apart from the set of seen URLs, the main thread also maintains a counter for
+-- | Apart from the set of seen URLs, the main thread also maintains a counter for
 -- the number of open (i.e., uncompleted) jobs. If this counter reaches zero,
 -- the program exits.
 data CrawlerState = CrawlerState

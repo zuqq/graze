@@ -7,6 +7,15 @@
 -- This module contains a best-effort parser for the original robots.txt
 -- <https://www.robotstxt.org/norobots-rfc.txt standard>.
 --
+-- = Implementation
+--
+-- The parser has two stages; it first parsese the individual lines and folds
+-- them into groups. The line parser is a straightforward translation of the
+-- grammar involving a handful of predicates for admissible characters,
+-- primitives from "Data.Attoparse.Text.Lazy", and the 'Applicative' class.
+--
+-- = Deficiencies
+--
 -- The parser deviates from the standard in (at least) the following points:
 --
 --     * User agents are matched exactly, not in a case-insensitive way.

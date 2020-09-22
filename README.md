@@ -40,6 +40,7 @@ Available options:
   -h,--help                Show this help text
 ```
 
+
 ## Storage model
 
 The example above creates the following file tree:

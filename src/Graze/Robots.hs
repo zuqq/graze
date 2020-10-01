@@ -191,10 +191,12 @@ group xs = (HS.fromList . lefts $ uas, (ds, as)) : group xs''
 
 -- Robots ----------------------------------------------------------------------
 
+-- | If we fix our user agent, a robots.txt file amounts to a predicate that is
+-- @True@ for paths that we are allowed to crawl and @False@ for the others.
 type Robots = T.Text -> Bool
 
--- | The expression @parseRobots ua s@ is a predicate that reflects the
--- robots.txt file @s@ as it applies to @ua@.
+-- | @parseRobots ua s@ is the predicate corresponding to the robots.txt file
+-- @s@, with respect to the user agent @ua@.
 parseRobots :: UserAgent -> BL.ByteString -> Robots
 parseRobots ua s (T.unpack -> x) = not (x `completes` ds) || x `completes` as
   where

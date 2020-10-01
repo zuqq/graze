@@ -23,7 +23,7 @@ runWriter folder Queues {..} = do
     createDirectoryIfMissing True (folder </> "records")
     loop
   where
-    loop  = (atomically . readTBQueue $ writerQueue) >>= \case
+    loop = (atomically . readTBQueue $ writerQueue) >>= \case
         StopWriting       -> return ()
         Write record body -> do
             let name = hashUrl . url $ record

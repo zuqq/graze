@@ -2,7 +2,7 @@
 
 Graze is a concurrent web crawler leveraging GHC's lightweight threads,
 with an attoparsec-based parser for `robots.txt` files and a trie implementation
-for efficiently applying the rules. Please note that it does not employ any kind
+for efficiently applying the rules. Please note that it does not have any kind
 of rate limiting.
 
 
@@ -30,6 +30,7 @@ Done
 **Help page:**
 
 ```
+$ stack run -- --help
 Usage: graze-exe URL FOLDER [--depth d] [--threads n]
 
 Available options:

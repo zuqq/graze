@@ -23,13 +23,12 @@ import qualified Data.HashMap.Strict as HM
 -- >>> import qualified Data.HashSet as HS (fromList)
 
 
--- | A trie @t :: Trie a@ stores items @xs :: [a]@ as paths in a tree emenating
--- from the root, with elements of @xs@ becoming labels of the edges on the
--- path. Every node carries a boolean flag that indicates whether it marks the
--- end of an item.
+-- | A trie @t :: Trie a@ stores lists @xs :: [a]@ as paths in a tree, where
+-- the elements of @xs@ label the edges on the path. Every node carries a
+-- boolean flag that indicates whether it marks the end of a list.
 --
--- A trie lets us efficiently determine whether one of the items it stores is a
--- prefix of a given value @ys :: [a]@.
+-- A trie lets us efficiently determine whether one of the lists it stores is a
+-- prefix of a given list @ys :: [a]@.
 data Trie a = Trie !Bool !(HM.HashMap a (Trie a))
 
 -- | The empty trie.
@@ -65,8 +64,7 @@ toList = ($ []) . go id id
         (if flag then xs . (path [] :) else xs)
         ts
 
--- | The expression @xs \`completes\` t@ is @True@ if and only if @t@ contains a
--- prefix of @xs@.
+-- | @xs \`completes\` t@ is @True@ if and only if @t@ contains a prefix of @xs@.
 --
 -- ==== __Examples__
 --

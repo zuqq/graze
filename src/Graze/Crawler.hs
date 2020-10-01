@@ -61,9 +61,11 @@ data CrawlerState = CrawlerState
     !(HS.HashSet HttpUrl)  -- ^ Seen URLs.
     !Int                   -- ^ Number of open jobs.
 
+-- | Set of seen URLs.
 seen :: Lens' CrawlerState (HS.HashSet HttpUrl)
 seen p (CrawlerState s i) = fmap (`CrawlerState` i) (p s)
 
+-- | Number of open jobs.
 open :: Lens' CrawlerState Int
 open q (CrawlerState s i) = fmap (s `CrawlerState`) (q i)
 

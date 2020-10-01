@@ -64,9 +64,8 @@ hrefs = mapMaybe (lookup "href") . ($ []) <$> go
 
 -- Interface -------------------------------------------------------------------
 
--- | The expression @links base html@ is a list of the URLs corresponding to the
--- links in the HTML document @html@, with @base@ serving as the base URL for
--- relative links.
+-- | @links base html@ is a list of the URLs corresponding to the links in the
+-- HTML document @html@, with @base@ serving as the base URL for relative links.
 parseLinks :: HttpUrl -> BL.ByteString -> [HttpUrl]
 parseLinks base = rights
     . fmap (parseRelUrl base)

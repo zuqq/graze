@@ -15,21 +15,21 @@ main = do
     let parser = Config
             <$> argument
                 (eitherReader $ parseUrl . T.pack)
-                (metavar "URL" <> help "URL to start at")
+                (metavar "<URL>" <> help "URL to start at")
             <*> argument
                 str
-                (metavar "FOLDER" <> help "Download folder")
+                (metavar "<folder>" <> help "Download folder")
             <*> option
                 auto
                 (long "depth"
-                    <> metavar "d"
+                    <> metavar "<depth>"
                     <> value 3
                     <> showDefault
                     <> help "Depth of the search")
             <*> option
                 auto
                 (long "threads"
-                    <> metavar "n"
+                    <> metavar "<threads>"
                     <> value 10
                     <> showDefault
                     <> help "Number of threads")

@@ -31,13 +31,13 @@ Done
 
 ```
 $ stack run -- --help
-Usage: graze-exe URL FOLDER [--depth d] [--threads n]
+Usage: graze-exe <URL> <folder> [--depth <depth>] [--threads <threads>]
 
 Available options:
-  URL                      URL to start at
-  FOLDER                   Download folder
-  --depth d                Depth of the search (default: 3)
-  --threads n              Number of threads (default: 10)
+  <URL>                    URL to start at
+  <folder>                 Download folder
+  --depth <depth>          Depth of the search (default: 3)
+  --threads <threads>      Number of threads (default: 10)
   -h,--help                Show this help text
 ```
 

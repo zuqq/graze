@@ -31,9 +31,9 @@ data Triple a b c = Triple !a !b !c
 -- accumulator is a difference list; it is converted to an ordinary list in the
 -- last step.
 process
-    :: HS.HashSet HttpUrl    -- Seen URLs before.
-    -> [HttpUrl]             -- Links.
-    -> ( HS.HashSet HttpUrl  -- Seen URLs after.
+    :: HS.HashSet HttpUrl    -- Set of seen URLs before.
+    -> [HttpUrl]             -- List of links.
+    -> ( HS.HashSet HttpUrl  -- Set of seen URLs after.
        , Int                 -- Number of new URLs.
        , [HttpUrl]           -- List of new URLs.
        )
@@ -58,7 +58,7 @@ data CrawlerConfig = CrawlerConfig
 -- the number of open (i.e., uncompleted) jobs. If this counter reaches zero,
 -- the program exits.
 data CrawlerState = CrawlerState
-    !(HS.HashSet HttpUrl)  -- ^ Seen URLs.
+    !(HS.HashSet HttpUrl)  -- ^ Set of seen URLs.
     !Int                   -- ^ Number of open jobs.
 
 -- | Set of seen URLs.

@@ -12,15 +12,11 @@ module Graze.Trie
     , empty
     , fromList
     , insert
-    , toList
     ) where
 
 import           Data.Foldable       (foldl')
 import           Data.Hashable       (Hashable)
 import qualified Data.HashMap.Strict as HM
-
--- $setup
--- >>> import qualified Data.HashSet as HS (fromList)
 
 
 -- | A trie @t :: Trie a@ stores lists @xs :: [a]@ as paths in a tree, where
@@ -50,19 +46,6 @@ insert (x : xs) (Trie flag ts) = Trie flag ts'
 -- | Build a trie from a list of items.
 fromList :: (Eq a, Hashable a) => [[a]] -> Trie a
 fromList = foldl' (flip insert) empty
-
--- | Build a list of items from a trie.
---
--- ==== __Properties__
---
--- prop> (HS.fromList . toList . fromList) (xs :: [String]) == HS.fromList xs
-toList :: Trie a -> [[a]]
-toList = ($ []) . go id id
-  where
-    go !xs !path (Trie flag ts) = HM.foldlWithKey'
-        (\xs' k v -> go xs' (path . (k :)) v)
-        (if flag then xs . (path [] :) else xs)
-        ts
 
 -- | @xs \`completes\` t@ is @True@ if and only if @t@ contains a prefix of @xs@.
 --

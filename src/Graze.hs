@@ -48,10 +48,10 @@ import Graze.Writer  (runWriter)
 
 -- | Configuration for the main thread.
 data Config = Config
-    { base    :: !HttpUrl   -- ^ URL to start at.
-    , folder  :: !FilePath  -- ^ Download folder.
-    , depth   :: !Int       -- ^ Depth of the search.
-    , threads :: !Int       -- ^ Number of threads.
+    { base    :: HttpUrl   -- ^ URL to start at.
+    , folder  :: FilePath  -- ^ Download folder.
+    , depth   :: Int       -- ^ Depth of the search.
+    , threads :: Int       -- ^ Number of threads.
     }
 
 -- | Run the main thread.

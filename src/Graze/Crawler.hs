@@ -47,9 +47,9 @@ process s xs = done $ foldl' step (Triple s 0 id) xs
 -- CrawlerConfig ---------------------------------------------------------------
 
 data CrawlerConfig = CrawlerConfig
-    { base  :: !HttpUrl            -- ^ Base URL.
-    , depth :: !Int                -- ^ Depth of the search.
-    , legal :: !(HttpUrl -> Bool)  -- ^ Predicate that selects URLs to crawl.
+    { base  :: HttpUrl          -- ^ Base URL.
+    , depth :: Int              -- ^ Depth of the search.
+    , legal :: HttpUrl -> Bool  -- ^ Predicate that selects URLs to crawl.
     }
 
 -- CrawlerState ----------------------------------------------------------------

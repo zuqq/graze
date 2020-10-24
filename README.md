@@ -1,9 +1,10 @@
 # graze
 
-Graze is a concurrent web crawler leveraging GHC's lightweight threads,
-with an attoparsec-based parser for `robots.txt` files and a trie implementation
-for efficiently applying the rules. Please note that it does not have any kind
-of rate limiting.
+A web crawler, using a pool of lightweight threads for concurrent crawling. It
+features a parser for `robots.txt` files and a specialized data structure that
+allows efficient querying of the resulting rules. Because existing solutions
+seem to be `String`-based or dependency-heavy, it also comes with lenient
+parsers for HTTP URLs and HTML links.
 
 
 ## Installation
@@ -16,7 +17,7 @@ Follow the usual [stack](https://www.haskellstack.org) workflow.
 **Example:**
 
 ```
-$ stack run -- https://www.iana.org download --depth=1 --threads=4
+$ stack run -- https://www.iana.org download --depth=1
 Crawling https://www.iana.org/
 Got https://www.iana.org/
 Got https://www.iana.org/domains
@@ -61,6 +62,17 @@ download
 
 For every visited URL we store two things: a file containing the response body
 and a JSON-encoded record that contains information about the corresponding node
-in the crawl graph. The file names derive from the SHA-1 digest of the URL; for
-example, `13f601567450c419c77c2771594753b6dc2add5e` corresponds to
-`https://www.iana.org/protocols/apply`.
+in the crawl graph.
+
+The file names are derived from the URL's SHA-1 digest; for example,
+associated with
+
+```
+https://www.iana.org/protocols/apply
+```
+
+becomes
+
+```
+13f601567450c419c77c2771594753b6dc2add5e
+```

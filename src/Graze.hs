@@ -88,13 +88,11 @@ run Config {..} = do
     let legal url = domain url == domain base && p (path url)
     runCrawler CrawlerConfig {..} queues
 
-    -- Tell the threads to shut down.
     atomically $ do
         replicateM_ threads $ writeTQueue fetcherQueue StopFetching
         writeTBQueue writerQueue StopWriting
         writeTBQueue loggerQueue StopLogging
 
-    -- Wait for the threads to shut down.
     traverse_ (atomically . takeTMVar) (lm : wm : ms)
 
     putStrLn "Done"

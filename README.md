@@ -65,7 +65,6 @@ and a JSON-encoded record that contains information about the corresponding node
 in the crawl graph.
 
 The file names are derived from the URL's SHA-1 digest; for example,
-associated with
 
 ```
 https://www.iana.org/protocols/apply

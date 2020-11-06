@@ -32,7 +32,7 @@ data Triple a b c = Triple !a !b !c
 -- last step.
 process
     :: HS.HashSet HttpUrl    -- Set of seen URLs before.
-    -> [HttpUrl]             -- List of links.
+    -> [HttpUrl]             -- List of URLs to process.
     -> ( HS.HashSet HttpUrl  -- Set of seen URLs after.
        , Int                 -- Number of new URLs.
        , [HttpUrl]           -- List of new URLs.

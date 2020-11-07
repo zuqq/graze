@@ -6,8 +6,7 @@ import qualified Data.Text as T (pack)
 
 import Options.Applicative
 
-import Graze.HttpUrl (parseUrl)
-import Graze         (Config (Config), run)
+import Graze (Config (Config), parseUrl, run)
 
 
 main :: IO ()

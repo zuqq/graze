@@ -1,5 +1,7 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards   #-}
+{-# LANGUAGE LambdaCase          #-}
+{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE RecordWildCards     #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 --------------------------------------------------------------------------------
 -- | Module: Graze
@@ -31,11 +33,13 @@ import           Control.Concurrent             (forkFinally)
 import           Control.Concurrent.STM         (atomically)
 import           Control.Concurrent.STM.TQueue  (newTQueueIO, writeTQueue)
 import           Control.Concurrent.STM.TBQueue (newTBQueueIO, writeTBQueue)
-import           Control.Concurrent.STM.TMVar
+import           Control.Concurrent.STM.TMVar   (TMVar, newEmptyTMVar, putTMVar, takeTMVar)
+import           Control.Exception              (try)
 import           Control.Monad                  (replicateM, replicateM_)
 import           Data.Foldable                  (traverse_)
 import qualified Data.Text                      as T (unpack)
 
+import Network.HTTP.Client     (HttpException)
 import Network.HTTP.Client.TLS (newTlsManager, setGlobalManager)
 
 import Graze.Crawler (CrawlerConfig (..), runCrawler)
@@ -85,9 +89,9 @@ run Config {..} = do
 
     ms <- replicateM threads . forkChild $ runFetcher queues
 
-    p <- getRobots base
+    legal' <- either (\(_ :: HttpException) -> const True) id <$> (try . getRobots $ base)
     -- Note that we only follow links that don't leave the domain.
-    let legal url = domain url == domain base && p (path url)
+    let legal url = domain url == domain base && legal' (path url)
     runCrawler CrawlerConfig {..} queues
 
     atomically $ do

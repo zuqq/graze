@@ -31,7 +31,7 @@ data Trie a = Trie !Bool !(HM.HashMap a (Trie a))
 --
 -- ==== __Properties__
 --
--- prop> map (`completes` empty) (xs :: [String]) == map (const False) xs
+-- prop> fmap (`completes` empty) (xs :: [String]) == fmap (const False) xs
 empty :: Trie a
 empty = Trie False HM.empty
 
@@ -68,7 +68,7 @@ fromList = foldl' (flip insert) empty
 --
 -- ==== __Properties__
 --
--- prop> map (`completes` fromList xs) (xs :: [String]) == map (const True) xs
+-- prop> fmap (`completes` fromList xs) (xs :: [String]) == fmap (const True) xs
 completes :: (Eq a, Hashable a) => [a] -> Trie a -> Bool
 completes _ (Trie True _)      = True
 completes [] _                 = False

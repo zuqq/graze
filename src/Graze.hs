@@ -47,6 +47,12 @@ import Graze.Types
 import Graze.Writer  (runWriter)
 
 
+forkChild :: IO a -> IO (TMVar ())
+forkChild x = do
+    m <- atomically newEmptyTMVar
+    _ <- forkFinally x (\_ -> atomically $ putTMVar m ())
+    return m
+
 -- | Configuration for the main thread.
 data Config = Config
     { base    :: HttpUrl   -- ^ URL to start at.
@@ -72,11 +78,6 @@ run Config {..} = do
     loggerQueue  <- newTBQueueIO n
     resultQueue  <- newTBQueueIO n
     let queues = Queues {..}
-
-    let forkChild x = do
-            m <- atomically newEmptyTMVar
-            _ <- forkFinally x (\_ -> atomically $ putTMVar m ())
-            return m
 
     lm <- forkChild $ runLogger queues
 

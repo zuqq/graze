@@ -14,8 +14,8 @@ import           System.FilePath                ((<.>), (</>))
 
 import Data.Aeson (encode)
 
-import Graze.HttpUrl (hashUrl)
-import Graze.Types   (Queues (..), Record (..), WriterCommand (..))
+import Graze.Url   (hashUrl)
+import Graze.Types (Queues (..), Record (..), WriterCommand (..))
 
 
 runWriter :: FilePath -> Queues -> IO ()

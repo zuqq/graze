@@ -1,4 +1,3 @@
-{-# LANGUAGE LambdaCase          #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE RecordWildCards     #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -36,19 +35,23 @@ import           Control.Concurrent.STM.TBQueue (newTBQueueIO, writeTBQueue)
 import           Control.Concurrent.STM.TMVar   (TMVar, newEmptyTMVar, putTMVar, takeTMVar)
 import           Control.Exception              (try)
 import           Control.Monad                  (replicateM, replicateM_)
+import qualified Data.ByteString.Lazy           as BL (toStrict)
 import           Data.Foldable                  (traverse_)
 import qualified Data.Text                      as T (unpack)
+import qualified Data.Text.Encoding             as T (decodeUtf8')
 
 import Network.HTTP.Client     (HttpException)
 import Network.HTTP.Client.TLS (newTlsManager, setGlobalManager)
 
-import Graze.Crawler (CrawlerConfig (..), runCrawler)
-import Graze.Fetcher (runFetcher)
-import Graze.Http    (getRobots)
-import Graze.HttpUrl (HttpUrl (..), parseUrl, serializeUrl)
-import Graze.Logger  (runLogger)
-import Graze.Types
-import Graze.Writer  (runWriter)
+import Graze.Crawler    (CrawlerConfig (..), runCrawler)
+import Graze.Fetcher    (runFetcher)
+import Graze.Http       (ContentType (..), Result, get)
+import Graze.Url        (Url (..), serializeUrl)
+import Graze.Url.Parser (parseUrl)
+import Graze.Logger     (runLogger)
+import Graze.Robots     (parseRobots)
+import Graze.Types      (FetcherCommand (..), LoggerCommand (..), Queues (..), WriterCommand (..))
+import Graze.Writer     (runWriter)
 
 
 forkChild :: IO a -> IO (TMVar ())
@@ -59,7 +62,7 @@ forkChild x = do
 
 -- | Configuration for the main thread.
 data Config = Config
-    { base    :: HttpUrl   -- ^ URL to start at.
+    { base    :: Url   -- ^ URL to start at.
     , folder  :: FilePath  -- ^ Download folder.
     , depth   :: Int       -- ^ Depth of the search.
     , threads :: Int       -- ^ Number of threads.
@@ -73,25 +76,27 @@ run Config {..} = do
     tls <- newTlsManager
     setGlobalManager tls
 
-    let n = fromIntegral threads
     fetcherQueue <- newTQueueIO
     -- These queues are bounded in order to provide sufficient backpressure.
     -- If any of them is full, all fetcher threads block. This gives the other
     -- threads a chance to catch up.
+    let n = fromIntegral threads
     writerQueue  <- newTBQueueIO n
     loggerQueue  <- newTBQueueIO n
     resultQueue  <- newTBQueueIO n
     let queues = Queues {..}
 
-    lm <- forkChild $ runLogger queues
+    fetchers <- replicateM threads . forkChild $ runFetcher queues
+    writer   <- forkChild $ runWriter folder queues
+    logger   <- forkChild $ runLogger queues
 
-    wm <- forkChild $ runWriter folder queues
-
-    ms <- replicateM threads . forkChild $ runFetcher queues
-
-    legal' <- either (\(_ :: HttpException) -> const True) id <$> (try . getRobots $ base)
-    -- Note that we only follow links that don't leave the domain.
-    let legal url = domain url == domain base && legal' (path url)
+    response :: Either HttpException Result <- try $ get base {path = "/robots.txt"}
+    let robots  = case response of
+            Right (TextPlain, bs) -> case T.decodeUtf8' . BL.toStrict $ bs of
+                Left _  -> const True
+                Right s -> parseRobots "graze"  s
+            _                     -> const True
+        legal x = domain x == domain base && robots (path x)
     runCrawler CrawlerConfig {..} queues
 
     atomically $ do
@@ -99,6 +104,8 @@ run Config {..} = do
         writeTBQueue writerQueue StopWriting
         writeTBQueue loggerQueue StopLogging
 
-    traverse_ (atomically . takeTMVar) (lm : wm : ms)
+    traverse_ (atomically . takeTMVar) fetchers
+    atomically . takeTMVar $ writer
+    atomically . takeTMVar $ logger
 
     putStrLn "Done"

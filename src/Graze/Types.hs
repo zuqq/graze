@@ -23,15 +23,15 @@ import           GHC.Generics                   (Generic)
 
 import Data.Aeson (ToJSON (..), defaultOptions, genericToEncoding)
 
-import Graze.HttpUrl (HttpUrl)
+import Graze.Url (Url)
 
 
 -- Messages --------------------------------------------------------------------
 
 -- | A page to visit.
 data Job = Job
-    { origin :: !HttpUrl
-    , url    :: !HttpUrl
+    { origin :: !Url
+    , url    :: !Url
     , depth  :: !Int      -- ^ Remaining depth of the search.
     }
 
@@ -43,13 +43,13 @@ data FetcherCommand
 -- | The result of a page visit that a fetcher passes back to the main thread.
 data Result
     = Failure
-    | Success !Job ![HttpUrl]
+    | Success !Job ![Url]
 
 -- | Metadata for a visited page.
 data Record = Record
-    { origin :: !HttpUrl
-    , url    :: !HttpUrl
-    , links  :: ![HttpUrl]
+    { origin :: !Url
+    , url    :: !Url
+    , links  :: ![Url]
     }
     deriving Generic
 

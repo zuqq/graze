@@ -4,18 +4,16 @@ module Graze.Links
     ( parseLinks
     ) where
 
-import           Control.Applicative       ((<|>))
-import qualified Data.Attoparsec.Text.Lazy as A
-import qualified Data.ByteString.Lazy      as BL (ByteString)
-import           Data.Char                 (isSpace)
-import           Data.Either               (fromRight, rights)
-import           Data.Functor              (($>))
-import           Data.Maybe                (mapMaybe)
-import qualified Data.Text                 as T (Text)
-import qualified Data.Text.Lazy.Encoding   as TL (decodeUtf8With)
-import           Data.Text.Encoding.Error  (lenientDecode)
+import           Control.Applicative  ((<|>))
+import qualified Data.Attoparsec.Text as A
+import           Data.Char            (isSpace)
+import           Data.Either          (fromRight, rights)
+import           Data.Functor         (($>))
+import           Data.Maybe           (mapMaybe)
+import qualified Data.Text            as T (Text)
 
-import Graze.HttpUrl (HttpUrl (..), parseRelUrl)
+import Graze.Url        (Url (..))
+import Graze.Url.Parser (parseRelUrl)
 
 
 -- Predicates ------------------------------------------------------------------
@@ -57,19 +55,17 @@ a = A.string "<a"
     <* A.char '>'
 
 hrefs :: A.Parser [T.Text]
-hrefs = mapMaybe (lookup "href") . ($ []) <$> go
+hrefs = mapMaybe (lookup "href") <$> go
   where
     go = A.takeWhile (/= '<') *>
-        (A.endOfInput $> id <|> (.) . (:) <$> a <*> go <|> A.char '<' *> go)
+        (A.endOfInput $> [] <|> (:) <$> a <*> go <|> A.char '<' *> go)
 
 -- Interface -------------------------------------------------------------------
 
 -- | @links base html@ is a list of the URLs corresponding to the links in the
 -- HTML document @html@, with @base@ serving as the base URL for relative links.
-parseLinks :: HttpUrl -> BL.ByteString -> [HttpUrl]
+parseLinks :: Url -> T.Text -> [Url]
 parseLinks base = rights
     . fmap (parseRelUrl base)
     . fromRight []
-    . A.eitherResult
-    . A.parse hrefs
-    . TL.decodeUtf8With lenientDecode
+    . A.parseOnly hrefs

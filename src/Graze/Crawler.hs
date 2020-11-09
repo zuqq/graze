@@ -18,24 +18,45 @@ import qualified Data.HashSet   as HS (HashSet, insert, member, singleton)
 import           Lens.Micro     (Lens')
 import           Lens.Micro.Mtl ((+=), (-=), (.=), use)
 
-import Graze.HttpUrl (HttpUrl)
-import Graze.Types
+import Graze.Url   (Url)
+import Graze.Types (FetcherCommand (..), Job (..), Queues (..), Result (..))
 
+
+-- CrawlerState ----------------------------------------------------------------
+
+-- | Apart from the set of seen URLs, the crawler also maintains a counter for
+-- the number of open jobs. When this counter reaches zero, the crawler exits.
+data CrawlerState = CrawlerState
+    !(HS.HashSet Url)  -- ^ Set of seen URLs.
+    !Int               -- ^ Number of open jobs.
+
+-- | Set of seen URLs.
+seen :: Lens' CrawlerState (HS.HashSet Url)
+seen p (CrawlerState s i) = fmap (`CrawlerState` i) (p s)
+
+-- | Number of open jobs.
+open :: Lens' CrawlerState Int
+open q (CrawlerState s i) = fmap (s `CrawlerState`) (q i)
 
 -- process ---------------------------------------------------------------------
 
 -- | An auxiliary triple type that is strict in every argument.
 data Triple a b c = Triple !a !b !c
 
--- | Process a list of links in a single pass. The third component of the
--- accumulator is a difference list; it is converted to an ordinary list in the
--- last step.
+-- | Process a list of links in a single pass.
+--
+-- Note that this needs to be a left fold: the tail of the list can only be
+-- processed after the head is added to the set of seen URLs, because we want to
+-- avoid duplicates.
+--
+-- The third component of the accumulator is a difference list containing the
+-- new links; it is converted to an ordinary list by @done@.
 process
-    :: HS.HashSet HttpUrl    -- Set of seen URLs before.
-    -> [HttpUrl]             -- List of URLs to process.
-    -> ( HS.HashSet HttpUrl  -- Set of seen URLs after.
-       , Int                 -- Number of new URLs.
-       , [HttpUrl]           -- List of new URLs.
+    :: HS.HashSet Url    -- Set of seen URLs before.
+    -> [Url]             -- List of URLs to process.
+    -> ( HS.HashSet Url  -- Set of seen URLs after.
+       , Int             -- Number of new URLs.
+       , [Url]           -- List of new URLs.
        )
 process s xs = done $ foldl' step (Triple s 0 id) xs
   where
@@ -44,31 +65,6 @@ process s xs = done $ foldl' step (Triple s 0 id) xs
         else Triple (x `HS.insert` s') (i + 1) (ys . (x :))
     done (Triple s' i ys)   = (s', i, ys [])
 
--- CrawlerConfig ---------------------------------------------------------------
-
-data CrawlerConfig = CrawlerConfig
-    { base  :: HttpUrl          -- ^ Base URL.
-    , depth :: Int              -- ^ Depth of the search.
-    , legal :: HttpUrl -> Bool  -- ^ Predicate that selects URLs to crawl.
-    }
-
--- CrawlerState ----------------------------------------------------------------
-
--- | Apart from the set of seen URLs, the main thread also maintains a counter for
--- the number of open (i.e., uncompleted) jobs. If this counter reaches zero,
--- the program exits.
-data CrawlerState = CrawlerState
-    !(HS.HashSet HttpUrl)  -- ^ Set of seen URLs.
-    !Int                   -- ^ Number of open jobs.
-
--- | Set of seen URLs.
-seen :: Lens' CrawlerState (HS.HashSet HttpUrl)
-seen p (CrawlerState s i) = fmap (`CrawlerState` i) (p s)
-
--- | Number of open jobs.
-open :: Lens' CrawlerState Int
-open q (CrawlerState s i) = fmap (s `CrawlerState`) (q i)
-
 -- Crawler ---------------------------------------------------------------------
 
 type Crawler a = StateT CrawlerState IO a
@@ -76,8 +72,8 @@ type Crawler a = StateT CrawlerState IO a
 evalCrawler :: Crawler a -> CrawlerState -> IO a
 evalCrawler = evalStateT
 
-crawler :: (HttpUrl -> Bool) -> Queues -> Crawler ()
-crawler legal Queues {..} = loop
+crawl :: (Url -> Bool) -> Queues -> Crawler ()
+crawl legal Queues {..} = loop
   where
     loop = do
         (liftIO . atomically . readTBQueue $ resultQueue) >>= \case
@@ -93,7 +89,15 @@ crawler legal Queues {..} = loop
         n <- use open
         unless (n <= 0) loop
 
+-- CrawlerConfig ---------------------------------------------------------------
+
+data CrawlerConfig = CrawlerConfig
+    { base  :: Url          -- ^ Base URL.
+    , depth :: Int          -- ^ Depth of the search.
+    , legal :: Url -> Bool  -- ^ Predicate that selects URLs to crawl.
+    }
+
 runCrawler :: CrawlerConfig -> Queues -> IO ()
 runCrawler CrawlerConfig {..} queues = do
     atomically . writeTQueue (fetcherQueue queues) $ Fetch (Job base base depth)
-    evalCrawler (crawler legal queues) (CrawlerState (HS.singleton base) 1)
+    evalCrawler (crawl legal queues) (CrawlerState (HS.singleton base) 1)

@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Graze.Test.HttpUrl
+module Graze.Test.Url
     ( tests
     ) where
 
@@ -11,18 +11,19 @@ import qualified Data.Text     as T
 import Test.Tasty       (TestTree, testGroup)
 import Test.Tasty.HUnit ((@?=), assertBool, testCaseSteps)
 
-import Graze.HttpUrl (HttpUrl (HttpUrl), parseUrl, parseRelUrl)
+import Graze.Url        (Url (Url))
+import Graze.Url.Parser (parseUrl, parseRelUrl)
 
 
 -- parseUrl --------------------------------------------------------------------
 
-absoluteValid :: [(T.Text, HttpUrl)]
+absoluteValid :: [(T.Text, Url)]
 absoluteValid =
     [ ( "http://www.example.com"
-      , HttpUrl "http:" "//www.example.com" "/"
+      , Url "http:" "//www.example.com" "/"
       )
     , ( "http://www.example.com/a/b/c"
-      , HttpUrl "http:" "//www.example.com" "/a/b/c"
+      , Url "http:" "//www.example.com" "/a/b/c"
       )
     ]
 
@@ -45,25 +46,25 @@ testParseUrl = testCaseSteps "absolute" $ \step -> do
 
 -- parseRelUrl -----------------------------------------------------------------
 
-base :: HttpUrl
-base = HttpUrl "https:" "//a" "/b/c/d?q"
+base :: Url
+base = Url "https:" "//a" "/b/c/d?q"
 
 -- Examples from RFC 1808, section 5.1.
-relativeValid :: [(T.Text, HttpUrl)]
+relativeValid :: [(T.Text, Url)]
 relativeValid =
-    [ ("g"      , HttpUrl "https:" "//a" "/b/c/g" )
-    , ("./g"    , HttpUrl "https:" "//a" "/b/c/g" )
-    , ("g/"     , HttpUrl "https:" "//a" "/b/c/g/")
-    , ("/g"     , HttpUrl "https:" "//a" "/g"     )
-    , ("//g"    , HttpUrl "https:" "//g" "/"      )
-    , ("."      , HttpUrl "https:" "//a" "/b/c/"  )
-    , ("./"     , HttpUrl "https:" "//a" "/b/c/"  )
-    , (".."     , HttpUrl "https:" "//a" "/b/"    )
-    , ("../"    , HttpUrl "https:" "//a" "/b/"    )
-    , ("../g"   , HttpUrl "https:" "//a" "/b/g"   )
-    , ("../.."  , HttpUrl "https:" "//a" "/"      )
-    , ("../../" , HttpUrl "https:" "//a" "/"      )
-    , ("../../g", HttpUrl "https:" "//a" "/g"     )
+    [ ("g"      , Url "https:" "//a" "/b/c/g" )
+    , ("./g"    , Url "https:" "//a" "/b/c/g" )
+    , ("g/"     , Url "https:" "//a" "/b/c/g/")
+    , ("/g"     , Url "https:" "//a" "/g"     )
+    , ("//g"    , Url "https:" "//g" "/"      )
+    , ("."      , Url "https:" "//a" "/b/c/"  )
+    , ("./"     , Url "https:" "//a" "/b/c/"  )
+    , (".."     , Url "https:" "//a" "/b/"    )
+    , ("../"    , Url "https:" "//a" "/b/"    )
+    , ("../g"   , Url "https:" "//a" "/b/g"   )
+    , ("../.."  , Url "https:" "//a" "/"      )
+    , ("../../" , Url "https:" "//a" "/"      )
+    , ("../../g", Url "https:" "//a" "/g"     )
     ]
 
 testParseRelUrl :: TestTree
@@ -80,4 +81,4 @@ testParseRelUrl = testCaseSteps "relative" $ \step -> do
 -- Interface -------------------------------------------------------------------
 
 tests :: TestTree
-tests = testGroup "HttpUrl" [testParseUrl, testParseRelUrl]
+tests = testGroup "Url" [testParseUrl, testParseRelUrl]

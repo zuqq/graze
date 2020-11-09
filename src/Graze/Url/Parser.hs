@@ -1,7 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ViewPatterns      #-}
 
-module Graze.HttpUrl.Parser
+module Graze.Url.Parser
     ( parseUrl
     , parseRelUrl
     ) where
@@ -13,7 +12,7 @@ import           Data.Char            (isAlphaNum)
 import           Data.Functor         (($>))
 import qualified Data.Text            as T
 
-import Graze.HttpUrl.Internal (HttpUrl (HttpUrl))
+import Graze.Url (Url (Url))
 
 -- $setup
 -- >>> :set -XOverloadedStrings
@@ -114,24 +113,6 @@ normalize s =
     -- Generic case.
     go xs (y : ys) = go (y : xs) ys
 
--- Url -------------------------------------------------------------------------
-
-type Url = (T.Text, T.Text, T.Text)
-
-toUrl :: HttpUrl -> Url
-toUrl (HttpUrl x y z) = (x, y, z)
-
-fromUrl :: Url -> Either String HttpUrl
-fromUrl = fmap pack . (checkDomain <=< checkScheme)
-  where
-    checkScheme (x, y, z) = if x == "http:" || x == "https:"
-        then Right (x, y, z)
-        else Left "Invalid scheme."
-    checkDomain (x, y, z) = if "//" `T.isPrefixOf` y
-        then Right (x, y, z)
-        else Left "Invalid netloc."
-    pack (x, y, z) = HttpUrl x y (normalize z)
-
 -- Parsers ---------------------------------------------------------------------
 
 isSchar :: Char -> Bool
@@ -146,11 +127,11 @@ domain = T.append <$> A.string "//" <*> A.takeWhile (/= '/')
 path :: A.Parser T.Text
 path = T.cons <$> A.char '/' <*> A.takeText
 
-absUrl :: A.Parser Url
-absUrl = (,,) <$> scheme <*> A.option "" domain <*> A.takeText
+absolute :: A.Parser (T.Text, T.Text, T.Text)
+absolute = (,,) <$> scheme <*> A.option "" domain <*> A.takeText
 
-relUrl :: Url -> A.Parser Url
-relUrl (x, y, z) = absUrl
+relativeTo :: Url -> A.Parser (T.Text, T.Text, T.Text)
+relativeTo (Url x y z) = absolute
     <|> A.endOfInput $> (x, y, z)                -- Matches "".
     <|> (,,) x <$> domain <*> A.takeText         -- Matches "//...".
     <|> (,,) x y <$> path                        -- Matches "/...".
@@ -161,11 +142,22 @@ relUrl (x, y, z) = absUrl
 stripFragment :: T.Text -> T.Text
 stripFragment = T.takeWhile (/= '#')
 
+check :: (T.Text, T.Text, T.Text) -> Either String Url
+check = fmap pack . (checkDomain <=< checkScheme)
+  where
+    checkScheme (x, y, z) = if x == "http:" || x == "https:"
+        then Right (x, y, z)
+        else Left "Invalid scheme."
+    checkDomain (x, y, z) = if "//" `T.isPrefixOf` y
+        then Right (x, y, z)
+        else Left "Invalid netloc."
+    pack (x, y, z) = Url x y (normalize z)
+
 -- | Parse an absolute HTTP(S) URL.
-parseUrl :: T.Text -> Either String HttpUrl
-parseUrl = fromUrl <=< A.parseOnly absUrl . stripFragment
+parseUrl :: T.Text -> Either String Url
+parseUrl = check <=< A.parseOnly absolute . stripFragment
 
 -- | Parse an absolute or relative HTTP(S) URL, with the first argument as the
 -- base URL.
-parseRelUrl :: HttpUrl -> T.Text -> Either String HttpUrl
-parseRelUrl (toUrl -> x) = fromUrl <=< A.parseOnly (relUrl x) . stripFragment
+parseRelUrl :: Url -> T.Text -> Either String Url
+parseRelUrl x = check <=< A.parseOnly (relativeTo x) . stripFragment

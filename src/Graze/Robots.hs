@@ -1,3 +1,5 @@
+{-# LANGUAGE BangPatterns      #-}
+{-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ViewPatterns      #-}
 
@@ -33,161 +35,58 @@ module Graze.Robots
     , parseRobots
     ) where
 
-import           Control.Applicative       ((<|>))
-import qualified Data.Attoparsec.Text.Lazy as A
-import qualified Data.ByteString.Lazy      as BL (ByteString)
-import           Data.Char                 (isAscii)
-import           Data.Either               (isLeft, isRight, lefts, rights)
-import           Data.Foldable             (foldl')
-import           Data.Function             ((&))
-import qualified Data.HashSet              as HS (HashSet, fromList, member)
-import           Data.List                 (find)
-import qualified Data.Text                 as T (Text, unpack)
-import qualified Data.Text.Lazy            as TL (lines)
-import qualified Data.Text.Lazy.Encoding   as TL (decodeUtf8With)
-import           Data.Text.Encoding.Error  (lenientDecode)
+import           Control.Applicative ((<|>))
+import           Data.Either         (isLeft, isRight, lefts, rights)
+import           Data.Foldable       (foldl')
+import           Data.Function       ((&))
+import qualified Data.HashSet        as HS (HashSet, fromList, member)
+import           Data.List           (find)
+import qualified Data.Text           as T (Text, lines, unpack)
 
-import Graze.Trie (Trie, completes, empty, insert)
+import Graze.Robots.Parser (Line, Rule(..), UserAgent, parseLine)
+import Graze.Trie          (Trie, completes, empty, insert)
 
-
--- Line ------------------------------------------------------------------------
-
-type UserAgent = T.Text
-
-data Rule
-    = Disallow  !T.Text
-    | Allow     !T.Text
-    | Extension !T.Text
-
-type Line = Either UserAgent Rule
-
--- Predicates ------------------------------------------------------------------
-
-isSpace :: Char -> Bool
-isSpace w = w == ' ' || w == '\t'
-
-isSafe :: Char -> Bool
-isSafe w = case w of
-    '$' -> True
-    '-' -> True
-    '_' -> True
-    '.' -> True
-    '+' -> True
-    _   -> False
-
-isExtra :: Char -> Bool
-isExtra w = case w of
-    '!'  -> True
-    '*'  -> True
-    '\'' -> True
-    '('  -> True
-    ')'  -> True
-    ','  -> True
-    _    -> False
-
-isUchar :: Char -> Bool
-isUchar w = w == '%'  -- Treat escaped characters by just allowing '%'.
-    || 'a' <= w && w <= 'z'
-    || 'A' <= w && w <= 'Z'
-    || '0' <= w && w <= '9'
-    || isSafe w
-    || isExtra w
-
-isPchar :: Char -> Bool
-isPchar w = w == '/'  -- Just allow '/' instead of parsing segments.
-    || isUchar w
-    || w == ':'
-    || w == '@'
-    || w == '&'
-    || w == '='
-
-isCtl :: Char -> Bool
-isCtl w = w < '\32' || w == '\127'
-
-isTspecial :: Char -> Bool
-isTspecial w = case w of
-    '('  -> True
-    ')'  -> True
-    '<'  -> True
-    '>'  -> True
-    '@'  -> True
-    ','  -> True
-    ';'  -> True
-    ':'  -> True
-    '\\' -> True
-    '"'  -> True
-    '/'  -> True
-    '['  -> True
-    ']'  -> True
-    '?'  -> True
-    '='  -> True
-    '{'  -> True
-    '}'  -> True
-    ' '  -> True
-    '\t' -> True
-    _    -> False
-
-isTchar :: Char -> Bool
-isTchar w = isAscii w && not (isCtl w || isTspecial w)
-
--- Parser ----------------------------------------------------------------------
-
-skipSpace :: A.Parser ()
-skipSpace = A.skipWhile isSpace
-
-path :: A.Parser T.Text
-path = A.takeWhile isPchar
-
-comment :: A.Parser T.Text
-comment = A.char '#' *> A.takeText
-
-userAgent :: A.Parser UserAgent
-userAgent = A.string "User-agent:"
-    *> skipSpace
-    *> A.takeWhile1 isTchar
-    <* (A.endOfInput <|> skipSpace <* comment)
-
-disallow :: A.Parser Rule
-disallow = fmap Disallow $
-    A.string "Disallow:"
-    *> skipSpace
-    *> path
-    <* (A.endOfInput <|> skipSpace <* comment)
-
-allow :: A.Parser Rule
-allow = fmap Allow $
-    A.string "Allow:"
-    *> skipSpace
-    *> path
-    <* (A.endOfInput <|> skipSpace <* comment)
-
-extension :: A.Parser Rule
-extension = fmap Extension $
-    A.takeWhile isTchar
-    *> A.char ':'
-    *> skipSpace
-    *> A.takeWhile (/= '#')
-    <* (A.endOfInput <|> skipSpace <* comment)
-
-line :: A.Parser Line
-line = A.eitherP userAgent (disallow <|> allow <|> extension)
 
 -- Record ----------------------------------------------------------------------
 
-type Record = (HS.HashSet UserAgent, (Trie Char, Trie Char))
+type RuleSet = (Trie Char, Trie Char)
+
+emptyRuleSet :: RuleSet
+emptyRuleSet = (empty, empty)
+
+fromList :: [Rule] -> RuleSet
+fromList = foldl' step emptyRuleSet
+  where
+    step (!disallows, !allows) = \case
+        Disallow "" -> (disallows, allows)
+        Disallow d  -> (insert (T.unpack d) disallows, allows)
+        Allow a     -> (disallows, insert (T.unpack a) allows)
+        Extension _ -> (disallows, allows)
+
+type Record = (HS.HashSet UserAgent, RuleSet)
+
+affects :: UserAgent -> Record -> Bool
+affects userAgent = HS.member userAgent . fst
+
+ruleSet :: Record -> RuleSet
+ruleSet = snd
+
+-- | Returns, in descending priority, one of:
+--
+-- * the 'RuleSet' of the first 'Record' that mentions the given 'UserAgent';
+-- * the 'RuleSet' of the first 'Record' that mentions @\"*\"@;
+-- * the empty 'RuleSet'.
+extract :: UserAgent -> [Record] -> RuleSet
+extract userAgent records = maybe emptyRuleSet ruleSet $ go userAgent <|> go "*"
+  where
+    go x = find (affects x) records
 
 group :: [Line] -> [Record]
 group [] = []
-group xs = (HS.fromList . lefts $ uas, (ds, as)) : group xs''
+group ls = (HS.fromList userAgents, fromList rules) : group ls''
   where
-    (uas, xs') = span isLeft xs
-    (rs, xs'') = span isRight xs'
-    f (u, v) r = case r of
-        Disallow "" -> (u, v)
-        Disallow d  -> (insert (T.unpack d) u, v)
-        Allow a     -> (u, insert (T.unpack a) v)
-        Extension _ -> (u, v)
-    (ds, as)   = foldl' f (empty, empty) . rights $ rs
+    (lefts -> userAgents, ls') = span isLeft ls
+    (rights -> rules, ls'')    = span isRight ls'
 
 -- Robots ----------------------------------------------------------------------
 
@@ -195,16 +94,15 @@ group xs = (HS.fromList . lefts $ uas, (ds, as)) : group xs''
 -- @True@ for paths that we are allowed to crawl and @False@ for the others.
 type Robots = T.Text -> Bool
 
--- | @parseRobots ua s@ is the predicate corresponding to the robots.txt file
--- @s@, with respect to the user agent @ua@.
-parseRobots :: UserAgent -> BL.ByteString -> Robots
-parseRobots ua s (T.unpack -> x) = not (x `completes` ds) || x `completes` as
+-- | @parseRobots userAgent s@ is the predicate corresponding to the robots.txt
+-- file @s@, with respect to the user agent @userAgent@.
+parseRobots :: UserAgent -> T.Text -> Robots
+parseRobots userAgent s = \(T.unpack -> x) ->
+    not (x `completes` disallows) || x `completes` allows
   where
-    records  = s
-        & TL.decodeUtf8With lenientDecode
-        & TL.lines
-        & fmap (A.eitherResult . A.parse line)
+    (!disallows, !allows) = s
+        & T.lines
+        & fmap parseLine
         & rights
         & group
-    for name = find (HS.member name . fst) records
-    (ds, as) = maybe (empty, empty) snd $ for ua <|> for "*"
+        & extract userAgent

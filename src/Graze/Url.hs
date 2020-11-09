@@ -1,7 +1,7 @@
 {-# LANGUAGE RecordWildCards #-}
 
-module Graze.HttpUrl.Internal
-    ( HttpUrl (..)
+module Graze.Url
+    ( Url (..)
     , hashUrl
     , serializeUrl
     ) where
@@ -19,38 +19,43 @@ import           Data.Aeson       (ToJSON (..))
 -- >>> :set -XOverloadedStrings
 
 
-data HttpUrl = HttpUrl
+-- | A simplified URL type of exactly the granularity that we need.
+--
+-- Namely, we need access to the scheme in order to resolve protocol-relative
+-- HTML links, and access to the domain and path in order to apply the
+-- robots.txt file.
+data Url = Url
     { scheme :: !T.Text
     , domain :: !T.Text
     , path   :: !T.Text
     }
-    deriving (Read, Show)
+    deriving Show
 
 -- | Ignores 'scheme'.
-instance Eq HttpUrl where
+instance Eq Url where
     x == y = (domain x, path x) == (domain y, path y)
 
 -- | Ignores 'scheme'.
-instance Hashable HttpUrl where
+instance Hashable Url where
     hashWithSalt salt x = hashWithSalt salt (domain x <> path x)
 
--- | Serialize the given 'HttpUrl', by concatenating its constituents.
+-- | Serialize the given 'Url', by concatenating its constituents.
 --
 -- ==== __Examples__
 --
--- >>> serializeUrl $ HttpUrl "http:" "//www.example.com" "/"
+-- >>> serializeUrl $ Url "http:" "//www.example.com" "/"
 -- "http://www.example.com/"
-serializeUrl :: HttpUrl -> T.Text
-serializeUrl HttpUrl {..} = scheme <> domain <> path
+serializeUrl :: Url -> T.Text
+serializeUrl Url {..} = scheme <> domain <> path
 
-instance ToJSON HttpUrl where
+instance ToJSON Url where
     toJSON     = toJSON . serializeUrl
     toEncoding = toEncoding . serializeUrl
 
--- | Map an 'HttpUrl' to the Base16-encoded SHA-1 digest of its serialization.
+-- | Map an 'Url' to the Base16-encoded SHA-1 digest of its serialization.
 --
 -- ==== __Examples__
--- >>> hashUrl $ HttpUrl "http:" "//www.example.com" "/"
+-- >>> hashUrl $ Url "http:" "//www.example.com" "/"
 -- "89e6a0649e06d83370cdf2cbfb05f363934a8d0c"
-hashUrl :: HttpUrl -> String
+hashUrl :: Url -> String
 hashUrl = BC.unpack . Base16.encode . SHA1.hash . T.encodeUtf8 . serializeUrl

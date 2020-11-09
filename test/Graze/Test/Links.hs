@@ -11,7 +11,7 @@ import qualified Data.HashSet  as HS (fromList)
 import Test.Tasty       (TestTree, testGroup)
 import Test.Tasty.HUnit ((@?=), testCase)
 
-import Graze.HttpUrl (HttpUrl (HttpUrl))
+import Graze.Url (Url (Url))
 import Graze.Links   (parseLinks)
 
 
@@ -20,13 +20,13 @@ testParseLinks = testCase "parseLinks" $ do
     for_ examples $ \(x, ys) ->
         ((@?=) `on` HS.fromList) (parseLinks base $ header <> x <> footer) ys
   where
-    base = HttpUrl "http:" "//www.example.com" "/"
+    base = Url "http:" "//www.example.com" "/"
     header = "<!DOCTYPE html><body>"
     footer = "</body>"
     a   = "<a href=a>a</a>"
     a'  = "<a href='a'>a</a>"
     a'' = "<a href=\"a\">a</a>"
-    y   = HttpUrl "http:" "//www.example.com" "/a"
+    y   = Url "http:" "//www.example.com" "/a"
     examples = [(a, [y]), (a', [y]), (a'', [y])]
 
 tests :: TestTree

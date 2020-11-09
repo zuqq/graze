@@ -4,10 +4,9 @@ module Graze.Test.Robots
     ( tests
     ) where
 
-import qualified Data.ByteString.Lazy.Char8 as BLC
-import           Data.Foldable              (for_)
-import           Data.Functor               ((<&>))
-import qualified Data.Text                  as T
+import           Data.Foldable (for_)
+import           Data.Functor  ((<&>))
+import qualified Data.Text     as T
 
 import Test.Tasty       (TestTree, testGroup)
 import Test.Tasty.HUnit ((@?=), testCaseSteps)
@@ -15,8 +14,8 @@ import Test.Tasty.HUnit ((@?=), testCaseSteps)
 import Graze.Robots (parseRobots)
 
 
-content :: BLC.ByteString
-content = BLC.unlines
+content :: T.Text
+content = T.unlines
     [ "# /robots.txt for http://www.fict.org/"
     , "# comments to webmaster@fict.org"
     , ""
@@ -52,9 +51,9 @@ cases =
 
 tests :: TestTree
 tests = testGroup "Robots" $
-    cases <&> \(ua, results) ->
-        let rs = parseRobots ua content
-        in testCaseSteps (T.unpack ua) $ \step ->
+    cases <&> \(userAgent, results) ->
+        let legal = parseRobots userAgent content
+        in testCaseSteps (T.unpack userAgent) $ \step ->
             for_ (zip paths results) $ \(path, result) -> do
                 step (T.unpack path)
-                rs path @?= result
+                legal path @?= result

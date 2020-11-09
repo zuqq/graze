@@ -7,16 +7,18 @@ module Graze.Fetcher
     ( runFetcher
     ) where
 
-import Control.Concurrent.STM         (atomically)
-import Control.Concurrent.STM.TQueue  (readTQueue)
-import Control.Concurrent.STM.TBQueue (writeTBQueue)
-import Control.Exception              (try)
+import           Control.Concurrent.STM         (atomically)
+import           Control.Concurrent.STM.TQueue  (readTQueue)
+import           Control.Concurrent.STM.TBQueue (writeTBQueue)
+import           Control.Exception              (try)
+import qualified Data.ByteString.Lazy           as BL (toStrict)
+import qualified Data.Text.Encoding             as T (decodeUtf8')
 
 import Network.HTTP.Client (HttpException)
 
-import Graze.Http    (ContentType (TextHtml), get)
-import Graze.HttpUrl (serializeUrl)
-import Graze.Links   (parseLinks)
+import Graze.Http  (ContentType (TextHtml), get)
+import Graze.Url   (serializeUrl)
+import Graze.Links (parseLinks)
 import Graze.Types
 
 
@@ -29,12 +31,14 @@ runFetcher Queues {..} = loop
             try (get url) >>= \case
                 Left (_ :: HttpException) -> atomically $
                     writeTBQueue resultQueue Failure
-                Right (contentType, body) -> do
+                Right (contentType, bs)   -> do
                     let links = case contentType of
-                            TextHtml -> parseLinks url body
+                            TextHtml -> case T.decodeUtf8' . BL.toStrict $ bs of
+                                Left _  -> []
+                                Right s -> parseLinks url s
                             _        -> []
                     atomically . writeTBQueue writerQueue $
-                        Write (Record origin url links) body
+                        Write (Record origin url links) bs
                     atomically . writeTBQueue loggerQueue $
                         Log ("Got " <> serializeUrl url)
                     atomically . writeTBQueue resultQueue $

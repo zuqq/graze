@@ -14,7 +14,7 @@ import           Control.Exception              (try)
 import qualified Data.ByteString.Lazy           as BL (toStrict)
 import qualified Data.Text.Encoding             as T (decodeUtf8')
 
-import Network.HTTP.Client (HttpException)
+import qualified Network.HTTP.Client as H (HttpException)
 
 import Graze.Http  (ContentType (TextHtml), get)
 import Graze.Url   (serializeUrl)
@@ -29,9 +29,9 @@ runFetcher Queues {..} = loop
         StopFetching         -> return ()
         Fetch job @ Job {..} -> do
             try (get url) >>= \case
-                Left (_ :: HttpException) -> atomically $
+                Left (_ :: H.HttpException) -> atomically $
                     writeTBQueue resultQueue Failure
-                Right (contentType, bs)   -> do
+                Right (contentType, bs)     -> do
                     let links = case contentType of
                             TextHtml -> case T.decodeUtf8' . BL.toStrict $ bs of
                                 Left _  -> []

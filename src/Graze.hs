@@ -40,8 +40,8 @@ import           Data.Foldable                  (traverse_)
 import qualified Data.Text                      as T (unpack)
 import qualified Data.Text.Encoding             as T (decodeUtf8')
 
-import Network.HTTP.Client     (HttpException)
-import Network.HTTP.Client.TLS (newTlsManager, setGlobalManager)
+import qualified Network.HTTP.Client     as H (HttpException)
+import qualified Network.HTTP.Client.TLS as H (newTlsManager, setGlobalManager)
 
 import Graze.Crawler    (CrawlerConfig (..), runCrawler)
 import Graze.Fetcher    (runFetcher)
@@ -73,8 +73,8 @@ run :: Config -> IO ()
 run Config {..} = do
     putStrLn $ "Crawling " <> T.unpack (serializeUrl base)
 
-    tls <- newTlsManager
-    setGlobalManager tls
+    tls <- H.newTlsManager
+    H.setGlobalManager tls
 
     fetcherQueue <- newTQueueIO
     -- These queues are bounded in order to provide sufficient backpressure.
@@ -90,7 +90,7 @@ run Config {..} = do
     writer   <- forkChild $ runWriter folder queues
     logger   <- forkChild $ runLogger queues
 
-    response :: Either HttpException Result <- try $ get base {path = "/robots.txt"}
+    response :: Either H.HttpException Result <- try $ get base {path = "/robots.txt"}
     let robots  = case response of
             Right (TextPlain, bs) -> case T.decodeUtf8' . BL.toStrict $ bs of
                 Left _  -> const True

@@ -47,8 +47,6 @@ import Graze.Robots.Parser (Line, Rule(..), UserAgent, parseLine)
 import Graze.Trie          (Trie, completes, empty, insert)
 
 
--- Record ----------------------------------------------------------------------
-
 type RuleSet = (Trie Char, Trie Char)
 
 emptyRuleSet :: RuleSet
@@ -87,8 +85,6 @@ group ls = (HS.fromList userAgents, fromList rules) : group ls''
   where
     (lefts -> userAgents, ls') = span isLeft ls
     (rights -> rules, ls'')    = span isRight ls'
-
--- Robots ----------------------------------------------------------------------
 
 -- | If we fix our user agent, a robots.txt file amounts to a predicate that is
 -- @True@ for paths that we are allowed to crawl and @False@ for the others.

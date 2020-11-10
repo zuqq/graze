@@ -22,8 +22,6 @@ import Graze.Url   (Url)
 import Graze.Types (FetcherCommand (..), Job (..), Queues (..), Result (..))
 
 
--- CrawlerState ----------------------------------------------------------------
-
 -- | Apart from the set of seen URLs, the crawler also maintains a counter for
 -- the number of open jobs. When this counter reaches zero, the crawler exits.
 data CrawlerState = CrawlerState
@@ -37,8 +35,6 @@ seen p (CrawlerState s i) = fmap (`CrawlerState` i) (p s)
 -- | Number of open jobs.
 open :: Lens' CrawlerState Int
 open q (CrawlerState s i) = fmap (s `CrawlerState`) (q i)
-
--- process ---------------------------------------------------------------------
 
 -- | An auxiliary triple type that is strict in every argument.
 data Triple a b c = Triple !a !b !c
@@ -65,8 +61,6 @@ process s xs = done $ foldl' step (Triple s 0 id) xs
         else Triple (x `HS.insert` s') (i + 1) (ys . (x :))
     done (Triple s' i ys)   = (s', i, ys [])
 
--- Crawler ---------------------------------------------------------------------
-
 type Crawler a = StateT CrawlerState IO a
 
 evalCrawler :: Crawler a -> CrawlerState -> IO a
@@ -88,8 +82,6 @@ crawl legal Queues {..} = loop
         open -= 1
         n <- use open
         unless (n <= 0) loop
-
--- CrawlerConfig ---------------------------------------------------------------
 
 data CrawlerConfig = CrawlerConfig
     { base  :: Url          -- ^ Base URL.

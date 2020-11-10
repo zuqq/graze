@@ -27,8 +27,6 @@ import qualified Network.HTTP.Client.TLS as H (getGlobalManager)
 import Graze.Url (Url (..), serializeUrl)
 
 
--- ContentType -----------------------------------------------------------------
-
 -- | A partial representation of the \"Content-Type\" response header.
 data ContentType
     = TextHtml
@@ -47,8 +45,6 @@ fromResponse :: H.Response body -> ContentType
 fromResponse = fromMaybe Other
     . (fromByteString <=< lookup "Content-Type")
     . H.responseHeaders
-
--- get -------------------------------------------------------------------------
 
 -- | The 'ContentType' of the response and its body.
 type Result = (ContentType, BL.ByteString)

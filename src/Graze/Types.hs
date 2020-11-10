@@ -26,8 +26,6 @@ import Data.Aeson (ToJSON (..), defaultOptions, genericToEncoding)
 import Graze.Url (Url)
 
 
--- Messages --------------------------------------------------------------------
-
 -- | A page to visit.
 data Job = Job
     { origin :: !Url
@@ -65,8 +63,6 @@ data WriterCommand
 data LoggerCommand
     = StopLogging
     | Log !T.Text
-
--- Queues ----------------------------------------------------------------------
 
 -- | Queues that the different threads use to communicate.
 data Queues = Queues

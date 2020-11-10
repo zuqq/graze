@@ -11,10 +11,8 @@
 --
 -- = Implementation
 --
--- The parser has two stages; it first parsese the individual lines and folds
--- them into groups. The line parser is a straightforward translation of the
--- grammar involving a handful of predicates for admissible characters,
--- primitives from "Data.Attoparse.Text.Lazy", and the 'Applicative' class.
+-- Since robots.txt is a line-based format, we first parse each line separately
+-- before combining them into meaningful directives.
 --
 -- = Deficiencies
 --
@@ -71,9 +69,9 @@ ruleSet = snd
 
 -- | Returns, in descending priority, one of:
 --
--- * the 'RuleSet' of the first 'Record' that mentions the given 'UserAgent';
--- * the 'RuleSet' of the first 'Record' that mentions @\"*\"@;
--- * the empty 'RuleSet'.
+--     * the 'RuleSet' of the first 'Record' that mentions the given 'UserAgent';
+--     * the 'RuleSet' of the first 'Record' that mentions @\"*\"@;
+--     * the empty 'RuleSet'.
 extract :: UserAgent -> [Record] -> RuleSet
 extract userAgent records = maybe emptyRuleSet ruleSet $ go userAgent <|> go "*"
   where

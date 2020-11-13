@@ -56,7 +56,7 @@ split = T.span (\w -> w /= ';' && w /= '?')
 folder :: T.Text -> T.Text
 folder = T.dropWhileEnd (/= '/') . fst . split
 
--- | Remove relative path elements.
+-- | Remove relative path elements.
 --
 -- If the input doesn't start with a slash, one is added.
 --
@@ -116,7 +116,7 @@ normalize s =
 -- Parsers ---------------------------------------------------------------------
 
 isSchar :: Char -> Bool
-isSchar w = isAlphaNum w || w == '+' || w == '-' || w == '.'
+isSchar w = isAlphaNum w || w == '+' || w == '-' || w == '.'
 
 scheme :: A.Parser T.Text
 scheme = T.snoc <$> A.takeWhile1 isSchar <*> A.char ':'
@@ -157,7 +157,7 @@ check = fmap pack . (checkDomain <=< checkScheme)
 parseUrl :: T.Text -> Either String Url
 parseUrl = check <=< A.parseOnly absolute . stripFragment
 
--- | Parse an absolute or relative HTTP(S) URL, with the first argument as the
+-- | Parse an absolute or relative HTTP(S) URL, with the first argument as the
 -- base URL.
 parseRelUrl :: Url -> T.Text -> Either String Url
-parseRelUrl x = check <=< A.parseOnly (relativeTo x) . stripFragment
+parseRelUrl x = check <=< A.parseOnly (relativeTo x) . stripFragment

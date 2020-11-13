@@ -2,7 +2,7 @@
 {-# LANGUAGE ViewPatterns      #-}
 
 --------------------------------------------------------------------------------
--- | Module: Graze.Http
+-- | Module: Graze.Http
 --
 -- Functions for making GET requests, based on "Network.HTTP.Client".
 --------------------------------------------------------------------------------
@@ -49,7 +49,7 @@ fromResponse = fromMaybe Other
 -- | The 'ContentType' of the response and its body.
 type Result = (ContentType, BL.ByteString)
 
--- | Set the \"User-Agent\", since some sites will not serve us otherwise.
+-- | Set the \"User-Agent\", since some sites will not serve us otherwise.
 setUserAgent :: H.Request -> H.Request
 setUserAgent request = request {H.requestHeaders = [("User-Agent", "graze")]}
 

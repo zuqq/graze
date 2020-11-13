@@ -17,7 +17,7 @@ import           Data.Hashable       (Hashable)
 import qualified Data.HashMap.Strict as HM
 
 
--- | A trie @t :: Trie a@ stores lists @xs :: [a]@ as paths in a tree, where
+-- | A trie @t :: Trie a@ stores lists @xs :: [a]@ as paths in a tree, where
 -- the elements of @xs@ label the edges on the path. Every node carries a
 -- boolean flag that indicates whether it marks the end of a list.
 --

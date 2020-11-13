@@ -19,7 +19,7 @@ import           Data.Aeson       (ToJSON (..))
 -- >>> :set -XOverloadedStrings
 
 
--- | A simplified URL type of exactly the granularity that we need.
+-- | A simplified URL type of exactly the granularity that we need.
 --
 -- Namely, we need access to the scheme in order to resolve protocol-relative
 -- HTML links, and access to the domain and path in order to apply the
@@ -31,11 +31,11 @@ data Url = Url
     }
     deriving Show
 
--- | Ignores 'scheme'.
+-- | Ignores 'scheme'.
 instance Eq Url where
     x == y = (domain x, path x) == (domain y, path y)
 
--- | Ignores 'scheme'.
+-- | Ignores 'scheme'.
 instance Hashable Url where
     hashWithSalt salt x = hashWithSalt salt (domain x <> path x)
 

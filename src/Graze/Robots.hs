@@ -1,7 +1,7 @@
 {-# LANGUAGE BangPatterns      #-}
 {-# LANGUAGE LambdaCase        #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ViewPatterns      #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ViewPatterns      #-}
 
 --------------------------------------------------------------------------------
 -- | Module: Graze.Robots
@@ -67,7 +67,7 @@ affects userAgent = HS.member userAgent . fst
 ruleSet :: Record -> RuleSet
 ruleSet = snd
 
--- | Returns, in descending priority, one of:
+-- | Returns, in descending priority, one of:
 --
 --     * the 'RuleSet' of the first 'Record' that mentions the given 'UserAgent';
 --     * the 'RuleSet' of the first 'Record' that mentions @\"*\"@;

@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Graze.Robots.Parser
     ( Line
@@ -52,8 +52,8 @@ isUchar w = w == '%'  -- Treat escaped characters by just allowing '%'.
     || 'a' <= w && w <= 'z'
     || 'A' <= w && w <= 'Z'
     || '0' <= w && w <= '9'
-    || isSafe w
-    || isExtra w
+    || isSafe w
+    || isExtra w
 
 isPchar :: Char -> Bool
 isPchar w = w == '/'  -- Just allow '/' instead of parsing segments.

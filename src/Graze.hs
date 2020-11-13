@@ -3,7 +3,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 --------------------------------------------------------------------------------
--- | Module: Graze
+-- | Module: Graze
 --
 -- This module ties together the different components of the system.
 --
@@ -68,7 +68,7 @@ data Config = Config
     , threads :: Int       -- ^ Number of threads.
     }
 
--- | Run the main thread.
+-- | Run the main thread.
 run :: Config -> IO ()
 run Config {..} = do
     putStrLn $ "Crawling " <> T.unpack (serializeUrl base)

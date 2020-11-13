@@ -23,7 +23,7 @@ isKchar c = not (isSpace c)
     && c /= '"'
     && c /= '\''
     && c /= '>'
-    && c /= '/'
+    && c /= '/'
     && c /= '='
 
 isVchar :: Char -> Bool

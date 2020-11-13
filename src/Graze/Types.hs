@@ -26,7 +26,7 @@ import Data.Aeson (ToJSON (..), defaultOptions, genericToEncoding)
 import Graze.Url (Url)
 
 
--- | A page to visit.
+-- | A page to visit.
 data Job = Job
     { origin :: !Url
     , url    :: !Url
@@ -41,9 +41,9 @@ data FetcherCommand
 -- | The result of a page visit that a fetcher passes back to the main thread.
 data Result
     = Failure
-    | Success !Job ![Url]
+    | Success !Job ![Url]
 
--- | Metadata for a visited page.
+-- | Metadata for a visited page.
 data Record = Record
     { origin :: !Url
     , url    :: !Url
@@ -54,17 +54,17 @@ data Record = Record
 instance ToJSON Record where
     toEncoding = genericToEncoding defaultOptions
 
--- | Instructions for the writer.
+-- | Instructions for the writer.
 data WriterCommand
-    = StopWriting
-    | Write !Record !BL.ByteString
+    = StopWriting
+    | Write !Record !BL.ByteString
 
--- | Instructions for the logger.
+-- | Instructions for the logger.
 data LoggerCommand
     = StopLogging
-    | Log !T.Text
+    | Log !T.Text
 
--- | Queues that the different threads use to communicate.
+-- | Queues that the different threads use to communicate.
 data Queues = Queues
     { fetcherQueue :: TQueue FetcherCommand
     , writerQueue  :: TBQueue WriterCommand

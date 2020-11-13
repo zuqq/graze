@@ -22,7 +22,7 @@ import Graze.Url   (Url)
 import Graze.Types (FetcherCommand (..), Job (..), Queues (..), Result (..))
 
 
--- | Apart from the set of seen URLs, the crawler also maintains a counter for
+-- | Apart from the set of seen URLs, the crawler also maintains a counter for
 -- the number of open jobs. When this counter reaches zero, the crawler exits.
 data CrawlerState = CrawlerState
     !(HS.HashSet Url)  -- ^ Set of seen URLs.
@@ -67,7 +67,7 @@ evalCrawler :: Crawler a -> CrawlerState -> IO a
 evalCrawler = evalStateT
 
 crawl :: (Url -> Bool) -> Queues -> Crawler ()
-crawl legal Queues {..} = loop
+crawl legal Queues {..} = loop
   where
     loop = do
         (liftIO . atomically . readTBQueue $ resultQueue) >>= \case

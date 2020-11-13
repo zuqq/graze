@@ -61,7 +61,7 @@ tests:
     - graze
 
   graze-test:
-    main: Main.hs
+    main: Spec.hs
     source-dirs: test
     ghc-options:
     - -threaded
@@ -69,6 +69,5 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - graze
-    - tasty
-    - tasty-hunit
+    - hspec
     - unordered-containers

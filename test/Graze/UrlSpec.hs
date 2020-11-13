@@ -1,15 +1,14 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Graze.Test.Url
-    ( tests
+module Graze.UrlSpec
+    ( spec
     ) where
 
 import           Data.Either   (isLeft)
 import           Data.Foldable (for_)
 import qualified Data.Text     as T
 
-import Test.Tasty       (TestTree, testGroup)
-import Test.Tasty.HUnit ((@?=), assertBool, testCaseSteps)
+import Test.Hspec (Spec, describe, shouldBe, shouldSatisfy, specify)
 
 import Graze.Url        (Url (Url))
 import Graze.Url.Parser (parseUrl, parseRelUrl)
@@ -33,14 +32,14 @@ absoluteInvalid =
     , ("http:/...", "http:/www.example.com" )
     ]
 
-testParseUrl :: TestTree
-testParseUrl = testCaseSteps "absolute" $ \step -> do
-    for_ absoluteValid $ \(x, y) -> do
-        step (show x)
-        parseUrl x @?= Right y
-    for_ absoluteInvalid $ \(s, x) -> do
-        step (show s)
-        assertBool s (isLeft (parseUrl x))
+parseUrlSpec :: Spec
+parseUrlSpec = do
+    describe "valid examples" $
+        for_ absoluteValid $ \(x, y) ->
+            specify (show x) $ parseUrl x `shouldBe` Right y
+    describe "invalid examples" $
+        for_ absoluteInvalid $ \(s, x) ->
+            specify (show s) $ parseUrl x `shouldSatisfy` isLeft
 
 base :: Url
 base = Url "https:" "//a" "/b/c/d?q"
@@ -63,16 +62,20 @@ relativeValid =
     , ("../../g", Url "https:" "//a" "/g"     )
     ]
 
-testParseRelUrl :: TestTree
-testParseRelUrl = testCaseSteps "relative" $ \step -> do
-    for_ relativeValid $ \(x, y) -> do
-        step (show x)
-        parseRelUrl base x @?= Right y
-    step (show "")
-    parseRelUrl base "" @?= Right base
-    step "mailto:"
-    assertBool "mailto:" $
-        isLeft (parseRelUrl base "mailto:tom@example.com")
+relativeInvalid :: [(String, T.Text)]
+relativeInvalid = [("mailto:", "mailto:tom@example.com")]
 
-tests :: TestTree
-tests = testGroup "Url" [testParseUrl, testParseRelUrl]
+parseRelUrlSpec :: Spec
+parseRelUrlSpec = do
+    describe "valid examples" $ do
+        for_ relativeValid $ \(x, y) ->
+            specify (show x) $ parseRelUrl base x `shouldBe` Right y
+        specify "\"\"" $ parseRelUrl base "" `shouldBe` Right base
+    describe "invalid examples" $
+        for_ relativeInvalid $ \(s, x) ->
+            specify (show s) $ parseRelUrl base x `shouldSatisfy` isLeft
+
+spec :: Spec
+spec = do
+    describe "parseUrl" parseUrlSpec
+    describe "parseRelUrl" parseRelUrlSpec

@@ -1,15 +1,14 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Graze.Test.Robots
-    ( tests
+module Graze.RobotsSpec
+    ( spec
     ) where
 
 import           Data.Foldable (for_)
 import           Data.Functor  ((<&>))
 import qualified Data.Text     as T
 
-import Test.Tasty       (TestTree, testGroup)
-import Test.Tasty.HUnit ((@?=), testCaseSteps)
+import Test.Hspec (Spec, describe, shouldBe, specify)
 
 import Graze.Robots (parseRobots)
 
@@ -49,11 +48,13 @@ cases =
     , ("googlebot" , [False, False, True , False, True ])
     ]
 
-tests :: TestTree
-tests = testGroup "Robots" $
-    cases <&> \(userAgent, results) ->
-        let legal = parseRobots userAgent content
-        in testCaseSteps (T.unpack userAgent) $ \step ->
-            for_ (zip paths results) $ \(path, result) -> do
-                step (T.unpack path)
-                legal path @?= result
+parseRobotsSpec :: Spec
+parseRobotsSpec = describe "valid examples" $
+    for_ cases $ \(userAgent, results) ->
+        describe (T.unpack userAgent) $
+            let legal = parseRobots userAgent content
+            in for_ (zip paths results) $ \(path, result) ->
+                specify (T.unpack path) $ legal path `shouldBe` result
+
+spec :: Spec
+spec = describe "parseRobots" parseRobotsSpec

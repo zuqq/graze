@@ -28,7 +28,7 @@ import           Control.Concurrent             (forkFinally)
 import           Control.Concurrent.STM         (atomically)
 import           Control.Concurrent.STM.TQueue  (newTQueueIO, writeTQueue)
 import           Control.Concurrent.STM.TBQueue (newTBQueueIO, writeTBQueue)
-import           Control.Concurrent.STM.TMVar   (TMVar, newEmptyTMVar, putTMVar, takeTMVar)
+import           Control.Concurrent.STM.TMVar   (TMVar, newEmptyTMVarIO, putTMVar, takeTMVar)
 import           Control.Exception              (try)
 import           Control.Monad                  (replicateM, replicateM_)
 import qualified Data.ByteString.Lazy           as BL (toStrict)
@@ -52,7 +52,7 @@ import Graze.Writer     (runWriter)
 
 forkChild :: IO a -> IO (TMVar ())
 forkChild x = do
-    m <- atomically newEmptyTMVar
+    m <- newEmptyTMVarIO
     _ <- forkFinally x (\_ -> atomically $ putTMVar m ())
     return m
 

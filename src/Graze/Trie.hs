@@ -1,8 +1,4 @@
---------------------------------------------------------------------------------
--- | Module: Graze.Trie
---
--- A generic trie implementation for lists of 'Hashable' values.
---------------------------------------------------------------------------------
+-- | A generic trie implementation for lists of 'Hashable' values.
 
 module Graze.Trie
     ( Trie

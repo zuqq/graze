@@ -1,11 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ViewPatterns      #-}
 
---------------------------------------------------------------------------------
--- | Module: Graze.Http
---
--- Functions for making GET requests, based on "Network.HTTP.Client".
---------------------------------------------------------------------------------
+-- | Functions for making GET requests, based on "Network.HTTP.Client".
 
 module Graze.Http
     ( ContentType (..)

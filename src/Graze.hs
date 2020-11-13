@@ -2,10 +2,7 @@
 {-# LANGUAGE RecordWildCards     #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
---------------------------------------------------------------------------------
--- | Module: Graze
---
--- This module ties together the different components of the system.
+-- | This module ties together the different components of the system.
 --
 -- Concurrency is achieved through the creation of multiple threads that
 -- use queues to communicate. The main thread spawns
@@ -20,7 +17,6 @@
 -- entered into the set of visited pages and new jobs are created from its
 -- outgoing links. The fetcher thread also dispatches to the writer thread,
 -- which writes the page and its metadata to the filesystem.
---------------------------------------------------------------------------------
 
 module Graze
     ( Config (..)

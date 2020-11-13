@@ -12,8 +12,6 @@ import qualified Data.Attoparsec.Text as A
 import           Data.Char            (isAscii)
 import qualified Data.Text            as T (Text)
 
--- Line ------------------------------------------------------------------------
-
 type UserAgent = T.Text
 
 data Rule
@@ -22,8 +20,6 @@ data Rule
     | Extension !T.Text
 
 type Line = Either UserAgent Rule
-
--- Predicates ------------------------------------------------------------------
 
 isSpace :: Char -> Bool
 isSpace w = w == ' ' || w == '\t'
@@ -91,8 +87,6 @@ isTspecial w = case w of
 
 isTchar :: Char -> Bool
 isTchar w = isAscii w && not (isCtl w || isTspecial w)
-
--- Parser ----------------------------------------------------------------------
 
 skipSpace :: A.Parser ()
 skipSpace = A.skipWhile isSpace

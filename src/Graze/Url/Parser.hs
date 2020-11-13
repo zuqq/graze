@@ -18,8 +18,6 @@ import Graze.Url (Url (Url))
 -- >>> :set -XOverloadedStrings
 
 
--- Path ------------------------------------------------------------------------
-
 -- | Split on the first occurrence of @\';\'@ or @\'?\'@.
 --
 -- ==== __Examples__
@@ -113,8 +111,6 @@ normalize s =
     -- Generic case.
     go xs (y : ys) = go (y : xs) ys
 
--- Parsers ---------------------------------------------------------------------
-
 isSchar :: Char -> Bool
 isSchar w = isAlphaNum w || w == '+' || w == '-' || w == '.'
 
@@ -136,8 +132,6 @@ relativeTo (Url x y z) = absolute
     <|> (,,) x <$> domain <*> A.takeText         -- Matches "//...".
     <|> (,,) x y <$> path                        -- Matches "/...".
     <|> (,,) x y . (folder z <>) <$> A.takeText  -- Matches everything.
-
--- Interface -------------------------------------------------------------------
 
 stripFragment :: T.Text -> T.Text
 stripFragment = T.takeWhile (/= '#')

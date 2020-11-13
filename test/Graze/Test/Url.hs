@@ -15,8 +15,6 @@ import Graze.Url        (Url (Url))
 import Graze.Url.Parser (parseUrl, parseRelUrl)
 
 
--- parseUrl --------------------------------------------------------------------
-
 absoluteValid :: [(T.Text, Url)]
 absoluteValid =
     [ ( "http://www.example.com"
@@ -43,8 +41,6 @@ testParseUrl = testCaseSteps "absolute" $ \step -> do
     for_ absoluteInvalid $ \(s, x) -> do
         step (show s)
         assertBool s (isLeft (parseUrl x))
-
--- parseRelUrl -----------------------------------------------------------------
 
 base :: Url
 base = Url "https:" "//a" "/b/c/d?q"
@@ -77,8 +73,6 @@ testParseRelUrl = testCaseSteps "relative" $ \step -> do
     step "mailto:"
     assertBool "mailto:" $
         isLeft (parseRelUrl base "mailto:tom@example.com")
-
--- Interface -------------------------------------------------------------------
 
 tests :: TestTree
 tests = testGroup "Url" [testParseUrl, testParseRelUrl]

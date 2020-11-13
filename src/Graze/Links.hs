@@ -16,8 +16,6 @@ import Graze.Url        (Url (..))
 import Graze.Url.Parser (parseRelUrl)
 
 
--- Predicates ------------------------------------------------------------------
-
 isKchar :: Char -> Bool
 isKchar c = not (isSpace c)
     && c /= '"'
@@ -31,8 +29,6 @@ isVchar c = not (isSpace c)
     && c /= '"'
     && c /= '\''
     && c /= '>'
-
--- Parser ----------------------------------------------------------------------
 
 key :: A.Parser T.Text
 key = A.takeWhile1 isKchar
@@ -59,8 +55,6 @@ hrefs = mapMaybe (lookup "href") <$> go
   where
     go = A.takeWhile (/= '<') *>
         (A.endOfInput $> [] <|> (:) <$> a <*> go <|> A.char '<' *> go)
-
--- Interface -------------------------------------------------------------------
 
 -- | @links base html@ is a list of the URLs corresponding to the links in the
 -- HTML document @html@, with @base@ serving as the base URL for relative links.

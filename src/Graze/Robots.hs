@@ -3,10 +3,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ViewPatterns      #-}
 
---------------------------------------------------------------------------------
--- | Module: Graze.Robots
---
--- This module contains a best-effort parser for the original robots.txt
+-- | This module contains a best-effort parser for the original robots.txt
 -- <https://www.robotstxt.org/norobots-rfc.txt standard>.
 --
 -- = Implementation
@@ -25,7 +22,6 @@
 --     * If a path is affected by both an \"Allow\" and a \"Disallow\", then the
 --       \"Allow\" wins out; the standard intends the rule that occurs first to
 --       be decisive.
---------------------------------------------------------------------------------
 
 module Graze.Robots
     ( Robots

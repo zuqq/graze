@@ -75,7 +75,8 @@ crawl legal Queues {..} = loop
             Success Job {..} links -> unless (depth <= 0) $ do
                 s <- use seen
                 let (s', i, links') = process s . filter legal $ links
-                traverse_ (liftIO . atomically . writeTQueue fetcherQueue)
+                traverse_
+                    (liftIO . atomically . writeTQueue fetcherQueue)
                     [Fetch (Job url link (depth - 1)) | link <- links']
                 seen .= s'
                 open += i

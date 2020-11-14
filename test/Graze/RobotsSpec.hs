@@ -5,7 +5,6 @@ module Graze.RobotsSpec
     ) where
 
 import           Data.Foldable (for_)
-import           Data.Functor  ((<&>))
 import qualified Data.Text     as T
 
 import Test.Hspec (Spec, describe, shouldBe, specify)

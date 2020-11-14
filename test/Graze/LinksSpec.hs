@@ -5,7 +5,6 @@ module Graze.LinksSpec
     ) where
 
 import           Data.Foldable (for_)
-import           Data.Function (on)
 import qualified Data.HashSet  as HS (fromList)
 import qualified Data.Text     as T (Text, unpack)
 

@@ -30,7 +30,7 @@ import Graze.Url (Url)
 data Job = Job
     { origin :: !Url
     , url    :: !Url
-    , depth  :: !Int      -- ^ Remaining depth of the search.
+    , depth  :: !Int  -- ^ Remaining depth of the search.
     }
 
 -- | Instructions for a fetcher.

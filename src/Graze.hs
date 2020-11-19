@@ -57,7 +57,7 @@ forkChild x = do
 
 -- | Configuration for the main thread.
 data Config = Config
-    { base    :: Url   -- ^ URL to start at.
+    { base    :: Url       -- ^ URL to start at.
     , folder  :: FilePath  -- ^ Download folder.
     , depth   :: Int       -- ^ Depth of the search.
     , threads :: Int       -- ^ Number of threads.

@@ -23,7 +23,7 @@ import           GHC.Generics                   (Generic)
 
 import Data.Aeson (ToJSON (..), defaultOptions, genericToEncoding)
 
-import Graze.Url (Url)
+import Graze.Url
 
 
 -- | A page to visit.

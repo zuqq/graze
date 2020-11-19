@@ -18,8 +18,8 @@ import qualified Data.HashSet   as HS (HashSet, insert, member, singleton)
 import           Lens.Micro     (Lens')
 import           Lens.Micro.Mtl ((+=), (-=), (.=), use)
 
-import Graze.Url   (Url)
-import Graze.Types (FetcherCommand (..), Job (..), Queues (..), Result (..))
+import Graze.Types
+import Graze.Url
 
 
 -- | Apart from the set of seen URLs, the crawler also maintains a counter for

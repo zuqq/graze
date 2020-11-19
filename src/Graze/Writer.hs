@@ -1,6 +1,7 @@
 {-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
+{-# LANGUAGE ViewPatterns      #-}
 
 module Graze.Writer
     ( runWriter
@@ -14,8 +15,8 @@ import           System.FilePath                ((<.>), (</>))
 
 import Data.Aeson (encode)
 
-import Graze.Url   (hashUrl)
-import Graze.Types (Queues (..), Record (..), WriterCommand (..))
+import Graze.Types
+import Graze.Url
 
 
 runWriter :: FilePath -> Queues -> IO ()
@@ -26,7 +27,7 @@ runWriter folder Queues {..} = do
     loop = (atomically . readTBQueue $ writerQueue) >>= \case
         StopWriting       -> return ()
         Write record body -> do
-            let name = hashUrl . url $ record
+            let Record _ (hashUrl -> name) _ = record
             BL.writeFile (folder </> "records" </> name <.> "json") (encode record)
             BL.writeFile (folder </> name) body
             loop

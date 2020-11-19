@@ -16,10 +16,10 @@ import qualified Data.Text.Encoding             as T (decodeUtf8')
 
 import qualified Network.HTTP.Client as H (HttpException)
 
-import Graze.Http  (ContentType (TextHtml), get)
-import Graze.Url   (serializeUrl)
-import Graze.Links (parseLinks)
+import Graze.Http
+import Graze.Links
 import Graze.Types
+import Graze.Url
 
 
 runFetcher :: Queues -> IO ()

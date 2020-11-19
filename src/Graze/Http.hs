@@ -20,7 +20,7 @@ import qualified Data.CaseInsensitive    as CI (mk)
 import qualified Network.HTTP.Client     as H
 import qualified Network.HTTP.Client.TLS as H (getGlobalManager)
 
-import Graze.Url (Url (..), serializeUrl)
+import Graze.Url
 
 
 -- | A partial representation of the \"Content-Type\" response header.

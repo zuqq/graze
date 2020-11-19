@@ -37,8 +37,8 @@ import qualified Data.HashSet        as HS (HashSet, fromList, member)
 import           Data.List           (find)
 import qualified Data.Text           as T (Text, lines, unpack)
 
-import Graze.Robots.Parser (Line, Rule(..), UserAgent, parseLine)
-import Graze.Robots.Trie   (Trie, completes, empty, insert)
+import Graze.Robots.Parser
+import Graze.Robots.Trie
 
 
 type RuleSet

@@ -39,14 +39,14 @@ import qualified Data.Text.Encoding             as T (decodeUtf8')
 import qualified Network.HTTP.Client     as H (HttpException)
 import qualified Network.HTTP.Client.TLS as H (newTlsManager, setGlobalManager)
 
-import Graze.Crawler    (CrawlerConfig (..), runCrawler)
-import Graze.Fetcher    (runFetcher)
-import Graze.Http       (ContentType (..), Response, get)
-import Graze.Url        (Url (..), parseUrl, serializeUrl)
-import Graze.Logger     (runLogger)
-import Graze.Robots     (parseRobots)
-import Graze.Types      (FetcherCommand (..), LoggerCommand (..), Queues (..), WriterCommand (..))
-import Graze.Writer     (runWriter)
+import Graze.Crawler
+import Graze.Fetcher
+import Graze.Http
+import Graze.Logger
+import Graze.Robots
+import Graze.Types
+import Graze.Url
+import Graze.Writer
 
 
 forkChild :: IO a -> IO (TMVar ())

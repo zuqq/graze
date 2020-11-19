@@ -38,16 +38,16 @@ import           Data.List           (find)
 import qualified Data.Text           as T (Text, lines, unpack)
 
 import Graze.Robots.Parser (Line, Rule(..), UserAgent, parseLine)
-import Graze.Trie          (Trie, completes, empty, insert)
+import Graze.Robots.Trie   (Trie, completes, empty, insert)
 
 
-type RuleSet = (Trie Char, Trie Char)
+type RuleSet
+    = ( Trie Char  -- Disallows
+      , Trie Char  -- Allows
+      )
 
-emptyRuleSet :: RuleSet
-emptyRuleSet = (empty, empty)
-
-fromList :: [Rule] -> RuleSet
-fromList = foldl' step emptyRuleSet
+combineRules :: [Rule] -> RuleSet
+combineRules = foldl' step (empty, empty)
   where
     step (!disallows, !allows) = \case
         Disallow "" -> (disallows, allows)
@@ -63,22 +63,23 @@ affects userAgent = HS.member userAgent . fst
 ruleSet :: Record -> RuleSet
 ruleSet = snd
 
--- | Returns, in descending priority, one of:
---
---     * the 'RuleSet' of the first 'Record' that mentions the given 'UserAgent';
---     * the 'RuleSet' of the first 'Record' that mentions @\"*\"@;
---     * the empty 'RuleSet'.
-extract :: UserAgent -> [Record] -> RuleSet
-extract userAgent records = maybe emptyRuleSet ruleSet $ go userAgent <|> go "*"
-  where
-    go x = find (affects x) records
-
-group :: [Line] -> [Record]
-group [] = []
-group ls = (HS.fromList userAgents, fromList rules) : group ls''
+groupLines :: [Line] -> [Record]
+groupLines [] = []
+groupLines ls = (HS.fromList userAgents, combineRules rules) : groupLines ls''
   where
     (lefts -> userAgents, ls') = span isLeft ls
     (rights -> rules, ls'')    = span isRight ls'
+
+-- | Returns, in descending priority, one of:
+--
+--     * the 'RuleSet' of the first 'Record' that affects the 'UserAgent';
+--     * the 'RuleSet' of the first 'Record' that affects @\"*\"@;
+--     * the empty 'RuleSet'.
+findRuleSetFor :: UserAgent -> [Record] -> RuleSet
+findRuleSetFor userAgent records = maybe (empty, empty) ruleSet $
+    go userAgent <|> go "*"
+  where
+    go x = find (affects x) records
 
 -- | If we fix our user agent, a robots.txt file amounts to a predicate that is
 -- @True@ for paths that we are allowed to crawl and @False@ for the others.
@@ -94,5 +95,5 @@ parseRobots userAgent s = \(T.unpack -> x) ->
         & T.lines
         & fmap parseLine
         & rights
-        & group
-        & extract userAgent
+        & groupLines
+        & findRuleSetFor userAgent

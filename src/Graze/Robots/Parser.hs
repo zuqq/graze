@@ -12,6 +12,7 @@ import qualified Data.Attoparsec.Text as A
 import           Data.Char            (isAscii)
 import qualified Data.Text            as T (Text)
 
+
 type UserAgent = T.Text
 
 data Rule

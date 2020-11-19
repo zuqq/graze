@@ -1,6 +1,6 @@
 -- | A generic trie implementation for lists of 'Hashable' values.
 
-module Graze.Trie
+module Graze.Robots.Trie
     ( Trie
     , completes
     , empty

@@ -12,8 +12,7 @@ import           Data.Functor         (($>))
 import           Data.Maybe           (mapMaybe)
 import qualified Data.Text            as T (Text)
 
-import Graze.Url        (Url (..))
-import Graze.Url.Parser (parseRelUrl)
+import Graze.Url (Url (..), parseRelUrl)
 
 
 isKchar :: Char -> Bool

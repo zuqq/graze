@@ -10,8 +10,7 @@ import qualified Data.Text     as T (Text)
 
 import Test.Hspec (Spec, describe, shouldBe, shouldSatisfy, specify)
 
-import Graze.Url        (Url (Url))
-import Graze.Url.Parser (parseUrl, parseRelUrl)
+import Graze.Url (Url (Url), parseUrl, parseRelUrl)
 
 
 absoluteValid :: [(T.Text, Url)]

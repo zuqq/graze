@@ -12,7 +12,7 @@ import           Data.Char            (isAlphaNum)
 import           Data.Functor         (($>))
 import qualified Data.Text            as T
 
-import Graze.Url (Url (Url))
+import Graze.Url.Types (Url (Url))
 
 -- $setup
 -- >>> :set -XOverloadedStrings

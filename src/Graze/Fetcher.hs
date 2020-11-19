@@ -28,10 +28,11 @@ runFetcher Queues {..} = loop
     loop = (atomically . readTQueue $ fetcherQueue) >>= \case
         StopFetching         -> return ()
         Fetch job @ Job {..} -> do
-            try (get url) >>= \case
-                Left (_ :: H.HttpException) -> atomically $
+            response :: Either H.HttpException Response <- try $ get url
+            case response of
+                Left _                  -> atomically $
                     writeTBQueue resultQueue Failure
-                Right (contentType, bs)     -> do
+                Right (contentType, bs) -> do
                     let links = case contentType of
                             TextHtml -> case T.decodeUtf8' . BL.toStrict $ bs of
                                 Left _  -> []

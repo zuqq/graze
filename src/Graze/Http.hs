@@ -5,7 +5,7 @@
 
 module Graze.Http
     ( ContentType (..)
-    , Result
+    , Response
     , get
     ) where
 
@@ -31,19 +31,19 @@ data ContentType
 
 -- | This returns a 'Maybe' even though we could just use 'Other' because that
 -- makes it more easily composable.
-fromByteString :: B.ByteString -> Maybe ContentType
-fromByteString bs = case CI.mk (BC.takeWhile (/= ';') bs) of
+parseContentType :: B.ByteString -> Maybe ContentType
+parseContentType bs = case CI.mk (BC.takeWhile (/= ';') bs) of
     "text/html"  -> Just TextHtml
     "text/plain" -> Just TextPlain
     _            -> Nothing
 
-fromResponse :: H.Response body -> ContentType
-fromResponse = fromMaybe Other
-    . (fromByteString <=< lookup "Content-Type")
+extractContentType :: H.Response body -> ContentType
+extractContentType = fromMaybe Other
+    . (parseContentType <=< lookup "Content-Type")
     . H.responseHeaders
 
 -- | The 'ContentType' of the response and its body.
-type Result = (ContentType, BL.ByteString)
+type Response = (ContentType, BL.ByteString)
 
 -- | Set the \"User-Agent\", since some sites will not serve us otherwise.
 setUserAgent :: H.Request -> H.Request
@@ -52,9 +52,9 @@ setUserAgent request = request {H.requestHeaders = [("User-Agent", "graze")]}
 -- | Sends a GET request for the given URL and returns the result.
 --
 -- Throws 'HttpException' if the URL is invalid or the request is unsuccessful.
-get :: Url -> IO Result
+get :: Url -> IO Response
 get (T.unpack . serializeUrl -> url) = do
     request  <- setUserAgent <$> H.parseUrlThrow url
     manager  <- H.getGlobalManager
     response <- H.httpLbs request manager
-    return (fromResponse response, H.responseBody response)
+    return (extractContentType response, H.responseBody response)

@@ -41,7 +41,7 @@ import qualified Network.HTTP.Client.TLS as H (newTlsManager, setGlobalManager)
 
 import Graze.Crawler    (CrawlerConfig (..), runCrawler)
 import Graze.Fetcher    (runFetcher)
-import Graze.Http       (ContentType (..), Result, get)
+import Graze.Http       (ContentType (..), Response, get)
 import Graze.Url        (Url (..), parseUrl, serializeUrl)
 import Graze.Logger     (runLogger)
 import Graze.Robots     (parseRobots)
@@ -85,7 +85,7 @@ run Config {..} = do
     writer   <- forkChild $ runWriter folder queues
     logger   <- forkChild $ runLogger queues
 
-    response :: Either H.HttpException Result <- try $ get base {path = "/robots.txt"}
+    response :: Either H.HttpException Response <- try $ get base {path = "/robots.txt"}
     let robots  = case response of
             Right (TextPlain, bs) -> case T.decodeUtf8' . BL.toStrict $ bs of
                 Left _  -> const True

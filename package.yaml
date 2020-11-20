@@ -48,7 +48,7 @@ executables:
     - graze
 
 tests:
-  doctest:
+  graze-doctest:
     main: Main.hs
     source-dirs: doctest
     ghc-options:

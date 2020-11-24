@@ -24,11 +24,10 @@ module Graze
     , run
     ) where
 
-import           Control.Concurrent             (forkFinally)
+import           Control.Concurrent.Async       (async, wait)
 import           Control.Concurrent.STM         (atomically)
 import           Control.Concurrent.STM.TQueue  (newTQueueIO, writeTQueue)
 import           Control.Concurrent.STM.TBQueue (newTBQueueIO, writeTBQueue)
-import           Control.Concurrent.STM.TMVar   (TMVar, newEmptyTMVarIO, putTMVar, takeTMVar)
 import           Control.Exception              (try)
 import           Control.Monad                  (replicateM, replicateM_)
 import qualified Data.ByteString.Lazy           as BL (toStrict)
@@ -48,12 +47,6 @@ import Graze.Types
 import Graze.Url
 import Graze.Writer
 
-
-forkChild :: IO a -> IO (TMVar ())
-forkChild x = do
-    m <- newEmptyTMVarIO
-    _ <- forkFinally x (\_ -> atomically $ putTMVar m ())
-    return m
 
 -- | Configuration for the main thread.
 data Config = Config
@@ -81,9 +74,9 @@ run Config {..} = do
     resultQueue  <- newTBQueueIO n
     let queues = Queues {..}
 
-    fetchers <- replicateM threads . forkChild $ runFetcher queues
-    writer   <- forkChild $ runWriter folder queues
-    logger   <- forkChild $ runLogger queues
+    fetchers <- replicateM threads . async $ runFetcher queues
+    writer   <- async $ runWriter folder queues
+    logger   <- async $ runLogger queues
 
     response :: Either H.HttpException Response <- try $ get base {path = "/robots.txt"}
     let robots  = case response of
@@ -99,8 +92,8 @@ run Config {..} = do
         writeTBQueue writerQueue StopWriting
         writeTBQueue loggerQueue StopLogging
 
-    traverse_ (atomically . takeTMVar) fetchers
-    atomically . takeTMVar $ writer
-    atomically . takeTMVar $ logger
+    traverse_ wait fetchers
+    wait writer
+    wait logger
 
     putStrLn "Done"

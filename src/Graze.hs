@@ -66,7 +66,7 @@ data Config = Config
 -- | Run the main thread.
 run :: Config -> IO ()
 run Config {..} = do
-    putStrLn $ "Crawling " <> T.unpack (serializeUrl base)
+    putStrLn . T.unpack $ "Crawling " <> serializeUrl base
 
     tls <- H.newTlsManager
     H.setGlobalManager tls

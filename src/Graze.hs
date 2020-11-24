@@ -7,16 +7,13 @@
 -- Concurrency is achieved through the creation of multiple threads that
 -- use queues to communicate. The main thread spawns
 --
---     * a logger thread,
---     * a writer thread,
---     * and 'threads' fetcher threads.
+--     * a "Graze.Crawler" thread,
 --
--- The fetcher threads retrieve jobs from a shared job queue. A unit of work for
--- a fetcher thread consists of downloading a page and parsing it; the fetcher
--- thread then passes the result back to the main thread, where the page is
--- entered into the set of visited pages and new jobs are created from its
--- outgoing links. The fetcher thread also dispatches to the writer thread,
--- which writes the page and its metadata to the filesystem.
+--     * a "Graze.Logger" thread,
+--
+--     * a "Graze.Writer" thread,
+--
+--     * and 'threads' "Graze.Fetcher" threads.
 
 module Graze
     ( Config (..)
@@ -24,14 +21,12 @@ module Graze
     , run
     ) where
 
-import           Control.Concurrent.Async       (async, wait)
-import           Control.Concurrent.STM         (atomically)
-import           Control.Concurrent.STM.TQueue  (newTQueueIO, writeTQueue)
-import           Control.Concurrent.STM.TBQueue (newTBQueueIO, writeTBQueue)
+import           Control.Concurrent.Async       (Concurrently (..))
+import           Control.Concurrent.STM.TQueue  (newTQueueIO)
+import           Control.Concurrent.STM.TBQueue (newTBQueueIO)
 import           Control.Exception              (try)
-import           Control.Monad                  (replicateM, replicateM_)
+import           Control.Monad                  (replicateM_)
 import qualified Data.ByteString.Lazy           as BL (toStrict)
-import           Data.Foldable                  (traverse_)
 import qualified Data.Text                      as T (unpack)
 import qualified Data.Text.Encoding             as T (decodeUtf8')
 
@@ -64,36 +59,32 @@ run Config {..} = do
     tls <- H.newTlsManager
     H.setGlobalManager tls
 
-    fetcherQueue <- newTQueueIO
-    -- These queues are bounded in order to provide sufficient backpressure.
-    -- If any of them is full, all fetcher threads block. This gives the other
-    -- threads a chance to catch up.
     let n = fromIntegral threads
-    writerQueue  <- newTBQueueIO n
-    loggerQueue  <- newTBQueueIO n
-    resultQueue  <- newTBQueueIO n
-    let queues = Queues {..}
+    queues <- Queues
+        <$> newTQueueIO
+        <*> newTBQueueIO n
+        <*> newTBQueueIO n
+        <*> newTBQueueIO n
 
-    fetchers <- replicateM threads . async $ runFetcher queues
-    writer   <- async $ runWriter folder queues
-    logger   <- async $ runLogger queues
-
-    response :: Either H.HttpException Response <- try $ get base {path = "/robots.txt"}
+    response :: Either H.HttpException Response <- try $
+        get base {path = "/robots.txt"}
     let robots  = case response of
             Right (TextPlain, bs) -> case T.decodeUtf8' . BL.toStrict $ bs of
                 Left _  -> const True
                 Right s -> parseRobots "graze"  s
             _                     -> const True
         legal x = domain x == domain base && robots (path x)
-    runCrawler CrawlerConfig {..} queues
 
-    atomically $ do
-        replicateM_ threads $ writeTQueue fetcherQueue StopFetching
-        writeTBQueue writerQueue StopWriting
-        writeTBQueue loggerQueue StopLogging
+    {-
+        Build a 'Concurrently' value that pools the individual threads.
 
-    traverse_ wait fetchers
-    wait writer
-    wait logger
+        The crucial advantage over plain forking is that an uncaught exception
+        in any of the threads causes everything to be shut down.
+    -}
+    runConcurrently $
+        replicateM_ threads (Concurrently $ runFetcher queues)
+            *> Concurrently (runWriter folder queues)
+            *> Concurrently (runLogger queues)
+            *> Concurrently (runCrawler CrawlerConfig {..} queues)
 
     putStrLn "Done"

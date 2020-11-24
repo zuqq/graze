@@ -6,18 +6,19 @@ module Graze.Logger
     ) where
 
 import           Control.Concurrent.STM         (atomically)
-import           Control.Concurrent.STM.TBQueue (readTBQueue)
+import           Control.Concurrent.STM.TBQueue (readTBQueue, writeTBQueue)
 import qualified Data.Text                      as T (unpack)
 import           System.IO                      (hPutStrLn, stderr)
 
 import Graze.Types
 
 
+-- | Logs the URLs of downloaded pages to 'stderr'.
 runLogger :: Queues -> IO ()
 runLogger Queues {..} = loop
   where
     loop = (atomically . readTBQueue $ loggerQueue) >>= \case
-        StopLogging -> return ()
+        StopLogging -> atomically $ writeTBQueue loggerQueue StopLogging
         Log message -> do
             hPutStrLn stderr . T.unpack $ message
             loop

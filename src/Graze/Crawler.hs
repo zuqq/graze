@@ -9,7 +9,7 @@ module Graze.Crawler
 
 import Control.Concurrent.STM           (atomically)
 import Control.Concurrent.STM.TQueue    (writeTQueue)
-import Control.Concurrent.STM.TBQueue   (readTBQueue)
+import Control.Concurrent.STM.TBQueue   (readTBQueue, writeTBQueue)
 import Control.Monad                    (unless)
 import Control.Monad.IO.Class           (liftIO)
 import Control.Monad.Trans.State.Strict (StateT, evalStateT)
@@ -23,8 +23,6 @@ import Graze.Types
 import Graze.Url
 
 
--- | Apart from the set of seen URLs, the crawler also maintains a counter for
--- the number of open jobs. When this counter reaches zero, the crawler exits.
 data CrawlerState = CrawlerState
     !(HS.HashSet Url)  -- ^ Set of seen URLs.
     !Int               -- ^ Number of open jobs.
@@ -88,7 +86,19 @@ data CrawlerConfig = CrawlerConfig
     , legal :: Url -> Bool  -- ^ Predicate that selects URLs to crawl.
     }
 
+-- | Processes 'Result's and orchestrates the other threads.
+--
+-- The crawler thread creates 'Job's for the fetcher threads to complete. To do
+-- so, it maintains the set of seen URLs and a counter for the number of open
+-- jobs.
+--
+-- Initially, there is a single job targeting 'base'. When the number of
+-- open jobs hits zero, the crawler thread instructs everyone else to shut down
+-- by sending them @Stop…@ commands.
 runCrawler :: CrawlerConfig -> Queues -> IO ()
-runCrawler CrawlerConfig {..} queues = do
-    atomically . writeTQueue (fetcherQueue queues) $ Fetch (Job base base depth)
+runCrawler CrawlerConfig {..} queues @ Queues {..} = do
+    atomically . writeTQueue fetcherQueue $ Fetch (Job base base depth)
     evalCrawler (crawl legal queues) (CrawlerState (HS.singleton base) 1)
+    atomically . writeTQueue fetcherQueue $ StopFetching
+    atomically . writeTBQueue writerQueue $ StopWriting
+    atomically . writeTBQueue loggerQueue $ StopLogging

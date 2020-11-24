@@ -118,7 +118,7 @@ scheme :: A.Parser T.Text
 scheme = T.snoc <$> A.takeWhile1 isSchar <*> A.char ':'
 
 domain :: A.Parser T.Text
-domain = T.append <$> A.string "//" <*> A.takeWhile (/= '/')
+domain = T.append <$> "//" <*> A.takeWhile (/= '/')
 
 path :: A.Parser T.Text
 path = T.cons <$> A.char '/' <*> A.takeText

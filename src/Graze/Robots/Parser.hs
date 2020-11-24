@@ -99,21 +99,21 @@ comment :: A.Parser T.Text
 comment = A.char '#' *> A.takeText
 
 userAgent :: A.Parser UserAgent
-userAgent = A.string "User-agent:"
+userAgent = "User-agent:"
     *> skipSpace
     *> A.takeWhile1 isTchar
     <* (A.endOfInput <|> skipSpace <* comment)
 
 disallow :: A.Parser Rule
 disallow = fmap Disallow $
-    A.string "Disallow:"
+    "Disallow:"
     *> skipSpace
     *> path
     <* (A.endOfInput <|> skipSpace <* comment)
 
 allow :: A.Parser Rule
 allow = fmap Allow $
-    A.string "Allow:"
+    "Allow:"
     *> skipSpace
     *> path
     <* (A.endOfInput <|> skipSpace <* comment)

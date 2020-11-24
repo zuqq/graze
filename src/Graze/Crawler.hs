@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns    #-}
 {-# LANGUAGE LambdaCase      #-}
 {-# LANGUAGE RecordWildCards #-}
 
@@ -36,9 +37,6 @@ seen p (CrawlerState s i) = fmap (`CrawlerState` i) (p s)
 open :: Lens' CrawlerState Int
 open q (CrawlerState s i) = fmap (s `CrawlerState`) (q i)
 
--- | An auxiliary triple type that is strict in every argument.
-data Triple a b c = Triple !a !b !c
-
 -- | Process a list of links in a single pass.
 --
 -- Note that this needs to be a left fold: the tail of the list can only be
@@ -54,12 +52,12 @@ process
        , Int             -- Number of new URLs.
        , [Url]           -- List of new URLs.
        )
-process s xs = done $ foldl' step (Triple s 0 id) xs
+process s xs = done $ foldl' step (s, 0, id) xs
   where
-    step (Triple s' i ys) x = if x `HS.member` s'
-        then Triple s' i ys
-        else Triple (x `HS.insert` s') (i + 1) (ys . (x :))
-    done (Triple s' i ys)   = (s', i, ys [])
+    step (!s', !i, !ys) x = if x `HS.member` s'
+        then (s', i, ys)
+        else (x `HS.insert` s', i + 1, ys . (x :))
+    done (!s', !i, !ys)   = (s', i, ys [])
 
 type Crawler a = StateT CrawlerState IO a
 

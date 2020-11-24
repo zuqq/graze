@@ -57,8 +57,10 @@ combineRules = foldl' step (empty, empty)
 
 type Record = (HS.HashSet UserAgent, RuleSet)
 
-affects :: UserAgent -> Record -> Bool
-affects userAgent = HS.member userAgent . fst
+affects :: Record -> UserAgent -> Bool
+affects = flip go
+  where
+    go x = HS.member x . fst
 
 ruleSet :: Record -> RuleSet
 ruleSet = snd
@@ -79,7 +81,7 @@ findRuleSetFor :: UserAgent -> [Record] -> RuleSet
 findRuleSetFor userAgent records = maybe (empty, empty) ruleSet $
     go userAgent <|> go "*"
   where
-    go x = find (affects x) records
+    go x = find (`affects` x) records
 
 -- | If we fix our user agent, a robots.txt file amounts to a predicate that is
 -- @True@ for paths that we are allowed to crawl and @False@ for the others.

@@ -7,12 +7,10 @@ module Graze.Fetcher
     ( runFetcher
     ) where
 
-import           Control.Concurrent.STM         (atomically)
-import           Control.Concurrent.STM.TQueue  (readTQueue)
-import           Control.Concurrent.STM.TBQueue (writeTBQueue)
-import           Control.Exception              (try)
-import qualified Data.ByteString.Lazy           as BL (toStrict)
-import qualified Data.Text.Encoding             as T (decodeUtf8')
+import Control.Concurrent.STM         (atomically)
+import Control.Concurrent.STM.TQueue  (readTQueue)
+import Control.Concurrent.STM.TBQueue (writeTBQueue)
+import Control.Exception              (try)
 
 import qualified Network.HTTP.Client as H (HttpException)
 
@@ -34,9 +32,7 @@ runFetcher Queues {..} = loop
                     writeTBQueue resultQueue Failure
                 Right (contentType, bs) -> do
                     let links = case contentType of
-                            TextHtml -> case T.decodeUtf8' . BL.toStrict $ bs of
-                                Left _  -> []
-                                Right s -> parseLinks url s
+                            TextHtml -> parseLinks url bs
                             _        -> []
                     atomically . writeTBQueue writerQueue $
                         Write (Record origin url links) bs

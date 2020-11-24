@@ -1,64 +1,57 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ViewPatterns #-}
 
 module Graze.Links
     ( parseLinks
     ) where
 
-import           Control.Applicative  ((<|>))
-import qualified Data.Attoparsec.Text as A
-import           Data.Char            (isSpace)
-import           Data.Either          (fromRight, rights)
-import           Data.Functor         (($>))
-import           Data.Maybe           (mapMaybe)
-import qualified Data.Text            as T (Text)
+import qualified Data.ByteString.Lazy as LB
+import           Data.Either          (rights)
+import           Data.Int             (Int64)
+import qualified Data.Text.Encoding   as T (decodeUtf8')
+import           Data.Word            (Word8)
 
+import Graze.Links.Parser
 import Graze.Url
 
 
-isKchar :: Char -> Bool
-isKchar c = not (isSpace c)
-    && c /= '"'
-    && c /= '\''
-    && c /= '>'
-    && c /= '/'
-    && c /= '='
+longerThan :: LB.ByteString -> Int64 -> Bool
+longerThan bs n = not . LB.null . LB.drop n $ bs
 
-isVchar :: Char -> Bool
-isVchar c = not (isSpace c)
-    && c /= '"'
-    && c /= '\''
-    && c /= '>'
+(!) :: LB.ByteString -> Int64 -> Word8
+(!) = LB.index
 
-key :: A.Parser T.Text
-key = A.takeWhile1 isKchar
+isSpace :: Word8 -> Bool
+isSpace (toEnum . fromIntegral -> c) = case c of
+    '\t' -> True
+    '\n' -> True
+    '\f' -> True
+    '\r' -> True
+    ' '  -> True
+    _    -> False
 
-value :: A.Parser T.Text
-value = A.char '"' *> A.takeWhile1 isVchar <* A.char '"'
-    <|> A.char '\'' *> A.takeWhile1 isVchar <* A.char '\''
-    <|> A.takeWhile1 isVchar
+{-
+    Captures the content of all anchor start tags with at least one attribute.
 
-attribute :: A.Parser (T.Text, T.Text)
-attribute = (,)
-    <$> key
-    <*> A.option "" (A.skipSpace *> A.char '=' <* A.skipSpace *> value)
+    This operates directly on the 'LB.ByteString' because that is lazier than
+    feeding the input into a parser.
 
-a :: A.Parser [(T.Text, T.Text)]
-a = A.string "<a"
-    *> A.takeWhile1 isSpace
-    *> attribute `A.sepBy` A.skipSpace
-    <* A.skipSpace
-    <* A.char '>'
-
-hrefs :: A.Parser [T.Text]
-hrefs = mapMaybe (lookup "href") <$> go
+    NB. Unfortunately the list of links in "Graze.Fetcher" still needs to be
+    materialized because it's used in two places.
+-}
+lexLinks :: LB.ByteString -> [LB.ByteString]
+lexLinks = go
   where
-    go = A.takeWhile (/= '<') *>
-        (A.endOfInput $> [] <|> (:) <$> a <*> go <|> A.char '<' *> go)
+    go (LB.drop 1 . LB.dropWhile (/= 60) -> bs) = if not (bs `longerThan` 2)
+        then []
+        else if bs ! 0 == 97 && isSpace (bs ! 1)
+            then let (x, bs') = LB.span (/= 62) bs in x : go bs'
+            else go bs
 
--- | @links base html@ is a list of the URLs corresponding to the links in the
--- HTML document @html@, with @base@ serving as the base URL for relative links.
-parseLinks :: Url -> T.Text -> [Url]
+-- | @parseLinks base bs@ is a list of the links in the HTML document @bs@, with
+-- @base@ serving as the base URL for relative links.
+parseLinks :: Url -> LB.ByteString -> [Url]
 parseLinks base = rights
-    . fmap (parseRelUrl base)
-    . fromRight []
-    . A.parseOnly hrefs
+    . fmap (parseLink base)
+    . rights
+    . fmap (T.decodeUtf8' . LB.toStrict)
+    . lexLinks

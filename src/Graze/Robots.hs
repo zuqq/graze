@@ -16,9 +16,13 @@
 -- The parser deviates from the standard in (at least) the following points:
 --
 --     * User agents are matched exactly, not in a case-insensitive way.
+--
 --     * There is no special handling of @\"/robots.txt\"@.
+--
 --     * There is no special handling of URL-encoded paths.
+--
 --     * Paths aren't required to be absolute.
+--
 --     * If a path is affected by both an \"Allow\" and a \"Disallow\", then the
 --       \"Allow\" wins out; the standard intends the rule that occurs first to
 --       be decisive.
@@ -75,7 +79,9 @@ groupLines ls = (HS.fromList userAgents, combineRules rules) : groupLines ls''
 -- | Returns, in descending priority, one of:
 --
 --     * the 'RuleSet' of the first 'Record' that affects the 'UserAgent';
+--
 --     * the 'RuleSet' of the first 'Record' that affects @\"*\"@;
+--
 --     * the empty 'RuleSet'.
 findRuleSetFor :: UserAgent -> [Record] -> RuleSet
 findRuleSetFor userAgent records = maybe (empty, empty) ruleSet $

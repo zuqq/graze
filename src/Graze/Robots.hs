@@ -78,11 +78,11 @@ groupLines ls = (HS.fromList userAgents, combineRules rules) : groupLines ls''
 
 -- | Returns, in descending priority, one of:
 --
---     * the 'RuleSet' of the first 'Record' that affects the 'UserAgent';
+--     * the @RuleSet@ of the first @Record@ that affects the @UserAgent@;
 --
---     * the 'RuleSet' of the first 'Record' that affects @\"*\"@;
+--     * the @RuleSet@ of the first @Record@ that affects @\"*\"@;
 --
---     * the empty 'RuleSet'.
+--     * the empty @RuleSet@.
 findRuleSetFor :: UserAgent -> [Record] -> RuleSet
 findRuleSetFor userAgent records = maybe (empty, empty) ruleSet $
     go userAgent <|> go "*"

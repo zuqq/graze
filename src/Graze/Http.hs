@@ -32,7 +32,7 @@ data ContentType
 -- | This returns a 'Maybe' even though we could just use 'Other' because that
 -- makes it more easily composable.
 parseContentType :: B.ByteString -> Maybe ContentType
-parseContentType bs = case CI.mk (BC.takeWhile (/= ';') bs) of
+parseContentType bs = case CI.mk . BC.takeWhile (/= ';') $ bs of
     "text/html"  -> Just TextHtml
     "text/plain" -> Just TextPlain
     _            -> Nothing
@@ -49,9 +49,10 @@ type Response = (ContentType, BL.ByteString)
 setUserAgent :: H.Request -> H.Request
 setUserAgent request = request {H.requestHeaders = [("User-Agent", "graze")]}
 
--- | Sends a GET request for the given URL and returns the result.
+-- | Sends a GET request for the given URL and returns the response.
 --
--- Throws 'HttpException' if the URL is invalid or the request is unsuccessful.
+-- Throws 'H.HttpException' if the given URL is invalid or the request was
+-- unsuccessful.
 get :: Url -> IO Response
 get (T.unpack . serializeUrl -> url) = do
     request  <- setUserAgent <$> H.parseUrlThrow url

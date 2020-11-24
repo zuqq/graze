@@ -71,7 +71,7 @@ run Config {..} = do
     let robots  = case response of
             Right (TextPlain, bs) -> case T.decodeUtf8' . BL.toStrict $ bs of
                 Left _  -> const True
-                Right s -> parseRobots "graze"  s
+                Right s -> parseRobots "graze" s
             _                     -> const True
         legal x = domain x == domain base && robots (path x)
 

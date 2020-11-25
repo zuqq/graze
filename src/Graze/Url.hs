@@ -1,6 +1,9 @@
 module Graze.Url
-    ( module Graze.Url.Parser
-    , module Graze.Url.Types
+    ( Url (..)
+    , hashUrl
+    , parseRelUrl
+    , parseUrl
+    , serializeUrl
     ) where
 
 import Graze.Url.Parser

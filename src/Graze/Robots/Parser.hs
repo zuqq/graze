@@ -12,8 +12,9 @@ import qualified Data.Attoparsec.Text as A
 import           Data.Char            (isAscii)
 import qualified Data.Text            as T (Text)
 
+import Data.CaseInsensitive (CI, mk)
 
-type UserAgent = T.Text
+type UserAgent = CI T.Text
 
 data Rule
     = Disallow  !T.Text
@@ -99,7 +100,8 @@ comment :: A.Parser T.Text
 comment = A.char '#' *> A.takeText
 
 userAgent :: A.Parser UserAgent
-userAgent = "User-agent:"
+userAgent = fmap mk $
+    "User-agent:"
     *> skipSpace
     *> A.takeWhile1 isTchar
     <* (A.endOfInput <|> skipSpace <* comment)

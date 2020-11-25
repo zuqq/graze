@@ -13,13 +13,9 @@
 --
 -- = Deficiencies
 --
--- The parser deviates from the standard in (at least) the following points:
+-- The parser deviates from the standard in the following points:
 --
---     * User agents are matched exactly, not in a case-insensitive way.
---
---     * There is no special handling of @\"/robots.txt\"@.
---
---     * There is no special handling of URL-encoded paths.
+--     * Paths are assume to be URL-encoded.
 --
 --     * Paths aren't required to be absolute.
 --

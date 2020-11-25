@@ -16,7 +16,7 @@ import qualified Data.ByteString.Lazy  as BL (ByteString)
 import           Data.Maybe            (fromMaybe)
 import qualified Data.Text             as T (unpack)
 
-import qualified Data.CaseInsensitive    as CI (mk)
+import           Data.CaseInsensitive    (mk)
 import qualified Network.HTTP.Client     as H
 import qualified Network.HTTP.Client.TLS as H (getGlobalManager)
 
@@ -32,7 +32,7 @@ data ContentType
 -- | This returns a 'Maybe' even though we could just use 'Other' because that
 -- makes it more easily composable.
 parseContentType :: B.ByteString -> Maybe ContentType
-parseContentType bs = case CI.mk . BC.takeWhile (/= ';') $ bs of
+parseContentType bs = case mk . BC.takeWhile (/= ';') $ bs of
     "text/html"  -> Just TextHtml
     "text/plain" -> Just TextPlain
     _            -> Nothing

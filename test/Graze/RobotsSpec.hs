@@ -9,7 +9,7 @@ import qualified Data.Text     as T
 
 import Test.Hspec (Spec, describe, shouldBe, specify)
 
-import Graze.Robots (parseRobots)
+import Graze.Robots (UserAgent, parseRobots)
 
 
 content :: T.Text
@@ -39,7 +39,7 @@ paths =
     , "/org/about.html"
     ]
 
-cases :: [(T.Text, [Bool])]
+cases :: [(UserAgent, [Bool])]
 cases =
     [ ("unhipbot"  , [False, False, False, False, False])
     , ("webcrawler", [True , True , True , True , True ])
@@ -50,10 +50,10 @@ cases =
 parseRobotsSpec :: Spec
 parseRobotsSpec = describe "valid examples" $
     for_ cases $ \(userAgent, results) ->
-        describe (T.unpack userAgent) $
+        describe (show userAgent) $
             let legal = parseRobots userAgent content
             in for_ (zip paths results) $ \(path, result) ->
-                specify (T.unpack path) $ legal path `shouldBe` result
+                specify (show path) $ legal path `shouldBe` result
 
 spec :: Spec
 spec = describe "parseRobots" parseRobotsSpec

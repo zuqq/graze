@@ -7,7 +7,6 @@ module Graze.LinksSpec
 import qualified Data.ByteString.Lazy as BL
 import           Data.Foldable        (for_)
 import qualified Data.HashSet         as HS (fromList)
-import qualified Data.Text            as T (unpack)
 
 import Test.Hspec (Spec, describe, shouldBe, specify)
 

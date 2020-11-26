@@ -24,6 +24,7 @@ dependencies:
 - microlens-mtl
 - optparse-applicative
 - stm
+- stm-chans
 - text
 - transformers
 - unordered-containers

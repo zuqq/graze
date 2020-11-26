@@ -1,5 +1,4 @@
 {-# LANGUAGE LambdaCase      #-}
-{-# LANGUAGE RecordWildCards #-}
 
 module Graze.Logger
     ( runLogger

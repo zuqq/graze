@@ -15,7 +15,7 @@
 --
 -- The parser deviates from the standard in the following points:
 --
---     * Paths are assume to be URL-encoded.
+--     * Paths are assumed to be percent-encoded.
 --
 --     * Paths aren't required to be absolute.
 --

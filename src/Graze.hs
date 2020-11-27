@@ -46,6 +46,16 @@ import Graze.Url
 import Graze.Writer
 
 
+getRobots :: Url -> IO Robots
+getRobots base = do
+    response :: Either H.HttpException Response <- try $
+        get base {path = "/robots.txt"}
+    return $ case response of
+        Right (TextPlain, bs) -> case T.decodeUtf8' . BL.toStrict $ bs of
+            Left _  -> const True
+            Right s -> parseRobots "graze" s
+        _                     -> const True
+
 -- | Configuration for the main thread.
 data Config = Config
     { base    :: Url       -- ^ URL to start at.
@@ -85,14 +95,7 @@ run Config {..} = do
 
     let runLogger' = runLogger (Q.readTBMQueue loggerQueue)
 
-    response :: Either H.HttpException Response <- try $
-        get base {path = "/robots.txt"}
-    let robots  = case response of
-            Right (TextPlain, bs) -> case T.decodeUtf8' . BL.toStrict $ bs of
-                Left _  -> const True
-                Right s -> parseRobots "graze" s
-            _                     -> const True
-
+    robots <- getRobots base
     let runCrawler' = do
             atomically . Q.writeTMQueue fetcherQueue $ Job base base depth
             runCrawler

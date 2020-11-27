@@ -21,19 +21,18 @@ module Graze
     , run
     ) where
 
-import           Control.Concurrent.Async       (Concurrently (..))
+import Control.Concurrent.Async (Concurrently (..))
 import Control.Concurrent.STM (atomically)
+import qualified Control.Concurrent.STM.TBMQueue as Q
 import qualified Control.Concurrent.STM.TBQueue as Q
 import qualified Control.Concurrent.STM.TMQueue as Q
-import qualified Control.Concurrent.STM.TBMQueue as Q
-import           Control.Exception              (try)
-import           Control.Monad                  (replicateM_)
-import qualified Data.ByteString.Lazy           as BL (toStrict)
-import qualified Data.Text                      as T (unpack)
-import qualified Data.Text.Encoding             as T (decodeUtf8')
-
+import Control.Exception (try)
+import Control.Monad (replicateM_)
+import qualified Data.ByteString.Lazy as BL (toStrict)
 import qualified Data.HashSet as HS (singleton)
-import qualified Network.HTTP.Client     as H (HttpException)
+import qualified Data.Text as T (unpack)
+import qualified Data.Text.Encoding as T (decodeUtf8')
+import qualified Network.HTTP.Client as H (HttpException)
 import qualified Network.HTTP.Client.TLS as H (newTlsManager, setGlobalManager)
 
 import Graze.Crawler

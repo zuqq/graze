@@ -6,14 +6,13 @@ module Graze.Url.Types
     , serializeUrl
     ) where
 
-import qualified Data.ByteString.Base16 as Base16 (encode)
-import qualified Data.ByteString.Char8  as BC (unpack)
-import           Data.Hashable          (Hashable (hashWithSalt))
-import qualified Data.Text              as T (Text)
-import qualified Data.Text.Encoding     as T (encodeUtf8)
-
 import qualified Crypto.Hash.SHA1 as SHA1 (hash)
-import           Data.Aeson       (ToJSON (..))
+import Data.Aeson (ToJSON (..))
+import qualified Data.ByteString.Base16 as Base16 (encode)
+import qualified Data.ByteString.Char8 as BC (unpack)
+import Data.Hashable (Hashable (hashWithSalt))
+import qualified Data.Text as T (Text)
+import qualified Data.Text.Encoding as T (encodeUtf8)
 
 -- $setup
 -- >>> :set -XOverloadedStrings

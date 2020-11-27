@@ -4,12 +4,11 @@ module Graze.RobotsSpec
     ( spec
     ) where
 
-import           Data.Foldable (for_)
-import qualified Data.Text     as T
-
+import Data.Foldable (for_)
+import qualified Data.Text as T
 import Test.Hspec (Spec, describe, shouldBe, specify)
 
-import Graze.Robots (UserAgent, parseRobots)
+import Graze.Robots
 
 
 content :: T.Text

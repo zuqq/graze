@@ -9,15 +9,14 @@ module Graze.Http
     , get
     ) where
 
-import           Control.Monad         ((<=<))
-import qualified Data.ByteString       as B (ByteString)
+import Control.Monad ((<=<))
+import qualified Data.ByteString as B (ByteString)
 import qualified Data.ByteString.Char8 as BC (takeWhile)
-import qualified Data.ByteString.Lazy  as BL (ByteString)
-import           Data.Maybe            (fromMaybe)
-import qualified Data.Text             as T (unpack)
-
-import           Data.CaseInsensitive    (mk)
-import qualified Network.HTTP.Client     as H
+import qualified Data.ByteString.Lazy as BL (ByteString)
+import Data.CaseInsensitive (mk)
+import Data.Maybe (fromMaybe)
+import qualified Data.Text as T (unpack)
+import qualified Network.HTTP.Client as H
 import qualified Network.HTTP.Client.TLS as H (getGlobalManager)
 
 import Graze.Url

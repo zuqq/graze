@@ -7,11 +7,10 @@ module Graze.Writer
     ) where
 
 import Control.Concurrent.STM (STM, atomically)
-import qualified Data.ByteString.Lazy           as BL (writeFile)
-import           System.Directory               (createDirectoryIfMissing)
-import           System.FilePath                ((<.>), (</>))
-
 import Data.Aeson (encode)
+import qualified Data.ByteString.Lazy as BL (writeFile)
+import System.Directory (createDirectoryIfMissing)
+import System.FilePath ((<.>), (</>))
 
 import Graze.Types
 import Graze.Url

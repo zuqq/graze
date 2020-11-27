@@ -7,12 +7,11 @@ module Graze.Robots.Parser
     , parseLine
     ) where
 
-import           Control.Applicative  ((<|>))
+import Control.Applicative  ((<|>))
 import qualified Data.Attoparsec.Text as A
-import           Data.Char            (isAscii)
-import qualified Data.Text            as T (Text)
-
 import Data.CaseInsensitive (CI, mk)
+import Data.Char (isAscii)
+import qualified Data.Text as T (Text)
 
 type UserAgent = CI T.Text
 

@@ -5,10 +5,10 @@ module Graze.Links
     ) where
 
 import qualified Data.ByteString.Lazy as LB
-import           Data.Either          (rights)
-import           Data.Int             (Int64)
-import qualified Data.Text.Encoding   as T (decodeUtf8')
-import           Data.Word            (Word8)
+import Data.Either (rights)
+import Data.Int (Int64)
+import qualified Data.Text.Encoding as T (decodeUtf8')
+import Data.Word (Word8)
 
 import Graze.Links.Parser
 import Graze.Url

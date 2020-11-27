@@ -10,10 +10,9 @@ module Graze.Types
     , Write (..)
     ) where
 
-import qualified Data.ByteString.Lazy           as BL (ByteString)
-import           GHC.Generics                   (Generic)
-
 import Data.Aeson (ToJSON (..), defaultOptions, genericToEncoding)
+import qualified Data.ByteString.Lazy as BL (ByteString)
+import GHC.Generics (Generic)
 
 import Graze.Url
 

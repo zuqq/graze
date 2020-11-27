@@ -4,13 +4,12 @@ module Graze.UrlSpec
     ( spec
     ) where
 
-import           Data.Either   (isLeft)
-import           Data.Foldable (for_)
-import qualified Data.Text     as T (Text)
-
+import Data.Either (isLeft)
+import Data.Foldable (for_)
+import qualified Data.Text as T (Text)
 import Test.Hspec (Spec, describe, shouldBe, shouldSatisfy, specify)
 
-import Graze.Url (Url (Url), parseUrl, parseRelUrl)
+import Graze.Url
 
 
 absoluteValid :: [(T.Text, Url)]

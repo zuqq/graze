@@ -6,7 +6,7 @@ module Graze.Logger
 
 import Control.Concurrent.STM (STM, atomically)
 import qualified Data.Text as T (Text, unpack)
-import           System.IO                      (hPutStrLn, stderr)
+import System.IO (hPutStrLn, stderr)
 
 
 -- | Logs the URLs of downloaded pages to 'stderr'.

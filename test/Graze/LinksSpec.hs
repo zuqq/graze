@@ -5,13 +5,12 @@ module Graze.LinksSpec
     ) where
 
 import qualified Data.ByteString.Lazy as BL
-import           Data.Foldable        (for_)
-import qualified Data.HashSet         as HS (fromList)
-
+import Data.Foldable (for_)
+import qualified Data.HashSet as HS (fromList)
 import Test.Hspec (Spec, describe, shouldBe, specify)
 
-import Graze.Url   (Url (Url))
-import Graze.Links (parseLinks)
+import Graze.Url
+import Graze.Links
 
 
 valid :: [(Url, BL.ByteString, [Url])]

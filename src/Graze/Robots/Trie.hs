@@ -8,8 +8,8 @@ module Graze.Robots.Trie
     , insert
     ) where
 
-import           Data.Foldable       (foldl')
-import           Data.Hashable       (Hashable)
+import Data.Foldable (foldl')
+import Data.Hashable (Hashable)
 import qualified Data.HashMap.Strict as HM
 
 

@@ -8,9 +8,8 @@ module Graze.Fetcher
     ) where
 
 import Control.Concurrent.STM (STM, atomically)
-import Control.Exception              (try)
+import Control.Exception (try)
 import qualified Data.Text as T (Text)
-
 import qualified Network.HTTP.Client as H (HttpException)
 
 import Graze.Http

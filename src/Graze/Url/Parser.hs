@@ -5,12 +5,12 @@ module Graze.Url.Parser
     , parseRelUrl
     ) where
 
-import           Control.Applicative  ((<|>))
-import           Control.Monad        ((<=<))
+import Control.Applicative ((<|>))
+import Control.Monad ((<=<))
 import qualified Data.Attoparsec.Text as A
-import           Data.Char            (isAlphaNum)
-import           Data.Functor         (($>))
-import qualified Data.Text            as T
+import Data.Char (isAlphaNum)
+import Data.Functor (($>))
+import qualified Data.Text as T
 
 import Graze.Url.Types (Url (Url))
 

@@ -4,11 +4,11 @@ module Graze.Links.Parser
     ( parseLink
     ) where
 
-import           Control.Applicative  ((<|>))
-import           Control.Monad        ((<=<))
+import Control.Applicative ((<|>))
+import Control.Monad ((<=<))
 import qualified Data.Attoparsec.Text as A
-import           Data.Char            (isSpace)
-import qualified Data.Text            as T (Text)
+import Data.Char (isSpace)
+import qualified Data.Text as T (Text)
 
 import Graze.Url
 

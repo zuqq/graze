@@ -8,14 +8,13 @@ module Graze.Crawler
     ) where
 
 import Control.Concurrent.STM (STM, atomically)
-import Control.Monad                    (unless)
-import Control.Monad.IO.Class           (liftIO)
+import Control.Monad (unless)
+import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Trans.State.Strict (evalStateT)
-import Data.Foldable                    (foldl', traverse_)
-
+import Data.Foldable (foldl', traverse_)
 import qualified Data.HashSet as HS (HashSet, insert, member)
-import           Lens.Micro     (Lens')
-import           Lens.Micro.Mtl ((+=), (-=), (.=), use)
+import Lens.Micro (Lens')
+import Lens.Micro.Mtl ((+=), (-=), (.=), use)
 
 import Graze.Types
 import Graze.Url

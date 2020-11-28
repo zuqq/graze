@@ -66,6 +66,6 @@ fromList = foldl' (flip insert) empty
 completes :: (Eq a, Hashable a) => [a] -> Trie a -> Bool
 completes _ (Trie True _)      = True
 completes [] _                 = False
-completes (x : xs) (Trie _ ts) = case HM.lookup x ts of
-    Nothing -> False
-    Just t  -> xs `completes` t
+completes (x : xs) (Trie _ ts)
+    | Just t <- HM.lookup x ts = xs `completes` t
+    | otherwise                = False

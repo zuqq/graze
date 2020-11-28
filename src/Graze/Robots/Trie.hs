@@ -32,10 +32,9 @@ empty = Trie False HM.empty
 -- | Insert an item into the trie.
 insert :: (Eq a, Hashable a) => [a] -> Trie a -> Trie a
 insert [] (Trie _ ts)          = Trie True ts
-insert (x : xs) (Trie flag ts) = Trie flag ts'
+insert (x : xs) (Trie flag ts) = Trie flag (HM.insert x t ts)
   where
-    t   = HM.lookupDefault empty x ts
-    ts' = HM.insert x (insert xs t) ts
+    t = insert xs . HM.lookupDefault empty x $ ts
 
 -- | Build a trie from a list of items.
 fromList :: (Eq a, Hashable a) => [[a]] -> Trie a

@@ -101,11 +101,11 @@ normalize s =
     go xs          []     = reverse xs
     -- Handle "..".
     go (".." : xs) (".." : ys) = go (".." : ".." : xs) ys
-    go (_ : xs)    (".." : ys) = go xs ys
-    go []          (".." : ys) = go [".."] ys
+    go (_ : xs)    (".." : ys) = go xs                 ys
+    go []          (".." : ys) = go [".."]             ys
     -- Handle ".".
     go [] ("." : ys) = go ["."] ys
-    go xs ("." : ys) = go xs ys
+    go xs ("." : ys) = go xs    ys
     -- Handle "".
     go xs ("" : ys) = go xs ys
     -- Generic case.

@@ -21,7 +21,7 @@ longerThan bs n = not . LB.null . LB.drop n $ bs
 (!) = LB.index
 
 isSpace :: Word8 -> Bool
-isSpace (toEnum . fromIntegral -> c) = case c of
+isSpace w = case toEnum . fromIntegral $ w of
     '\t' -> True
     '\n' -> True
     '\f' -> True

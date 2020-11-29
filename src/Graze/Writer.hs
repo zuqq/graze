@@ -26,7 +26,7 @@ runWriter folder recv = do
     loop
   where
     loop = atomically recv >>= \case
-        Nothing                  -> return ()
+        Nothing                  -> pure ()
         Just (Write record body) -> do
             let Record _ (hashUrl -> name) _ = record
             BL.writeFile (folder </> "records" </> name <.> "json") (encode record)

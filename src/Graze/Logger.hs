@@ -16,7 +16,7 @@ runLogger
 runLogger recv = loop
   where
     loop = atomically recv >>= \case
-        Nothing      -> return ()
+        Nothing      -> pure ()
         Just message -> do
             hPutStrLn stderr . T.unpack $ message
             loop

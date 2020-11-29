@@ -49,7 +49,7 @@ getRobots :: Url -> IO Robots
 getRobots base = do
     response :: Either H.HttpException Response <- try $
         get base {path = "/robots.txt"}
-    return $ case response of
+    pure $ case response of
         Right (TextPlain, bs) -> case T.decodeUtf8' . BL.toStrict $ bs of
             Left _  -> const True
             Right s -> parseRobots "graze" s

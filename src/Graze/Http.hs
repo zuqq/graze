@@ -57,4 +57,4 @@ get (T.unpack . serializeUrl -> url) = do
     request  <- setUserAgent <$> H.parseUrlThrow url
     manager  <- H.getGlobalManager
     response <- H.httpLbs request manager
-    return (extractContentType response, H.responseBody response)
+    pure (extractContentType response, H.responseBody response)

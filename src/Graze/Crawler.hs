@@ -72,7 +72,7 @@ runCrawler initial legal recv sendFetcher = evalStateT loop initial
   where
     loop = do
         (liftIO . atomically $ recv) >>= \case
-            Failure                -> return ()
+            Failure                -> pure ()
             Success Job {..} links -> unless (depth <= 0) $ do
                 s <- use seen
                 let (s', i, links') = process s . filter legal $ links

@@ -4,7 +4,8 @@ module Graze.Url
     , parseRelUrl
     , parseUrl
     , serializeUrl
-    ) where
+    )
+    where
 
 import Graze.Url.Parser
 import Graze.Url.Types

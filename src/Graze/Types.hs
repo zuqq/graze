@@ -8,7 +8,8 @@ module Graze.Types
     , Record (..)
     , Result (..)
     , Write (..)
-    ) where
+    )
+    where
 
 import Data.Aeson (ToJSON (..), defaultOptions, genericToEncoding)
 import qualified Data.ByteString.Lazy as BL (ByteString)

@@ -4,7 +4,8 @@ module Graze.Url.Types
     ( Url (..)
     , hashUrl
     , serializeUrl
-    ) where
+    )
+    where
 
 import qualified Crypto.Hash.SHA1 as SHA1 (hash)
 import Data.Aeson (ToJSON (..))

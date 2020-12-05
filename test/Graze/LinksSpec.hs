@@ -2,7 +2,8 @@
 
 module Graze.LinksSpec
     ( spec
-    ) where
+    )
+    where
 
 import qualified Data.ByteString.Lazy as BL
 import Data.Foldable (for_)

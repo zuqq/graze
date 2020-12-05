@@ -27,7 +27,8 @@ module Graze.Robots
     ( Robots
     , UserAgent
     , parseRobots
-    ) where
+    )
+    where
 
 import Control.Applicative ((<|>))
 import Data.Either (isLeft, isRight, lefts, rights)

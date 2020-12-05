@@ -2,7 +2,8 @@
 
 module Graze.Links.Parser
     ( parseLink
-    ) where
+    )
+    where
 
 import Control.Applicative ((<|>))
 import Control.Monad ((<=<))

@@ -6,7 +6,8 @@ module Graze.Robots.Trie
     , empty
     , fromList
     , insert
-    ) where
+    )
+    where
 
 import Data.Foldable (foldl')
 import Data.Hashable (Hashable)

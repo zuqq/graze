@@ -19,7 +19,8 @@ module Graze
     ( Config (..)
     , parseUrl
     , run
-    ) where
+    )
+    where
 
 import Control.Concurrent.Async (Concurrently (..))
 import Control.Concurrent.STM (atomically)

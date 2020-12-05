@@ -3,7 +3,8 @@
 module Graze.Url.Parser
     ( parseUrl
     , parseRelUrl
-    ) where
+    )
+    where
 
 import Control.Applicative ((<|>))
 import Control.Monad ((<=<))

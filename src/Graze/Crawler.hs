@@ -5,7 +5,8 @@
 module Graze.Crawler
     ( CrawlerState (..)
     , runCrawler
-    ) where
+    )
+    where
 
 import Control.Concurrent.STM (STM, atomically)
 import Control.Monad (unless)

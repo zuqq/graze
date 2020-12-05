@@ -2,7 +2,8 @@
 
 module Graze.Links
     ( parseLinks
-    ) where
+    )
+    where
 
 import qualified Data.ByteString.Lazy as LB
 import Data.Either (rights)

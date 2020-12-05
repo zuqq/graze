@@ -5,7 +5,8 @@
 
 module Graze.Fetcher
     ( runFetcher
-    ) where
+    )
+    where
 
 import Control.Concurrent.STM (STM, atomically)
 import Control.Exception (try)

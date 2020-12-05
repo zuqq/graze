@@ -2,7 +2,8 @@
 
 module Graze.UrlSpec
     ( spec
-    ) where
+    )
+    where
 
 import Data.Either (isLeft)
 import Data.Foldable (for_)

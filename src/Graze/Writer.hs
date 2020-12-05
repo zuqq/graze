@@ -4,7 +4,8 @@
 
 module Graze.Writer
     ( runWriter
-    ) where
+    )
+    where
 
 import Control.Concurrent.STM (STM, atomically)
 import Data.Aeson (encode)

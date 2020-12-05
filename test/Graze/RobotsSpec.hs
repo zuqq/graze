@@ -2,7 +2,8 @@
 
 module Graze.RobotsSpec
     ( spec
-    ) where
+    )
+    where
 
 import Data.Foldable (for_)
 import qualified Data.Text as T

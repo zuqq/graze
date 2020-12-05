@@ -2,7 +2,8 @@
 
 module Graze.Logger
     ( runLogger
-    ) where
+    )
+    where
 
 import Control.Concurrent.STM (STM, atomically)
 import qualified Data.Text as T (Text, unpack)

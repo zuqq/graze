@@ -5,7 +5,8 @@ module Graze.Robots.Parser
     , Rule (..)
     , UserAgent
     , parseLine
-    ) where
+    )
+    where
 
 import Control.Applicative  ((<|>))
 import qualified Data.Attoparsec.Text as A

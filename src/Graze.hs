@@ -81,8 +81,8 @@ run Config {..} = do
         a value from 'crawlerQueue' causes writes to 'fetcherQueue'; otherwise
         this cyclic dependency could cause a deadlock.
     -}
-    writerQueue <- Q.newTBMQueueIO threads
-    loggerQueue <- Q.newTBMQueueIO threads
+    writerQueue  <- Q.newTBMQueueIO threads
+    loggerQueue  <- Q.newTBMQueueIO threads
     crawlerQueue <- Q.newTBQueueIO (fromIntegral threads)
 
     let runFetcher' = runFetcher

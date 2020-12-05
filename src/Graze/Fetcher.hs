@@ -32,8 +32,8 @@ runFetcher
 runFetcher recv sendWriter sendLogger sendCrawler = loop
   where
     loop = atomically recv >>= \case
-        Nothing             -> pure ()
-        Just job @ Job {..} -> do
+        Nothing           -> pure ()
+        Just job@Job {..} -> do
             response :: Either H.HttpException Response <- try $ get url
             case response of
                 Left _                  -> atomically $ sendCrawler Failure

@@ -1,7 +1,3 @@
-module Main
-    ( main
-    ) where
-
 import Control.Applicative ((<**>))
 import qualified Data.Text as T (pack)
 import qualified Options.Applicative as O

@@ -9,7 +9,6 @@ import Control.Concurrent.STM (STM, atomically)
 import qualified Data.Text as T (Text, unpack)
 import System.IO (hPutStrLn, stderr)
 
-
 -- | Logs the URLs of downloaded pages to 'stderr'.
 runLogger
     :: STM (Maybe T.Text)  -- ^ Receive a 'T.Text' to log.

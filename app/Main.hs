@@ -4,7 +4,6 @@ import qualified Options.Applicative as O
 
 import Graze
 
-
 parser :: O.Parser Config
 parser = Config
     <$> O.argument

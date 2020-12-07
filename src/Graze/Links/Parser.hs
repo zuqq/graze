@@ -13,7 +13,6 @@ import qualified Data.Text as T (Text)
 
 import Graze.Url
 
-
 isKchar :: Char -> Bool
 isKchar c = not (isSpace c)
     && c /= '"'

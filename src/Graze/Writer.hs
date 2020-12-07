@@ -16,7 +16,6 @@ import System.FilePath ((<.>), (</>))
 import Graze.Types
 import Graze.Url
 
-
 -- | Writes 'Record's to the folder at the given 'FilePath'.
 runWriter
     :: FilePath           -- ^ Folder to download to.

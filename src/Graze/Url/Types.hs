@@ -18,7 +18,6 @@ import qualified Data.Text.Encoding as T (encodeUtf8)
 -- $setup
 -- >>> :set -XOverloadedStrings
 
-
 -- | A simplified URL type of exactly the granularity that we need.
 --
 -- Namely, we need access to the scheme in order to resolve protocol-relative

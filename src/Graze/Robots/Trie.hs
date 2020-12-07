@@ -1,5 +1,4 @@
 -- | A generic trie implementation for lists of 'Hashable' values.
-
 module Graze.Robots.Trie
     ( Trie
     , completes
@@ -12,7 +11,6 @@ module Graze.Robots.Trie
 import Data.Foldable (foldl')
 import Data.Hashable (Hashable)
 import qualified Data.HashMap.Strict as HM
-
 
 -- | A trie @t :: Trie a@ stores lists @xs :: [a]@ as paths in a tree, where
 -- the elements of @xs@ label the edges on the path. Every node carries a

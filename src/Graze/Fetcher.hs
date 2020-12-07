@@ -18,7 +18,6 @@ import Graze.Links
 import Graze.Types
 import Graze.Url
 
-
 -- | Completes 'Job's.
 --
 -- A unit of work for a fetcher consists of downloading a page and parsing it;

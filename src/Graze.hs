@@ -14,7 +14,6 @@
 --     * a "Graze.Writer" thread,
 --
 --     * and 'threads' "Graze.Fetcher" threads.
-
 module Graze
     ( Config (..)
     , parseUrl
@@ -44,7 +43,6 @@ import Graze.Robots
 import Graze.Types
 import Graze.Url
 import Graze.Writer
-
 
 getRobots :: Url -> IO Robots
 getRobots base = do

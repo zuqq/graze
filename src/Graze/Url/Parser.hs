@@ -18,7 +18,6 @@ import Graze.Url.Types (Url (Url))
 -- $setup
 -- >>> :set -XOverloadedStrings
 
-
 -- | Split on the first occurrence of @\';\'@ or @\'?\'@.
 --
 -- ==== __Examples__

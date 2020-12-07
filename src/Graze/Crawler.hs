@@ -20,7 +20,6 @@ import Lens.Micro.Mtl ((+=), (-=), (.=), use)
 import Graze.Types
 import Graze.Url
 
-
 data CrawlerState = CrawlerState
     !(HS.HashSet Url)  -- ^ Set of seen URLs.
     !Int               -- ^ Number of open jobs.

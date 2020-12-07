@@ -2,7 +2,6 @@
 {-# LANGUAGE ViewPatterns      #-}
 
 -- | Functions for making GET requests, based on "Network.HTTP.Client".
-
 module Graze.Http
     ( ContentType (..)
     , Response
@@ -21,7 +20,6 @@ import qualified Network.HTTP.Client as H
 import qualified Network.HTTP.Client.TLS as H (getGlobalManager)
 
 import Graze.Url
-
 
 -- | A partial representation of the \"Content-Type\" response header.
 data ContentType

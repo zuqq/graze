@@ -2,7 +2,6 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 
 -- | Messages that are passed between threads.
-
 module Graze.Types
     ( Job (..)
     , Record (..)
@@ -16,7 +15,6 @@ import qualified Data.ByteString.Lazy as BL (ByteString)
 import GHC.Generics (Generic)
 
 import Graze.Url
-
 
 -- | A page to visit.
 data Job = Job

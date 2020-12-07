@@ -22,7 +22,6 @@
 --     * If a path is affected by both an \"Allow\" and a \"Disallow\", then the
 --       \"Allow\" wins out; the standard intends the rule that occurs first to
 --       be decisive.
-
 module Graze.Robots
     ( Robots
     , UserAgent
@@ -40,7 +39,6 @@ import qualified Data.Text as T (Text, lines, unpack)
 
 import Graze.Robots.Parser
 import Graze.Robots.Trie
-
 
 type RuleSet
     = ( Trie Char  -- Disallows

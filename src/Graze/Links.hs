@@ -14,7 +14,6 @@ import Data.Word (Word8)
 import Graze.Links.Parser
 import Graze.Url
 
-
 longerThan :: LB.ByteString -> Int64 -> Bool
 longerThan bs n = not . LB.null . LB.drop n $ bs
 

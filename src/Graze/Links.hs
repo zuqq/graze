@@ -29,16 +29,14 @@ isSpace w = case toEnum . fromIntegral $ w of
     ' '  -> True
     _    -> False
 
-{-
-    Captures the content of all anchor start tags with at least one attribute.
-
-    This operates directly on the 'LB.ByteString' because that is lazier than
-    feeding the input into a parser. Note that it's okay to search for ASCII
-    characters directly because we're assuming UTF-8.
-
-    NB. Unfortunately the list of links in "Graze.Fetcher" still needs to be
-    materialized because it's used in two places.
--}
+-- | Captures the content of all anchor start tags with at least one attribute.
+--
+-- This operates directly on the 'LB.ByteString' because that is lazier than
+-- feeding the input into a parser. Note that it's okay to search for ASCII
+-- characters directly because we're assuming UTF-8.
+--
+-- NB. Unfortunately the list of links in "Graze.Fetcher" still needs to be
+-- materialized because it's used in two places.
 lexLinks :: LB.ByteString -> [LB.ByteString]
 lexLinks (LB.drop 1 . LB.dropWhile (/= 60) -> bs)
     | not $ bs `longerThan` 2          = []

@@ -49,9 +49,7 @@ a = A.char 'a'
 lookupHref :: [(T.Text, T.Text)] -> Either String T.Text
 lookupHref = maybe (Left "No href attribute.") Right . lookup "href"
 
-{-
-    NB. This parser operates on strict 'T.Text' because that's what we get from
-    properly decoding UTF-8.
--}
+-- NB. This parser operates on strict 'T.Text' because that's what we get from
+-- properly decoding UTF-8.
 parseLink :: Url -> T.Text -> Either String Url
 parseLink base = parseRelUrl base <=< lookupHref <=< A.parseOnly a

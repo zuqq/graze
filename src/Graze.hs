@@ -71,14 +71,12 @@ run Config {..} = do
     H.setGlobalManager tls
 
     fetcherQueue <- Q.newTMQueueIO
-    {-
-        These queues are bounded in order to prevent the threads that process
-        the results from being overwhelmed. If any of them is full, all fetcher
-        threads block; this gives the other threads a chance to catch up. On
-        the other hand, 'fetcherQueue' needs to be unbounded because consuming
-        a value from 'crawlerQueue' causes writes to 'fetcherQueue'; otherwise
-        this cyclic dependency could cause a deadlock.
-    -}
+    -- These queues are bounded in order to prevent the threads that process
+    -- the results from being overwhelmed. If any of them is full, all fetcher
+    -- threads block; this gives the other threads a chance to catch up. On
+    -- the other hand, 'fetcherQueue' needs to be unbounded because consuming
+    -- a value from 'crawlerQueue' causes writes to 'fetcherQueue'; otherwise
+    -- this cyclic dependency could cause a deadlock.
     writerQueue  <- Q.newTBMQueueIO threads
     loggerQueue  <- Q.newTBMQueueIO threads
     crawlerQueue <- Q.newTBQueueIO (fromIntegral threads)
@@ -105,16 +103,13 @@ run Config {..} = do
             atomically $ Q.closeTBMQueue writerQueue
             atomically $ Q.closeTBMQueue loggerQueue
 
-    {-
-        Build a 'Concurrently' value that pools the individual threads.
-
-        The crucial advantage over plain forking is that an uncaught exception
-        in any of the threads causes everything to be shut down.
-    -}
+    -- Build a 'Concurrently' value that pools the individual threads. The
+    -- crucial advantage over plain forking is that an uncaught exception in
+    -- any of the threads causes everything to be shut down.
     runConcurrently $
         replicateM_ threads (Concurrently runFetcher')
-            *> Concurrently runWriter'
-            *> Concurrently runLogger'
-            *> Concurrently runCrawler'
+        *> Concurrently runWriter'
+        *> Concurrently runLogger'
+        *> Concurrently runCrawler'
 
     putStrLn "Done"

@@ -1,4 +1,3 @@
-import Control.Applicative ((<**>))
 import qualified Data.Text as T (pack)
 import qualified Options.Applicative as O
 
@@ -31,5 +30,5 @@ parser = Config
 
 main :: IO ()
 main = do
-    config <- O.execParser $ O.info (parser <**> O.helper) O.fullDesc
+    config <- O.execParser . O.info (O.helper <*> parser) $ O.fullDesc
     run config

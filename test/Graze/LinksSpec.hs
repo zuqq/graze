@@ -1,9 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Graze.LinksSpec
-    ( spec
-    )
-    where
+module Graze.LinksSpec (spec) where
 
 import qualified Data.ByteString.Lazy as BL
 import Data.Foldable (for_)
@@ -12,7 +9,6 @@ import Test.Hspec (Spec, describe, shouldBe, specify)
 
 import Graze.Url
 import Graze.Links
-
 
 valid :: [(Url, BL.ByteString, [Url])]
 valid =

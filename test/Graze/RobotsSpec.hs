@@ -1,16 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Graze.RobotsSpec
-    ( spec
-    )
-    where
+module Graze.RobotsSpec (spec) where
 
 import Data.Foldable (for_)
 import qualified Data.Text as T
 import Test.Hspec (Spec, describe, shouldBe, specify)
 
 import Graze.Robots
-
 
 content :: T.Text
 content = T.unlines

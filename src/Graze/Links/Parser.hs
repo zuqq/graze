@@ -14,38 +14,41 @@ import qualified Data.Attoparsec.Text as Attoparsec
 
 import Graze.Url
 
-isKchar :: Char -> Bool
-isKchar c = not (isSpace c)
+isKeyChar :: Char -> Bool
+isKeyChar c = not (isSpace c)
     && c /= '"'
     && c /= '\''
     && c /= '>'
     && c /= '/'
     && c /= '='
 
-isVchar :: Char -> Bool
-isVchar c = not (isSpace c)
+isValueChar :: Char -> Bool
+isValueChar c = not (isSpace c)
     && c /= '"'
     && c /= '\''
     && c /= '>'
 
-key :: Attoparsec.Parser Text
-key = Attoparsec.takeWhile1 isKchar
+surroundedBy :: Applicative f => f a -> f b -> f a
+surroundedBy p q = q *> p <* q
 
 value :: Attoparsec.Parser Text
-value = Attoparsec.char '"' *> Attoparsec.takeWhile1 isVchar <* Attoparsec.char '"'
-    <|> Attoparsec.char '\'' *> Attoparsec.takeWhile1 isVchar <* Attoparsec.char '\''
-    <|> Attoparsec.takeWhile1 isVchar
+value = value_ `surroundedBy` Attoparsec.char '"'
+    <|> value_ `surroundedBy` Attoparsec.char '\''
+    <|> value_
+  where
+    value_ = Attoparsec.takeWhile1 isValueChar
 
 attribute :: Attoparsec.Parser (Text, Text)
-attribute = (,)
-    <$> key
-    <*> Attoparsec.option "" (Attoparsec.skipSpace *> Attoparsec.char '=' <* Attoparsec.skipSpace *> value)
+attribute =
+        (,)
+    <$> Attoparsec.takeWhile1 isKeyChar
+    <*> Attoparsec.option ""
+            (Attoparsec.char '=' `surroundedBy` Attoparsec.skipSpace *> value)
 
 a :: Attoparsec.Parser [(Text, Text)]
 a = Attoparsec.char 'a'
     *> Attoparsec.takeWhile1 isSpace
     *> attribute `Attoparsec.sepBy` Attoparsec.skipSpace
-    <* Attoparsec.skipSpace
 
 lookupHref :: [(Text, Text)] -> Either String Text
 lookupHref = maybe (Left "No href attribute.") Right . lookup "href"

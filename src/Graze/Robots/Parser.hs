@@ -8,128 +8,55 @@ module Graze.Robots.Parser
     )
     where
 
-import Control.Applicative  ((<|>))
-import qualified Data.Attoparsec.Text as A
-import Data.CaseInsensitive (CI, mk)
-import Data.Char (isAscii)
-import qualified Data.Text as T (Text)
+import Control.Applicative ((<|>))
+import Data.CaseInsensitive (CI)
+import Data.Text (Text)
 
-type UserAgent = CI T.Text
+import qualified Data.Attoparsec.Text as Attoparsec
+import qualified Data.CaseInsensitive as CI
+
+type UserAgent = CI Text
 
 data Rule
-    = Disallow  !T.Text
-    | Allow     !T.Text
-    | Extension !T.Text
+    = Disallow  !Text
+    | Allow     !Text
+    | Extension !Text
 
 type Line = Either UserAgent Rule
 
-isSpace :: Char -> Bool
-isSpace w = w == ' ' || w == '\t'
+nonSpecial :: Char -> Bool
+nonSpecial c = case c of
+    ' '  -> False
+    '\t' -> False
+    '#'  -> False
+    _    -> True
 
-isSafe :: Char -> Bool
-isSafe w = case w of
-    '$' -> True
-    '-' -> True
-    '_' -> True
-    '.' -> True
-    '+' -> True
-    _   -> False
+userAgent :: Attoparsec.Parser UserAgent
+userAgent = "User-agent:"
+    *> Attoparsec.skipSpace
+    *> (CI.mk <$> Attoparsec.takeWhile1 nonSpecial)
 
-isExtra :: Char -> Bool
-isExtra w = case w of
-    '!'  -> True
-    '*'  -> True
-    '\'' -> True
-    '('  -> True
-    ')'  -> True
-    ','  -> True
-    _    -> False
+path :: Attoparsec.Parser Text
+path = Attoparsec.takeWhile nonSpecial
 
-isUchar :: Char -> Bool
-isUchar w = w == '%'  -- Treat escaped characters by just allowing '%'.
-    || 'a' <= w && w <= 'z'
-    || 'A' <= w && w <= 'Z'
-    || '0' <= w && w <= '9'
-    || isSafe w
-    || isExtra w
+disallow :: Attoparsec.Parser Rule
+disallow = "Disallow:"
+    *> Attoparsec.skipSpace
+    *> (Disallow <$> path)
 
-isPchar :: Char -> Bool
-isPchar w = w == '/'  -- Just allow '/' instead of parsing segments.
-    || isUchar w
-    || w == ':'
-    || w == '@'
-    || w == '&'
-    || w == '='
+allow :: Attoparsec.Parser Rule
+allow = "Allow:"
+    *> Attoparsec.skipSpace
+    *> (Allow <$> path)
 
-isCtl :: Char -> Bool
-isCtl w = w < '\32' || w == '\127'
+extension :: Attoparsec.Parser Rule
+extension = Attoparsec.takeWhile (/= ':')
+    *> Attoparsec.char ':'
+    *> Attoparsec.skipSpace
+    *> (Extension <$> Attoparsec.takeWhile nonSpecial)
 
-isTspecial :: Char -> Bool
-isTspecial w = case w of
-    '('  -> True
-    ')'  -> True
-    '<'  -> True
-    '>'  -> True
-    '@'  -> True
-    ','  -> True
-    ';'  -> True
-    ':'  -> True
-    '\\' -> True
-    '"'  -> True
-    '/'  -> True
-    '['  -> True
-    ']'  -> True
-    '?'  -> True
-    '='  -> True
-    '{'  -> True
-    '}'  -> True
-    ' '  -> True
-    '\t' -> True
-    _    -> False
+line :: Attoparsec.Parser Line
+line = Attoparsec.eitherP userAgent (disallow <|> allow <|> extension)
 
-isTchar :: Char -> Bool
-isTchar w = isAscii w && not (isCtl w || isTspecial w)
-
-skipSpace :: A.Parser ()
-skipSpace = A.skipWhile isSpace
-
-path :: A.Parser T.Text
-path = A.takeWhile isPchar
-
-comment :: A.Parser T.Text
-comment = A.char '#' *> A.takeText
-
-userAgent :: A.Parser UserAgent
-userAgent = fmap mk $
-    "User-agent:"
-    *> skipSpace
-    *> A.takeWhile1 isTchar
-    <* (A.endOfInput <|> skipSpace <* comment)
-
-disallow :: A.Parser Rule
-disallow = fmap Disallow $
-    "Disallow:"
-    *> skipSpace
-    *> path
-    <* (A.endOfInput <|> skipSpace <* comment)
-
-allow :: A.Parser Rule
-allow = fmap Allow $
-    "Allow:"
-    *> skipSpace
-    *> path
-    <* (A.endOfInput <|> skipSpace <* comment)
-
-extension :: A.Parser Rule
-extension = fmap Extension $
-    A.takeWhile isTchar
-    *> A.char ':'
-    *> skipSpace
-    *> A.takeWhile (/= '#')
-    <* (A.endOfInput <|> skipSpace <* comment)
-
-line :: A.Parser Line
-line = A.eitherP userAgent (disallow <|> allow <|> extension)
-
-parseLine :: T.Text -> Either String Line
-parseLine = A.parseOnly line
+parseLine :: Text -> Either String Line
+parseLine = Attoparsec.parseOnly line

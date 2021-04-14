@@ -79,8 +79,8 @@ groupLines ls = (HS.fromList userAgents, combineRules rules) : groupLines ls''
 --
 --     * the empty @RuleSet@.
 findRuleSetFor :: UserAgent -> [Record] -> RuleSet
-findRuleSetFor userAgent records = maybe (empty, empty) ruleSet $
-    go userAgent <|> go "*"
+findRuleSetFor userAgent records =
+    maybe (empty, empty) ruleSet (go userAgent <|> go "*")
   where
     go x = find (`affects` x) records
 
@@ -91,7 +91,7 @@ type Robots = T.Text -> Bool
 -- | @parseRobots userAgent s@ is the predicate corresponding to the robots.txt
 -- file @s@, with respect to the user agent @userAgent@.
 parseRobots :: UserAgent -> T.Text -> Robots
-parseRobots userAgent s = \(T.unpack -> x) ->
+parseRobots userAgent s (T.unpack -> x) =
     not (x `completes` disallows) || x `completes` allows
   where
     (!disallows, !allows) = s

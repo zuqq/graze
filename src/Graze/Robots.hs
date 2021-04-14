@@ -33,9 +33,12 @@ import Control.Applicative ((<|>))
 import Data.Either (isLeft, isRight, lefts, rights)
 import Data.Foldable (foldl')
 import Data.Function ((&))
-import qualified Data.HashSet as HS (HashSet, fromList, member)
+import Data.HashSet (HashSet)
 import Data.List (find)
-import qualified Data.Text as T (Text, lines, unpack)
+import Data.Text (Text)
+
+import qualified Data.HashSet as HashSet
+import qualified Data.Text as Text
 
 import Graze.Robots.Parser
 import Graze.Robots.Trie
@@ -50,23 +53,24 @@ combineRules = foldl' step (empty, empty)
   where
     step (!disallows, !allows) = \case
         Disallow "" -> (disallows, allows)
-        Disallow d  -> (insert (T.unpack d) disallows, allows)
-        Allow a     -> (disallows, insert (T.unpack a) allows)
+        Disallow d  -> (insert (Text.unpack d) disallows, allows)
+        Allow a     -> (disallows, insert (Text.unpack a) allows)
         Extension _ -> (disallows, allows)
 
-type Record = (HS.HashSet UserAgent, RuleSet)
+type Record = (HashSet UserAgent, RuleSet)
 
 affects :: Record -> UserAgent -> Bool
 affects = flip go
   where
-    go x = HS.member x . fst
+    go x = HashSet.member x . fst
 
 ruleSet :: Record -> RuleSet
 ruleSet = snd
 
 groupLines :: [Line] -> [Record]
 groupLines [] = []
-groupLines ls = (HS.fromList userAgents, combineRules rules) : groupLines ls''
+groupLines ls =
+    (HashSet.fromList userAgents, combineRules rules) : groupLines ls''
   where
     (lefts -> userAgents, ls') = span isLeft ls
     (rights -> rules, ls'')    = span isRight ls'
@@ -86,16 +90,16 @@ findRuleSetFor userAgent records =
 
 -- | If we fix our user agent, a robots.txt file amounts to a predicate that is
 -- @True@ for paths that we are allowed to crawl and @False@ for the others.
-type Robots = T.Text -> Bool
+type Robots = Text -> Bool
 
 -- | @parseRobots userAgent s@ is the predicate corresponding to the robots.txt
 -- file @s@, with respect to the user agent @userAgent@.
-parseRobots :: UserAgent -> T.Text -> Robots
-parseRobots userAgent s (T.unpack -> x) =
+parseRobots :: UserAgent -> Text -> Robots
+parseRobots userAgent s (Text.unpack -> x) =
     not (x `completes` disallows) || x `completes` allows
   where
     (!disallows, !allows) = s
-        & T.lines
+        & Text.lines
         & fmap parseLine
         & rights
         & groupLines

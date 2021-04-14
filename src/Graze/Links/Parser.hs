@@ -7,9 +7,10 @@ module Graze.Links.Parser
 
 import Control.Applicative ((<|>))
 import Control.Monad ((<=<))
-import qualified Data.Attoparsec.Text as A
 import Data.Char (isSpace)
-import qualified Data.Text as T (Text)
+import Data.Text (Text)
+
+import qualified Data.Attoparsec.Text as Attoparsec
 
 import Graze.Url
 
@@ -27,29 +28,29 @@ isVchar c = not (isSpace c)
     && c /= '\''
     && c /= '>'
 
-key :: A.Parser T.Text
-key = A.takeWhile1 isKchar
+key :: Attoparsec.Parser Text
+key = Attoparsec.takeWhile1 isKchar
 
-value :: A.Parser T.Text
-value = A.char '"' *> A.takeWhile1 isVchar <* A.char '"'
-    <|> A.char '\'' *> A.takeWhile1 isVchar <* A.char '\''
-    <|> A.takeWhile1 isVchar
+value :: Attoparsec.Parser Text
+value = Attoparsec.char '"' *> Attoparsec.takeWhile1 isVchar <* Attoparsec.char '"'
+    <|> Attoparsec.char '\'' *> Attoparsec.takeWhile1 isVchar <* Attoparsec.char '\''
+    <|> Attoparsec.takeWhile1 isVchar
 
-attribute :: A.Parser (T.Text, T.Text)
+attribute :: Attoparsec.Parser (Text, Text)
 attribute = (,)
     <$> key
-    <*> A.option "" (A.skipSpace *> A.char '=' <* A.skipSpace *> value)
+    <*> Attoparsec.option "" (Attoparsec.skipSpace *> Attoparsec.char '=' <* Attoparsec.skipSpace *> value)
 
-a :: A.Parser [(T.Text, T.Text)]
-a = A.char 'a'
-    *> A.takeWhile1 isSpace
-    *> attribute `A.sepBy` A.skipSpace
-    <* A.skipSpace
+a :: Attoparsec.Parser [(Text, Text)]
+a = Attoparsec.char 'a'
+    *> Attoparsec.takeWhile1 isSpace
+    *> attribute `Attoparsec.sepBy` Attoparsec.skipSpace
+    <* Attoparsec.skipSpace
 
-lookupHref :: [(T.Text, T.Text)] -> Either String T.Text
+lookupHref :: [(Text, Text)] -> Either String Text
 lookupHref = maybe (Left "No href attribute.") Right . lookup "href"
 
--- NB. This parser operates on strict 'T.Text' because that's what we get from
+-- NB. This parser operates on strict 'Text' because that's what we get from
 -- properly decoding UTF-8.
-parseLink :: Url -> T.Text -> Either String Url
-parseLink base = parseRelUrl base <=< lookupHref <=< A.parseOnly a
+parseLink :: Url -> Text -> Either String Url
+parseLink base = parseRelUrl base <=< lookupHref <=< Attoparsec.parseOnly a

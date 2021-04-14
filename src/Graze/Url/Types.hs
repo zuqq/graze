@@ -7,13 +7,14 @@ module Graze.Url.Types
     )
     where
 
-import qualified Crypto.Hash.SHA1 as SHA1 (hash)
 import Data.Aeson (ToJSON (..))
-import qualified Data.ByteString.Base16 as Base16 (encode)
-import qualified Data.ByteString.Char8 as BC (unpack)
 import Data.Hashable (Hashable (hashWithSalt))
-import qualified Data.Text as T (Text)
-import qualified Data.Text.Encoding as T (encodeUtf8)
+import Data.Text (Text)
+
+import qualified Crypto.Hash.SHA1 as SHA1
+import qualified Data.ByteString.Base16 as Base16
+import qualified Data.ByteString.Char8 as Char8
+import qualified Data.Text.Encoding as Text
 
 -- $setup
 -- >>> :set -XOverloadedStrings
@@ -24,9 +25,9 @@ import qualified Data.Text.Encoding as T (encodeUtf8)
 -- HTML links, and access to the domain and path in order to apply the
 -- robots.txt file.
 data Url = Url
-    { scheme :: !T.Text
-    , domain :: !T.Text
-    , path   :: !T.Text
+    { scheme :: !Text
+    , domain :: !Text
+    , path   :: !Text
     }
     deriving Show
 
@@ -44,7 +45,7 @@ instance Hashable Url where
 --
 -- >>> serializeUrl $ Url "http:" "//www.example.com" "/"
 -- "http://www.example.com/"
-serializeUrl :: Url -> T.Text
+serializeUrl :: Url -> Text
 serializeUrl Url {..} = scheme <> domain <> path
 
 instance ToJSON Url where
@@ -57,4 +58,9 @@ instance ToJSON Url where
 -- >>> hashUrl $ Url "http:" "//www.example.com" "/"
 -- "89e6a0649e06d83370cdf2cbfb05f363934a8d0c"
 hashUrl :: Url -> String
-hashUrl = BC.unpack . Base16.encode . SHA1.hash . T.encodeUtf8 . serializeUrl
+hashUrl
+    = Char8.unpack
+    . Base16.encode
+    . SHA1.hash
+    . Text.encodeUtf8
+    . serializeUrl

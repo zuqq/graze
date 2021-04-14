@@ -5,20 +5,21 @@ module Graze.Links
     )
     where
 
-import qualified Data.ByteString.Lazy as LB
 import Data.Either (rights)
 import Data.Int (Int64)
-import qualified Data.Text.Encoding as T (decodeUtf8')
 import Data.Word (Word8)
+
+import qualified Data.ByteString.Lazy as Lazy
+import qualified Data.Text.Encoding as Text
 
 import Graze.Links.Parser
 import Graze.Url
 
-longerThan :: LB.ByteString -> Int64 -> Bool
-longerThan bs n = not . LB.null . LB.drop n $ bs
+longerThan :: Lazy.ByteString -> Int64 -> Bool
+longerThan bs n = not . Lazy.null . Lazy.drop n $ bs
 
-(!) :: LB.ByteString -> Int64 -> Word8
-(!) = LB.index
+(!) :: Lazy.ByteString -> Int64 -> Word8
+(!) = Lazy.index
 
 isSpace :: Word8 -> Bool
 isSpace w = case toEnum . fromIntegral $ w of
@@ -31,25 +32,25 @@ isSpace w = case toEnum . fromIntegral $ w of
 
 -- | Captures the content of all anchor start tags with at least one attribute.
 --
--- This operates directly on the 'LB.ByteString' because that is lazier than
+-- This operates directly on the 'Lazy.ByteString' because that is lazier than
 -- feeding the input into a parser. Note that it's okay to search for ASCII
 -- characters directly because we're assuming UTF-8.
 --
 -- NB. Unfortunately the list of links in "Graze.Fetcher" still needs to be
 -- materialized because it's used in two places.
-lexLinks :: LB.ByteString -> [LB.ByteString]
-lexLinks (LB.drop 1 . LB.dropWhile (/= 60) -> bs)
+lexLinks :: Lazy.ByteString -> [Lazy.ByteString]
+lexLinks (Lazy.drop 1 . Lazy.dropWhile (/= 60) -> bs)
     | not $ bs `longerThan` 2          = []
     | bs ! 0 == 97 && isSpace (bs ! 1) = x : lexLinks bs'
     | otherwise                        = lexLinks bs
   where
-    (x, bs') = LB.span (/= 62) bs
+    (x, bs') = Lazy.span (/= 62) bs
 
 -- | @parseLinks base bs@ is a list of the links in the HTML document @bs@, with
 -- @base@ serving as the base URL for relative links.
-parseLinks :: Url -> LB.ByteString -> [Url]
+parseLinks :: Url -> Lazy.ByteString -> [Url]
 parseLinks base = rights
     . fmap (parseLink base)
     . rights
-    . fmap (T.decodeUtf8' . LB.toStrict)
+    . fmap (Text.decodeUtf8' . Lazy.toStrict)
     . lexLinks

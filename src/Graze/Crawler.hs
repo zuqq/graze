@@ -13,19 +13,21 @@ import Control.Monad (unless)
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Trans.State.Strict (evalStateT)
 import Data.Foldable (foldl', traverse_)
-import qualified Data.HashSet as HS (HashSet, insert, member)
+import Data.HashSet (HashSet)
 import Lens.Micro (Lens')
 import Lens.Micro.Mtl ((+=), (-=), (.=), use)
+
+import qualified Data.HashSet as HashSet
 
 import Graze.Types
 import Graze.Url
 
 data CrawlerState = CrawlerState
-    !(HS.HashSet Url)  -- ^ Set of seen URLs.
-    !Int               -- ^ Number of open jobs.
+    !(HashSet Url)  -- ^ Set of seen URLs.
+    !Int            -- ^ Number of open jobs.
 
 -- | Set of seen URLs.
-seen :: Lens' CrawlerState (HS.HashSet Url)
+seen :: Lens' CrawlerState (HashSet Url)
 seen p (CrawlerState s i) = fmap (`CrawlerState` i) (p s)
 
 -- | Number of open jobs.
@@ -41,17 +43,17 @@ open q (CrawlerState s i) = fmap (s `CrawlerState`) (q i)
 -- The third component of the accumulator is a difference list containing the
 -- new links; it is converted to an ordinary list by @done@.
 process
-    :: HS.HashSet Url    -- Set of seen URLs before.
-    -> [Url]             -- List of URLs to process.
-    -> ( HS.HashSet Url  -- Set of seen URLs after.
-       , Int             -- Number of new URLs.
-       , [Url]           -- List of new URLs.
+    :: HashSet Url    -- Set of seen URLs before.
+    -> [Url]          -- List of URLs to process.
+    -> ( HashSet Url  -- Set of seen URLs after.
+       , Int          -- Number of new URLs.
+       , [Url]        -- List of new URLs.
        )
 process s xs = done $ foldl' step (s, 0, id) xs
   where
-    step (!s', !i, !ys) x = if x `HS.member` s'
+    step (!s', !i, !ys) x = if x `HashSet.member` s'
         then (s', i, ys)
-        else (x `HS.insert` s', i + 1, ys . (x :))
+        else (x `HashSet.insert` s', i + 1, ys . (x :))
     done (!s', !i, !ys)   = (s', i, ys [])
 
 -- | Processes 'Result's.

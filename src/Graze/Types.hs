@@ -11,8 +11,9 @@ module Graze.Types
     where
 
 import Data.Aeson (ToJSON (..), defaultOptions, genericToEncoding)
-import qualified Data.ByteString.Lazy as BL (ByteString)
 import GHC.Generics (Generic)
+
+import qualified Data.ByteString.Lazy as Lazy
 
 import Graze.Url
 
@@ -40,4 +41,4 @@ instance ToJSON Record where
     toEncoding = genericToEncoding defaultOptions
 
 -- | Instructions for the writer.
-data Write = Write !Record !BL.ByteString
+data Write = Write !Record !Lazy.ByteString

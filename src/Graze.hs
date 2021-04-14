@@ -32,8 +32,8 @@ import qualified Data.ByteString.Lazy as BL (toStrict)
 import qualified Data.HashSet as HS (singleton)
 import qualified Data.Text as T (unpack)
 import qualified Data.Text.Encoding as T (decodeUtf8')
-import qualified Network.HTTP.Client as H (HttpException)
-import qualified Network.HTTP.Client.TLS as H (newTlsManager, setGlobalManager)
+
+import qualified Network.HTTP.Client.TLS as TLS
 
 import Graze.Crawler
 import Graze.Fetcher
@@ -46,7 +46,7 @@ import Graze.Writer
 
 getRobots :: Url -> IO Robots
 getRobots base = do
-    response :: Either H.HttpException Response <- try $
+    response :: Either HttpException Response <- try $
         get base {path = "/robots.txt"}
     pure $ case response of
         Right (TextPlain, bs) -> case T.decodeUtf8' . BL.toStrict $ bs of
@@ -67,8 +67,7 @@ run :: Config -> IO ()
 run Config {..} = do
     putStrLn . T.unpack $ "Crawling " <> serializeUrl base
 
-    tls <- H.newTlsManager
-    H.setGlobalManager tls
+    TLS.newTlsManager >>= TLS.setGlobalManager
 
     fetcherQueue <- Q.newTMQueueIO
     -- These queues are bounded in order to prevent the threads that process

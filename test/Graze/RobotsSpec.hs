@@ -3,13 +3,15 @@
 module Graze.RobotsSpec (spec) where
 
 import Data.Foldable (for_)
-import qualified Data.Text as T
+import Data.Text (Text)
 import Test.Hspec (Spec, describe, shouldBe, specify)
+
+import qualified Data.Text as Text
 
 import Graze.Robots
 
-content :: T.Text
-content = T.unlines
+content :: Text
+content = Text.unlines
     [ "# /robots.txt for http://www.fict.org/"
     , "# comments to webmaster@fict.org"
     , ""
@@ -26,7 +28,7 @@ content = T.unlines
     , "Allow: /serv"
     ]
 
-paths :: [T.Text]
+paths :: [Text]
 paths =
     [ "/"
     , "/index.html"

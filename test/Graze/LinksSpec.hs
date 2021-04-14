@@ -2,15 +2,16 @@
 
 module Graze.LinksSpec (spec) where
 
-import qualified Data.ByteString.Lazy as BL
 import Data.Foldable (for_)
-import qualified Data.HashSet as HS (fromList)
 import Test.Hspec (Spec, describe, shouldBe, specify)
+
+import qualified Data.ByteString.Lazy as Lazy
+import qualified Data.HashSet as HashSet (fromList)
 
 import Graze.Url
 import Graze.Links
 
-valid :: [(Url, BL.ByteString, [Url])]
+valid :: [(Url, Lazy.ByteString, [Url])]
 valid =
     [ ( Url "http:" "//www.example.com" "/"
       , "<!DOCTYPE html><body><a href=a>a</a></body>"
@@ -30,7 +31,7 @@ parseLinksSpec :: Spec
 parseLinksSpec = describe "valid examples" $
     for_ valid $ \(base, bs, urls) ->
         specify (show bs) $
-            HS.fromList (parseLinks base bs) `shouldBe` HS.fromList urls
+            HashSet.fromList (parseLinks base bs) `shouldBe` HashSet.fromList urls
 
 spec :: Spec
 spec = describe "parseLinks" parseLinksSpec

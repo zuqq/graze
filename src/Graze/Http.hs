@@ -4,20 +4,23 @@
 -- | Functions for making GET requests, based on "Network.HTTP.Client".
 module Graze.Http
     ( ContentType (..)
+    , HttpException
     , Response
     , get
     )
     where
 
 import Control.Monad ((<=<))
-import qualified Data.ByteString as B (ByteString)
-import qualified Data.ByteString.Char8 as BC (takeWhile)
-import qualified Data.ByteString.Lazy as BL (ByteString)
-import Data.CaseInsensitive (mk)
+import Data.ByteString (ByteString)
 import Data.Maybe (fromMaybe)
-import qualified Data.Text as T (unpack)
-import qualified Network.HTTP.Client as H
-import qualified Network.HTTP.Client.TLS as H (getGlobalManager)
+import Network.HTTP.Client (HttpException)
+
+import qualified Data.ByteString.Char8 as Char8
+import qualified Data.ByteString.Lazy as Lazy
+import qualified Data.CaseInsensitive as CI
+import qualified Data.Text as Text
+import qualified Network.HTTP.Client as Http
+import qualified Network.HTTP.Client.TLS as TLS
 
 import Graze.Url
 
@@ -29,31 +32,31 @@ data ContentType
 
 -- | This returns a 'Maybe' even though we could just use 'Other' because that
 -- makes it more easily composable.
-parseContentType :: B.ByteString -> Maybe ContentType
-parseContentType bs = case mk . BC.takeWhile (/= ';') $ bs of
+parseContentType :: ByteString -> Maybe ContentType
+parseContentType bs = case CI.mk . Char8.takeWhile (/= ';') $ bs of
     "text/html"  -> Just TextHtml
     "text/plain" -> Just TextPlain
     _            -> Nothing
 
-extractContentType :: H.Response body -> ContentType
+extractContentType :: Http.Response body -> ContentType
 extractContentType = fromMaybe Other
     . (parseContentType <=< lookup "Content-Type")
-    . H.responseHeaders
+    . Http.responseHeaders
 
 -- | The 'ContentType' of the response and its body.
-type Response = (ContentType, BL.ByteString)
+type Response = (ContentType, Lazy.ByteString)
 
 -- | Set the \"User-Agent\", since some sites will not serve us otherwise.
-setUserAgent :: H.Request -> H.Request
-setUserAgent request = request {H.requestHeaders = [("User-Agent", "graze")]}
+setUserAgent :: Http.Request -> Http.Request
+setUserAgent request = request {Http.requestHeaders = [("User-Agent", "graze")]}
 
 -- | Sends a GET request for the given URL and returns the response.
 --
--- Throws 'H.HttpException' if the given URL is invalid or the request was
+-- Throws 'HttpException' if the given URL is invalid or the request was
 -- unsuccessful.
 get :: Url -> IO Response
-get (T.unpack . serializeUrl -> url) = do
-    request  <- setUserAgent <$> H.parseUrlThrow url
-    manager  <- H.getGlobalManager
-    response <- H.httpLbs request manager
-    pure (extractContentType response, H.responseBody response)
+get (Text.unpack . serializeUrl -> url) = do
+    request  <- setUserAgent <$> Http.parseUrlThrow url
+    manager  <- TLS.getGlobalManager
+    response <- Http.httpLbs request manager
+    pure (extractContentType response, Http.responseBody response)

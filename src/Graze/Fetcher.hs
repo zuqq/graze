@@ -11,7 +11,6 @@ module Graze.Fetcher
 import Control.Concurrent.STM (STM, atomically)
 import Control.Exception (try)
 import qualified Data.Text as T (Text)
-import qualified Network.HTTP.Client as H (HttpException)
 
 import Graze.Http
 import Graze.Links
@@ -33,7 +32,7 @@ runFetcher recv sendWriter sendLogger sendCrawler = loop
     loop = atomically recv >>= \case
         Nothing           -> pure ()
         Just job@Job {..} -> do
-            response :: Either H.HttpException Response <- try $ get url
+            response :: Either HttpException Response <- try $ get url
             case response of
                 Left _                  -> atomically $ sendCrawler Failure
                 Right (contentType, bs) -> do

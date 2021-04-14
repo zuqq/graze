@@ -4,12 +4,12 @@ module Graze.UrlSpec (spec) where
 
 import Data.Either (isLeft)
 import Data.Foldable (for_)
-import qualified Data.Text as T (Text)
+import Data.Text (Text)
 import Test.Hspec (Spec, describe, shouldBe, shouldSatisfy, specify)
 
 import Graze.Url
 
-absoluteValid :: [(T.Text, Url)]
+absoluteValid :: [(Text, Url)]
 absoluteValid =
     [ ( "http://www.example.com"
       , Url "http:" "//www.example.com" "/"
@@ -19,7 +19,7 @@ absoluteValid =
       )
     ]
 
-absoluteInvalid :: [(String, T.Text)]
+absoluteInvalid :: [(String, Text)]
 absoluteInvalid =
     [ (""         , ""                      )
     , ("mailto:"  , "mailto:tom@example.com")
@@ -40,7 +40,7 @@ base :: Url
 base = Url "https:" "//a" "/b/c/d?q"
 
 -- Examples from RFC 1808, section 5.1.
-relativeValid :: [(T.Text, Url)]
+relativeValid :: [(Text, Url)]
 relativeValid =
     [ ("g"      , Url "https:" "//a" "/b/c/g" )
     , ("./g"    , Url "https:" "//a" "/b/c/g" )
@@ -57,7 +57,7 @@ relativeValid =
     , ("../../g", Url "https:" "//a" "/g"     )
     ]
 
-relativeInvalid :: [(String, T.Text)]
+relativeInvalid :: [(String, Text)]
 relativeInvalid = [("mailto:", "mailto:tom@example.com")]
 
 parseRelUrlSpec :: Spec

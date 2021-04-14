@@ -1,5 +1,4 @@
 {-# LANGUAGE BangPatterns      #-}
-{-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ViewPatterns      #-}
 
@@ -51,11 +50,12 @@ type RuleSet
 combineRules :: [Rule] -> RuleSet
 combineRules = foldl' step (empty, empty)
   where
-    step (!disallows, !allows) = \case
-        Disallow "" -> (disallows, allows)
-        Disallow d  -> (insert (Text.unpack d) disallows, allows)
-        Allow a     -> (disallows, insert (Text.unpack a) allows)
-        Extension _ -> (disallows, allows)
+    step (!disallows, !allows) r =
+        case r of
+            Disallow "" -> (disallows, allows)
+            Disallow d  -> (insert (Text.unpack d) disallows, allows)
+            Allow a     -> (disallows, insert (Text.unpack a) allows)
+            Extension _ -> (disallows, allows)
 
 type Record = (HashSet UserAgent, RuleSet)
 

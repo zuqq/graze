@@ -5,7 +5,7 @@ module Graze.UrlSpec (spec) where
 import Data.Either (isLeft)
 import Data.Foldable (for_)
 import Data.Text (Text)
-import Test.Hspec (Spec, describe, shouldBe, shouldSatisfy, specify)
+import Test.Hspec
 
 import Graze.Url
 

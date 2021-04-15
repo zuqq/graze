@@ -3,13 +3,13 @@
 module Graze.LinksSpec (spec) where
 
 import Data.Foldable (for_)
-import Test.Hspec (Spec, describe, shouldBe, specify)
+import Test.Hspec
 
 import qualified Data.ByteString.Lazy as Lazy
-import qualified Data.HashSet as HashSet (fromList)
+import qualified Data.HashSet as HashSet
 
-import Graze.Url
 import Graze.Links
+import Graze.Url
 
 valid :: [(Url, Lazy.ByteString, [Url])]
 valid =

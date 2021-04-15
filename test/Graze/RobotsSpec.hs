@@ -4,7 +4,7 @@ module Graze.RobotsSpec (spec) where
 
 import Data.Foldable (for_)
 import Data.Text (Text)
-import Test.Hspec (Spec, describe, shouldBe, specify)
+import Test.Hspec
 
 import qualified Data.Text as Text
 

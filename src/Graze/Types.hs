@@ -5,14 +5,15 @@
 module Graze.Types
     ( Job (..)
     , Record (..)
+    , Report (..)
     , Result (..)
-    , Write (..)
     )
     where
 
-import Data.Aeson (ToJSON (..), defaultOptions, genericToEncoding)
+import Data.Aeson (ToJSON (..))
 import GHC.Generics (Generic)
 
+import qualified Data.Aeson as Aeson
 import qualified Data.ByteString.Lazy as Lazy
 
 import Graze.Url
@@ -25,9 +26,9 @@ data Job = Job
     }
 
 -- | The result that a fetcher passes back to the crawler.
-data Result
+data Report
     = Failure
-    | Success !Job ![Url]
+    | Success !Job ![Url] !Lazy.ByteString
 
 -- | Metadata for a visited page.
 data Record = Record
@@ -38,7 +39,6 @@ data Record = Record
     deriving Generic
 
 instance ToJSON Record where
-    toEncoding = genericToEncoding defaultOptions
+    toEncoding = Aeson.genericToEncoding Aeson.defaultOptions
 
--- | Instructions for the writer.
-data Write = Write !Record !Lazy.ByteString
+data Result = Result !Record !Lazy.ByteString

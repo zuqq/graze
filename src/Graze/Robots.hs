@@ -1,26 +1,8 @@
-{-# LANGUAGE BangPatterns      #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ViewPatterns      #-}
 
 -- | This module contains a best-effort parser for the original robots.txt
 -- <https://www.robotstxt.org/norobots-rfc.txt standard>.
---
--- = Implementation
---
--- Since robots.txt is a line-based format, we first parse each line separately
--- before combining them into meaningful directives.
---
--- = Deficiencies
---
--- The parser deviates from the standard in the following points:
---
---     * Paths are assumed to be percent-encoded.
---
---     * Paths aren't required to be absolute.
---
---     * If a path is affected by both an \"Allow\" and a \"Disallow\", then the
---       \"Allow\" wins out; the standard intends the rule that occurs first to
---       be decisive.
 module Graze.Robots
     ( Robots
     , UserAgent
@@ -30,8 +12,6 @@ module Graze.Robots
 
 import Control.Applicative ((<|>))
 import Data.Either (isLeft, isRight, lefts, rights)
-import Data.Foldable (foldl')
-import Data.Function ((&))
 import Data.HashSet (HashSet)
 import Data.List (find)
 import Data.Text (Text)
@@ -42,65 +22,40 @@ import qualified Data.Text as Text
 import Graze.Robots.Parser
 import Graze.Robots.Trie
 
-type RuleSet
-    = ( Trie Char  -- Disallows
-      , Trie Char  -- Allows
-      )
-
-combineRules :: [Rule] -> RuleSet
-combineRules = foldl' step (empty, empty)
+groupLines :: [Line] -> [(HashSet UserAgent, [Rule])]
+groupLines []     = []
+groupLines lines_ = (HashSet.fromList userAgents, rules) : groupLines lines''
   where
-    step (!disallows, !allows) r =
-        case r of
-            Disallow "" -> (disallows, allows)
-            Disallow d  -> (insert (Text.unpack d) disallows, allows)
-            Allow a     -> (disallows, insert (Text.unpack a) allows)
-            Extension _ -> (disallows, allows)
+    (lefts -> userAgents, lines') = span isLeft lines_
+    (rights -> rules, lines'')    = span isRight lines'
 
-type Record = (HashSet UserAgent, RuleSet)
-
-affects :: Record -> UserAgent -> Bool
-affects = flip go
+findGroup :: UserAgent -> [(HashSet UserAgent, [Rule])] -> Maybe [Rule]
+findGroup userAgent groups = snd <$> (find_ userAgent <|> find_ "*")
   where
-    go x = HashSet.member x . fst
+    find_ userAgent_ = find ((userAgent_ `HashSet.member`) . fst) groups
 
-ruleSet :: Record -> RuleSet
-ruleSet = snd
-
-groupLines :: [Line] -> [Record]
-groupLines [] = []
-groupLines ls =
-    (HashSet.fromList userAgents, combineRules rules) : groupLines ls''
+combineRules :: [Rule] -> (Trie Char, Trie Char)
+combineRules rules = (fromList disallows, fromList allows)
   where
-    (lefts -> userAgents, ls') = span isLeft ls
-    (rights -> rules, ls'')    = span isRight ls'
+    disallows = [Text.unpack d | Disallow d <- rules, not (Text.null d)]
+    allows    = [Text.unpack a | Allow a <- rules]
 
--- | Returns, in descending priority, one of:
---
---     * the @RuleSet@ of the first @Record@ that affects the @UserAgent@;
---
---     * the @RuleSet@ of the first @Record@ that affects @\"*\"@;
---
---     * the empty @RuleSet@.
-findRuleSetFor :: UserAgent -> [Record] -> RuleSet
-findRuleSetFor userAgent records =
-    maybe (empty, empty) ruleSet (go userAgent <|> go "*")
-  where
-    go x = find (`affects` x) records
+parseRules :: UserAgent -> Text -> (Trie Char, Trie Char)
+parseRules userAgent
+    = maybe (empty, empty) combineRules
+    . findGroup userAgent
+    . groupLines
+    . rights
+    . fmap parseLine
+    . Text.lines
 
--- | If we fix our user agent, a robots.txt file amounts to a predicate that is
--- @True@ for paths that we are allowed to crawl and @False@ for the others.
+-- | If we fix our user agent, then a robots.txt file amounts to a predicate
+-- that is @True@ for paths that we are allowed to crawl and @False@ for the
+-- others.
 type Robots = Text -> Bool
 
 -- | @parseRobots userAgent s@ is the predicate corresponding to the robots.txt
 -- file @s@, with respect to the user agent @userAgent@.
 parseRobots :: UserAgent -> Text -> Robots
-parseRobots userAgent s (Text.unpack -> x) =
-    not (x `completes` disallows) || x `completes` allows
-  where
-    (!disallows, !allows) = s
-        & Text.lines
-        & fmap parseLine
-        & rights
-        & groupLines
-        & findRuleSetFor userAgent
+parseRobots userAgent s = let (disallows, allows) = parseRules userAgent s in
+    \(Text.unpack -> x) -> not (x `completes` disallows) || x `completes` allows

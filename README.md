@@ -3,8 +3,8 @@
 A web crawler, using a pool of lightweight threads for concurrent crawling. It
 features a parser for `robots.txt` files and a specialized data structure that
 allows efficient querying of the resulting rules. Because existing solutions
-seem to be `String`-based or dependency-heavy, it also comes with lenient
-parsers for HTTP URLs and HTML links.
+seem to be `String`-based or dependency-heavy, it also comes with a lenient
+parser for HTML links.
 
 
 ## Installation

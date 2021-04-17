@@ -53,7 +53,5 @@ a = Attoparsec.char 'a'
 lookupHref :: [(Text, Text)] -> Either String Text
 lookupHref = maybe (Left "No href attribute.") Right . lookup "href"
 
--- NB. This parser operates on strict 'Text' because that's what we get from
--- properly decoding UTF-8.
 parseLink :: Url -> Text -> Either String Url
 parseLink base = parseRelUrl base <=< lookupHref <=< Attoparsec.parseOnly a

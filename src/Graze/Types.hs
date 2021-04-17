@@ -16,25 +16,25 @@ import GHC.Generics (Generic)
 import qualified Data.Aeson as Aeson
 import qualified Data.ByteString.Lazy as Lazy
 
-import Graze.Url
+import Graze.URI
 
 -- | A page to visit.
 data Job = Job
-    { origin :: !Url
-    , url    :: !Url
+    { origin :: !URI
+    , url    :: !URI
     , depth  :: !Int  -- ^ Remaining depth of the search.
     }
 
 -- | The result that a fetcher passes back to the crawler.
 data Report
     = Failure
-    | Success !Job ![Url] !Lazy.ByteString
+    | Success !Job ![URI] !Lazy.ByteString
 
 -- | Metadata for a visited page.
 data Record = Record
-    { origin :: !Url
-    , url    :: !Url
-    , links  :: ![Url]
+    { origin :: !URI
+    , url    :: !URI
+    , links  :: ![URI]
     }
     deriving Generic
 

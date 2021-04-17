@@ -4,13 +4,14 @@ module Graze.Links (parseLinks) where
 
 import Data.Either (rights)
 import Data.Int (Int64)
+import Data.Maybe (mapMaybe)
 import Data.Word (Word8)
 
 import qualified Data.ByteString.Lazy as Lazy
 import qualified Data.Text.Encoding as Text
 
 import Graze.Links.Parser
-import Graze.Url
+import Graze.URI
 
 lengthSmallerThan :: Int64 -> Lazy.ByteString -> Bool
 lengthSmallerThan n = Lazy.null . Lazy.drop n
@@ -42,10 +43,9 @@ lexLinks (Lazy.drop 1 . Lazy.dropWhile (/= 60) -> bs)
 
 -- | @parseLinks base bs@ is a list of the links in the HTML document @bs@, with
 -- @base@ serving as the base URL for relative links.
-parseLinks :: Url -> Lazy.ByteString -> [Url]
+parseLinks :: URI -> Lazy.ByteString -> [URI]
 parseLinks base
-    = rights
-    . fmap (parseLink base)
+    = mapMaybe (parseLink base)
     . rights
     . fmap (Text.decodeUtf8' . Lazy.toStrict)
     . lexLinks

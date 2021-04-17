@@ -3,10 +3,11 @@
 
 module Graze.LinksSpec (spec) where
 
+import Data.Maybe (fromJust)
 import Test.Hspec
 
 import Graze.Links
-import Graze.Url
+import Graze.URI
 
 parseLinksSpec :: Spec
 parseLinksSpec = do
@@ -28,8 +29,8 @@ parseLinksSpec = do
             parseLinks base "<!DOCTYPE html><body><ahref=a>a</a></body>"
                 `shouldBe` []
   where
-    base = Url "http:" "//www.example.com" "/"
-    links = [Url "http:" "//www.example.com" "/a"]
+    base = fromJust (parseURI "http://www.example.com/")
+    links = [fromJust (parseURI "http://www.example.com/a")]
 
 spec :: Spec
 spec = describe "parseLinks" parseLinksSpec

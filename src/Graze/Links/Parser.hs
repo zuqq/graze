@@ -1,9 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Graze.Links.Parser
-    ( parseLink
-    )
-    where
+module Graze.Links.Parser (parseLink) where
 
 import Control.Applicative ((<|>))
 import Control.Monad ((<=<))
@@ -11,8 +8,9 @@ import Data.Char (isSpace)
 import Data.Text (Text)
 
 import qualified Data.Attoparsec.Text as Attoparsec
+import qualified Data.Text as Text
 
-import Graze.Url
+import Graze.URI
 
 isKeyChar :: Char -> Bool
 isKeyChar c = not (isSpace c)
@@ -50,8 +48,8 @@ a = Attoparsec.char 'a'
     *> Attoparsec.takeWhile1 isSpace
     *> attribute `Attoparsec.sepBy` Attoparsec.skipSpace
 
-lookupHref :: [(Text, Text)] -> Either String Text
-lookupHref = maybe (Left "No href attribute.") Right . lookup "href"
-
-parseLink :: Url -> Text -> Either String Url
-parseLink base = parseRelUrl base <=< lookupHref <=< Attoparsec.parseOnly a
+parseLink :: URI -> Text -> Maybe URI
+parseLink base =
+        (parseRelURI base . Text.unpack)
+    <=< lookup "href"
+    <=< (either (const Nothing) Just . Attoparsec.parseOnly a)

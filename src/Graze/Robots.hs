@@ -52,10 +52,10 @@ parseRules userAgent
 -- | If we fix our user agent, then a robots.txt file amounts to a predicate
 -- that is @True@ for paths that we are allowed to crawl and @False@ for the
 -- others.
-type Robots = Text -> Bool
+type Robots = String -> Bool
 
 -- | @parseRobots userAgent s@ is the predicate corresponding to the robots.txt
 -- file @s@, with respect to the user agent @userAgent@.
 parseRobots :: UserAgent -> Text -> Robots
 parseRobots userAgent s = let (disallows, allows) = parseRules userAgent s in
-    \(Text.unpack -> x) -> not (x `completes` disallows) || x `completes` allows
+    \path -> not (path `completes` disallows) || path `completes` allows

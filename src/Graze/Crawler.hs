@@ -11,22 +11,22 @@ import Control.Monad (unless)
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Trans.State.Strict (evalStateT)
 import Data.Foldable (foldl', traverse_)
-import Data.HashSet (HashSet)
+import Data.Set (Set)
 import Lens.Micro (Lens')
 import Lens.Micro.Mtl ((+=), (-=), (.=), use)
 
-import qualified Data.HashSet as HashSet
+import qualified Data.Set as Set
 
 import Graze.Types
-import Graze.Url
+import Graze.URI
 import Graze.Fetcher
 
 data CrawlerState = CrawlerState
-    !(HashSet Url)  -- ^ Set of seen URLs.
+    !(Set URI)  -- ^ Set of seen URLs.
     !Int            -- ^ Number of open jobs.
 
 -- | Set of seen URLs.
-seen :: Lens' CrawlerState (HashSet Url)
+seen :: Lens' CrawlerState (Set URI)
 seen p (CrawlerState s i) = fmap (`CrawlerState` i) (p s)
 
 -- | Number of open jobs.
@@ -35,19 +35,19 @@ open q (CrawlerState s i) = fmap (s `CrawlerState`) (q i)
 
 -- | Process a list of links in a single pass.
 process
-    :: HashSet Url    -- Set of seen URLs before.
-    -> [Url]          -- List of URLs to process.
-    -> ( HashSet Url  -- Set of seen URLs after.
+    :: Set URI    -- Set of seen URLs before.
+    -> [URI]          -- List of URLs to process.
+    -> ( Set URI  -- Set of seen URLs after.
        , Int          -- Number of new URLs.
-       , [Url]        -- List of new URLs.
+       , [URI]        -- List of new URLs.
        )
 process s xs = done $ foldl' step (s, 0, id) xs
   where
     -- The third component of the accumulator is a difference list containing
     -- the new links; it is converted to an ordinary list by @done@.
-    step (!s', !i, !ys) x = if x `HashSet.member` s'
+    step (!s', !i, !ys) x = if x `Set.member` s'
         then (s', i, ys)
-        else (x `HashSet.insert` s', i + 1, ys . (x :))
+        else (x `Set.insert` s', i + 1, ys . (x :))
     done (!s', !i, !ys)   = (s', i, ys [])
 
 -- | Crawler thread.
@@ -60,8 +60,8 @@ process s xs = done $ foldl' step (s, 0, id) xs
 -- queue, shuts down the fetchers, and exits.
 crawl
     :: TBMQueue Result  -- ^ Result queue.
-    -> Url              -- ^ URL to start at.
-    -> (Url -> Bool)    -- ^ Determines URLs to visit.
+    -> URI              -- ^ URL to start at.
+    -> (URI -> Bool)    -- ^ Determines URLs to visit.
     -> Int              -- ^ Depth of the search.
     -> Int              -- ^ Number of threads.
     -> IO ()
@@ -96,6 +96,6 @@ crawl results base legal depth_ threads = do
         (replicateConcurrently_
             threads
             (fetch (readTMQueue jobs) (writeTBQueue reports)))
-        (evalStateT loop (CrawlerState (HashSet.singleton base) 1))
+        (evalStateT loop (CrawlerState (Set.singleton base) 1))
 
     atomically (closeTBMQueue results)

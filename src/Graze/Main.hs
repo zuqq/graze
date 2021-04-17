@@ -13,9 +13,11 @@ import System.Directory (createDirectoryIfMissing)
 import System.FilePath ((<.>), (</>))
 import System.IO (hPutStrLn, stderr)
 
+import qualified Crypto.Hash.SHA1 as SHA1
 import qualified Data.Aeson as Aeson
+import qualified Data.ByteString.Base16 as Base16
+import qualified Data.ByteString.Char8 as Char8
 import qualified Data.ByteString.Lazy as Lazy
-import qualified Data.Text as Text
 import qualified Data.Text.Encoding as Text
 import qualified Options.Applicative as Options
 
@@ -23,10 +25,10 @@ import Graze.Crawler
 import Graze.Http
 import Graze.Robots
 import Graze.Types
-import Graze.Url
+import Graze.URI
 
 data Options = Options
-    { base    :: Url       -- ^ URL to start at.
+    { base    :: URI       -- ^ URL to start at.
     , folder  :: FilePath  -- ^ Download folder.
     , depth   :: Int       -- ^ Depth of the search.
     , threads :: Int       -- ^ Number of threads.
@@ -36,7 +38,7 @@ parser :: Parser Options
 parser =
         Options
     <$> Options.argument
-            (Options.eitherReader (parseUrl . Text.pack))
+            (Options.maybeReader parseURI)
             (Options.metavar "<URL>" <> Options.help "URL to start at")
     <*> Options.argument
             Options.str
@@ -65,10 +67,10 @@ main :: IO ()
 main = do
     Options {..} <- Options.execParser parserInfo
 
-    putStrLn ("Crawling " <> Text.unpack (serializeUrl base))
+    putStrLn ("Crawling " <> show base)
 
     response :: Either HttpException Response
-        <- try (get base {path = "robots.txt"})
+        <- try (get base {uriPath = "/robots.txt"})
     let legal = case response of
             Right (TextPlain, bs) ->
                 case Text.decodeUtf8' . Lazy.toStrict $ bs of
@@ -85,19 +87,27 @@ main = do
             case mresult of
                 Nothing                             -> pure ()
                 Just (Result record@Record {..} bs) -> do
-                    let name = hashUrl url
+                    let name
+                            = Char8.unpack
+                            . Base16.encode
+                            . SHA1.hash
+                            . Char8.pack
+                            . show
+                            $ url
                     Lazy.writeFile
                         (folder </> "records" </> name <.> "json")
                         (Aeson.encode record)
                     Lazy.writeFile (folder </> name) bs
-                    hPutStrLn stderr ("Got " <> Text.unpack (serializeUrl url))
+                    hPutStrLn stderr ("Got " <> show url)
                     loop
 
     concurrently_
         (crawl
             results
             base
-            (\url -> domain url == domain base && legal (path url))
+            (\uri ->
+                    uriAuthority uri == uriAuthority base
+                &&  legal (uriPath uri))
             depth
             threads)
         loop

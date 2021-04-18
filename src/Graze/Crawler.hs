@@ -74,8 +74,9 @@ crawl results base legal depth_ threads = do
     let loop = do
             report <- liftIO . atomically . readTBQueue $ reports
             case report of
-                Failure                   -> pure ()
-                Success Job {..} links bs -> do
+                Failure                    -> pure ()
+                Success Job {..} links_ bs -> do
+                    let links = Set.toList links_
                     unless (depth <= 0) $ do
                         s <- use seen
                         let (s', i, links') = process s . filter legal $ links

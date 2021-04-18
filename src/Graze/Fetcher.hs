@@ -7,8 +7,11 @@ module Graze.Fetcher (fetch) where
 import Control.Concurrent.STM
 import Control.Exception (try)
 
+import qualified Data.ByteString.Lazy as Lazy
+import qualified Data.Text.Encoding as Text
+
+import Graze.HTML
 import Graze.Http
-import Graze.Links
 import Graze.Types
 
 -- | Fetcher thread.
@@ -31,7 +34,9 @@ fetch recvJob sendReport = loop
                     Left _                  -> atomically . sendReport $ Failure
                     Right (contentType, bs) -> do
                         let links = case contentType of
-                                TextHtml -> parseLinks url bs
-                                _        -> []
+                                TextHtml -> case Text.decodeUtf8' . Lazy.toStrict $ bs of
+                                    Left _  -> mempty
+                                    Right s -> parseLinks url s
+                                _        -> mempty
                         atomically . sendReport $ Success job links bs
                 loop

@@ -11,6 +11,7 @@ module Graze.Types
     where
 
 import Data.Aeson (ToJSON (..))
+import Data.Set (Set)
 import GHC.Generics (Generic)
 
 import qualified Data.Aeson as Aeson
@@ -28,7 +29,7 @@ data Job = Job
 -- | The result that a fetcher passes back to the crawler.
 data Report
     = Failure
-    | Success !Job ![URI] !Lazy.ByteString
+    | Success !Job !(Set URI) !Lazy.ByteString
 
 -- | Metadata for a visited page.
 data Record = Record

@@ -11,6 +11,7 @@ module Graze.Robots
 
 import Control.Applicative ((<|>))
 import Data.Either (isLeft, isRight, lefts, rights)
+import Data.Foldable (foldl')
 import Data.Set (Set)
 import Data.List (find)
 import Data.Text (Text)
@@ -38,11 +39,13 @@ findGroup userAgent groups =
     <|> lookupBy ("*" `Set.member`) groups
 
 combineRules :: [Rule] -> (Trie Char, Trie Char)
-combineRules rules = (disallows, allows)
+combineRules = foldl' step (empty, empty)
   where
-    disallows =
-        fromList [Text.unpack d | Disallow d <- rules, not (Text.null d)]
-    allows    = fromList [Text.unpack a | Allow a <- rules]
+    step (disallows, allows) rule =
+        case rule of
+            Disallow "" -> (disallows, allows)
+            Disallow d  -> (insert (Text.unpack d) disallows, allows)
+            Allow a     -> (disallows, insert (Text.unpack a) allows)
 
 parseRules :: UserAgent -> Text -> (Trie Char, Trie Char)
 parseRules userAgent

@@ -11,34 +11,38 @@ module Graze.Robots
 
 import Control.Applicative ((<|>))
 import Data.Either (isLeft, isRight, lefts, rights)
-import Data.HashSet (HashSet)
+import Data.Set (Set)
 import Data.List (find)
 import Data.Text (Text)
 
-import qualified Data.HashSet as HashSet
+import qualified Data.Set as Set
 import qualified Data.Text as Text
 
 import Graze.Robots.Parser
 import Graze.Robots.Trie
 
-groupLines :: [Line] -> [(HashSet UserAgent, [Rule])]
+groupLines :: [Line] -> [(Set UserAgent, [Rule])]
 groupLines []     = []
 groupLines lines_ =
-    (HashSet.fromList (lefts userAgents), rights rules) : groupLines lines''
+    (Set.fromList (lefts userAgents), rights rules) : groupLines lines''
   where
     (userAgents, lines') = span isLeft lines_
     (rules, lines'')     = span isRight lines'
 
-findGroup :: UserAgent -> [(HashSet UserAgent, [Rule])] -> Maybe [Rule]
-findGroup userAgent groups = snd <$> (find_ userAgent <|> find_ "*")
-  where
-    find_ userAgent_ = find ((userAgent_ `HashSet.member`) . fst) groups
+lookupBy :: (a -> Bool) -> [(a, b)] -> Maybe b
+lookupBy p = fmap snd . find (p . fst)
+
+findGroup :: UserAgent -> [(Set UserAgent, [Rule])] -> Maybe [Rule]
+findGroup userAgent groups =
+        lookupBy (userAgent `Set.member`) groups
+    <|> lookupBy ("*" `Set.member`) groups
 
 combineRules :: [Rule] -> (Trie Char, Trie Char)
-combineRules rules = (fromList disallows, fromList allows)
+combineRules rules = (disallows, allows)
   where
-    disallows = [Text.unpack d | Disallow d <- rules, not (Text.null d)]
-    allows    = [Text.unpack a | Allow a <- rules]
+    disallows =
+        fromList [Text.unpack d | Disallow d <- rules, not (Text.null d)]
+    allows    = fromList [Text.unpack a | Allow a <- rules]
 
 parseRules :: UserAgent -> Text -> (Trie Char, Trie Char)
 parseRules userAgent

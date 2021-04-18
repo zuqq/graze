@@ -18,7 +18,6 @@ dependencies:
 - cryptohash-sha1
 - directory
 - filepath
-- hashable
 - http-client
 - http-client-tls
 - microlens
@@ -29,7 +28,6 @@ dependencies:
 - stm-chans
 - text
 - transformers
-- unordered-containers
 
 library:
   source-dirs: src
@@ -74,4 +72,3 @@ tests:
     dependencies:
     - graze
     - hspec
-    - unordered-containers

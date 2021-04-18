@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module Graze.URI (URI (..), parseRelURI, parseURI) where
+module Graze.URI (URI (..), parseURI, parseURIRelativeTo) where
 
 import Data.Aeson (ToJSON (..))
 import Network.URI
@@ -8,5 +8,5 @@ import Network.URI
 instance ToJSON URI where
     toJSON = toJSON . show
 
-parseRelURI :: URI -> String -> Maybe URI
-parseRelURI base s = (`relativeTo` base) <$> parseURIReference s
+parseURIRelativeTo :: URI -> String -> Maybe URI
+parseURIRelativeTo base = fmap (`relativeTo` base) . parseURIReference

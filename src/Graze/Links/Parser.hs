@@ -50,6 +50,6 @@ a = Attoparsec.char 'a'
 
 parseLink :: URI -> Text -> Maybe URI
 parseLink base =
-        (parseRelURI base . Text.unpack)
+        (parseURIRelativeTo base . Text.unpack)
     <=< lookup "href"
     <=< (either (const Nothing) Just . Attoparsec.parseOnly a)

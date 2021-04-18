@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
--- | This module contains a best-effort parser for the original robots.txt
+-- | This module contains a lenient parser for the original robots.txt
 -- <https://www.robotstxt.org/norobots-rfc.txt standard>.
 module Graze.Robots
     ( Robots

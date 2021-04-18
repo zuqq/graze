@@ -1,10 +1,15 @@
 -- | A generic trie implementation for lists of totally ordered values.
 module Graze.Robots.Trie
-    ( Trie
-    , completes
+    (
+    -- * Trie type
+      Trie
+    -- * Construction
     , empty
     , fromList
+    -- * Insertion
     , insert
+    -- * Query
+    , completes
     )
     where
 
@@ -40,7 +45,7 @@ insert (x : xs) (Trie flag ts) = Trie flag (Map.insert x t ts)
 fromList :: Ord a => [[a]] -> Trie a
 fromList = foldl' (flip insert) empty
 
--- | @xs \`completes\` t@ is @True@ if and only if @t@ contains a prefix of @xs@.
+-- | @xs \`completes\` t@ if and only if @t@ contains a prefix of @xs@.
 --
 -- ==== __Examples__
 --

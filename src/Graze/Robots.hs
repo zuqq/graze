@@ -1,5 +1,4 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ViewPatterns      #-}
 
 -- | This module contains a best-effort parser for the original robots.txt
 -- <https://www.robotstxt.org/norobots-rfc.txt standard>.
@@ -24,10 +23,11 @@ import Graze.Robots.Trie
 
 groupLines :: [Line] -> [(HashSet UserAgent, [Rule])]
 groupLines []     = []
-groupLines lines_ = (HashSet.fromList userAgents, rules) : groupLines lines''
+groupLines lines_ =
+    (HashSet.fromList (lefts userAgents), rights rules) : groupLines lines''
   where
-    (lefts -> userAgents, lines') = span isLeft lines_
-    (rights -> rules, lines'')    = span isRight lines'
+    (userAgents, lines') = span isLeft lines_
+    (rules, lines'')     = span isRight lines'
 
 findGroup :: UserAgent -> [(HashSet UserAgent, [Rule])] -> Maybe [Rule]
 findGroup userAgent groups = snd <$> (find_ userAgent <|> find_ "*")

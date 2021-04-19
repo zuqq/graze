@@ -70,8 +70,8 @@ main = do
 
     putStrLn ("Crawling " <> show base)
 
-    robots
-        <-  try (get ("text" // "plain") "graze" base {uriPath = "/robots.txt"})
+    robots <-
+            try (get ("text" // "plain") "graze" base {uriPath = "/robots.txt"})
         <&> \case
                 Left (_ :: HttpException) -> const True
                 Right (Just s) -> parseRobots "graze" s
@@ -85,8 +85,8 @@ main = do
             atomically (readTBMQueue recordQueue) >>= \case
                 Nothing -> pure ()
                 Just record@Record {..} -> do
-                    let name
-                            = Char8.unpack
+                    let name =
+                              Char8.unpack
                             . Base16.encode
                             . SHA1.hash
                             . Char8.pack

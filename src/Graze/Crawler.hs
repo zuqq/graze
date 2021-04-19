@@ -7,7 +7,6 @@ import Control.Concurrent.STM
 import Control.Concurrent.STM.TBMQueue
 import Control.Concurrent.STM.TMQueue
 import Data.Foldable (traverse_)
-import Data.Set (Set)
 
 import qualified Data.Set as Set
 
@@ -36,8 +35,7 @@ crawl recordQueue base robots depth_ threads = do
     jobQueue <- newTMQueueIO
     atomically (writeTMQueue jobQueue (Job base base depth_))
 
-    let makeJobs :: Set URI -> Report -> (Set Job, Set URI)
-        makeJobs seen Failure                  = (mempty, seen)
+    let makeJobs seen Failure                  = (mempty, seen)
         makeJobs seen (Success Job {..} links) =
             if depth <= 0
                 then (mempty, seen)

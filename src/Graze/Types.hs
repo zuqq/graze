@@ -33,6 +33,7 @@ data Record = Record
     , uri    :: !URI
     , links  :: !(Set URI)
     }
+    deriving (Eq, Ord, Show)
 
 instance ToJSON Record where
     toJSON Record {..}     =

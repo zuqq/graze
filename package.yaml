@@ -69,5 +69,10 @@ tests:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
+    - containers
     - graze
     - hspec
+    - network
+    - streaming-commons
+    - wai-app-static
+    - warp

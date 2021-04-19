@@ -2,59 +2,74 @@
 
 -- | Functions for making GET requests, based on "Network.HTTP.Client".
 module Graze.Http
-    ( ContentType (..)
+    (
+    -- Performing requests
+      get
+    -- * Reexports
+    , (//)
     , HttpException
-    , Response
-    , get
     )
     where
 
-import Control.Monad ((<=<))
+import Control.Applicative ((<|>))
 import Data.ByteString (ByteString)
-import Data.Maybe (fromMaybe)
-import Network.HTTP.Client (HttpException)
+import Data.CaseInsensitive (CI)
+import Data.List (uncons)
+import Data.Text (Text)
+import Network.HTTP.Client
+import Network.HTTP.Client.TLS
+import Network.HTTP.Media
 
-import qualified Data.ByteString.Char8 as Char8
 import qualified Data.ByteString.Lazy as Lazy
-import qualified Data.CaseInsensitive as CI
-import qualified Network.HTTP.Client as Http
-import qualified Network.HTTP.Client.TLS as TLS
+import qualified Data.Text.Encoding as Text
 
 import Graze.URI
 
--- | A partial representation of the \"Content-Type\" response header.
-data ContentType
-    = TextHtml
-    | TextPlain
-    | Other
+parseContentType :: ByteString -> Maybe MediaType
+parseContentType header =
+        parseAccept header
+    >>= matchContent ["text" // "html", "text" // "plain"]
 
--- | This returns a 'Maybe' even though we could just use 'Other' because that
--- makes it more easily composable.
-parseContentType :: ByteString -> Maybe ContentType
-parseContentType bs = case CI.mk . Char8.takeWhile (/= ';') $ bs of
-    "text/html"  -> Just TextHtml
-    "text/plain" -> Just TextPlain
-    _            -> Nothing
+decodeLatin1 :: Lazy.ByteString -> Maybe Text
+decodeLatin1 = Just . Text.decodeLatin1 . Lazy.toStrict
 
-extractContentType :: Http.Response body -> ContentType
-extractContentType = fromMaybe Other
-    . (parseContentType <=< lookup "Content-Type")
-    . Http.responseHeaders
+decodeUtf8 :: Lazy.ByteString -> Maybe Text
+decodeUtf8 bs =
+    case Text.decodeUtf8' (Lazy.toStrict bs) of
+        Left _  -> Nothing
+        Right s -> Just s
 
--- | The 'ContentType' of the response and its body.
-type Response = (ContentType, Lazy.ByteString)
+parseCharset :: ByteString -> Maybe (Lazy.ByteString -> Maybe Text)
+parseCharset = mapContentCharset [("iso-8859-1", decodeLatin1)]
 
--- | Set the \"User-Agent\", since some sites will not serve us otherwise.
-setUserAgent :: Http.Request -> Http.Request
-setUserAgent request = request {Http.requestHeaders = [("User-Agent", "graze")]}
+addRequestHeader :: CI ByteString -> ByteString -> Request -> Request
+addRequestHeader key value request =
+    request {requestHeaders = (key, value) : requestHeaders request}
 
--- | Sends a GET request for the given URL and returns the response.
---
--- Throws 'HttpException' if the given URL is invalid or the request was
--- unsuccessful.
-get :: URI -> IO Response
-get uri = do
-    request  <- setUserAgent <$> Http.requestFromURI uri
-    manager  <- TLS.getGlobalManager
-    response <- Http.httpLbs request manager
-    pure (extractContentType response, Http.responseBody response)
+getResponseHeader :: CI ByteString -> Response a -> [ByteString]
+getResponseHeader name response =
+    [value | (key, value) <- responseHeaders response, key == name]
+
+parseResponse :: MediaType -> Response Lazy.ByteString -> Maybe Text
+parseResponse expected response = do
+    -- There should be at most one "Content-Type" header, so we take the first
+    -- one (if it exists). Response bodies with no "Content-Type" are ignored.
+    (header, _) <- uncons (getResponseHeader "Content-Type" response)
+    mediaType <- parseContentType header
+    decode <-
+            parseCharset header
+            -- Default to UTF-8, which also covers US-ASCII.
+        <|> Just decodeUtf8
+    if mediaType == expected
+        then decode (responseBody response)
+        else Nothing
+
+get :: MediaType -> ByteString -> URI -> IO (Maybe Text)
+get expected userAgent uri = do
+    request <-
+            -- Some hosts will not serve us without a "User-Agent".
+            addRequestHeader "User-Agent" userAgent
+        .   addRequestHeader "Accept" (renderHeader expected)
+        <$> requestFromURI uri
+    manager <- getGlobalManager
+    parseResponse expected <$> httpLbs request manager

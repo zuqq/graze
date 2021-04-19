@@ -59,13 +59,13 @@ process s xs = done $ foldl' step (s, 0, id) xs
 -- When the number of open jobs hits zero, the crawler thread closes the result
 -- queue, shuts down the fetchers, and exits.
 crawl
-    :: TBMQueue Result  -- ^ Result queue.
+    :: TBMQueue Record  -- ^ Record queue.
     -> URI              -- ^ URL to start at.
     -> (URI -> Bool)    -- ^ Determines URLs to visit.
     -> Int              -- ^ Depth of the search.
     -> Int              -- ^ Number of threads.
     -> IO ()
-crawl results base legal depth_ threads = do
+crawl records base legal depth_ threads = do
     reports <- newTBQueueIO (fromIntegral threads)
 
     jobs <- newTMQueueIO
@@ -74,19 +74,19 @@ crawl results base legal depth_ threads = do
     let loop = do
             report <- liftIO . atomically . readTBQueue $ reports
             case report of
-                Failure                    -> pure ()
-                Success Job {..} links_ bs -> do
+                Failure                 -> pure ()
+                Success Job {..} links_ -> do
                     let links = Set.toList links_
                     unless (depth <= 0) $ do
                         s <- use seen
                         let (s', i, links') = process s . filter legal $ links
                         traverse_
                             (liftIO . atomically . writeTMQueue jobs)
-                            [Job url link (depth - 1) | link <- links']
+                            [Job uri link (depth - 1) | link <- links']
                         seen .= s'
                         open += i
-                    liftIO . atomically . writeTBMQueue results $
-                        Result (Record origin url links) bs
+                    liftIO . atomically . writeTBMQueue records $
+                        Record origin uri links
             open -= 1
             n <- use open
             if n <= 0
@@ -99,4 +99,4 @@ crawl results base legal depth_ threads = do
             (fetch (readTMQueue jobs) (writeTBQueue reports)))
         (evalStateT loop (CrawlerState (Set.singleton base) 1))
 
-    atomically (closeTBMQueue results)
+    atomically (closeTBMQueue records)

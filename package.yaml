@@ -21,6 +21,7 @@ dependencies:
 - html-parse
 - http-client
 - http-client-tls
+- http-media
 - microlens
 - microlens-mtl
 - network-uri

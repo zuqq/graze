@@ -8,6 +8,7 @@ import Control.Concurrent.Async (concurrently_)
 import Control.Concurrent.STM
 import Control.Concurrent.STM.TBMQueue
 import Control.Exception (try)
+import Data.Text (Text)
 import Options.Applicative (Parser, ParserInfo)
 import System.Directory (createDirectoryIfMissing)
 import System.FilePath ((<.>), (</>))
@@ -18,7 +19,6 @@ import qualified Data.Aeson as Aeson
 import qualified Data.ByteString.Base16 as Base16
 import qualified Data.ByteString.Char8 as Char8
 import qualified Data.ByteString.Lazy as Lazy
-import qualified Data.Text.Encoding as Text
 import qualified Options.Applicative as Options
 
 import Graze.Crawler
@@ -69,14 +69,12 @@ main = do
 
     putStrLn ("Crawling " <> show base)
 
-    response :: Either HttpException Response
-        <- try (get base {uriPath = "/robots.txt"})
-    let legal = case response of
-            Right (TextPlain, bs) ->
-                case Text.decodeUtf8' . Lazy.toStrict $ bs of
-                    Left _  -> const True
-                    Right s -> parseRobots "graze" s
-            _                     -> const True
+    response :: Either HttpException (Maybe Text)
+        <- try (get ("text" // "plain") "graze" base {uriPath = "/robots.txt"})
+    let legal =
+            case response of
+                Right (Just s) -> parseRobots "graze" s
+                _              -> const True
 
     results <- newTBMQueueIO threads
 
@@ -85,20 +83,19 @@ main = do
     let loop = do
             mresult <- atomically (readTBMQueue results)
             case mresult of
-                Nothing                             -> pure ()
-                Just (Result record@Record {..} bs) -> do
+                Nothing                 -> pure ()
+                Just record@Record {..} -> do
                     let name
                             = Char8.unpack
                             . Base16.encode
                             . SHA1.hash
                             . Char8.pack
                             . show
-                            $ url
+                            $ uri
                     Lazy.writeFile
-                        (folder </> "records" </> name <.> "json")
+                        (folder </> name <.> "json")
                         (Aeson.encode record)
-                    Lazy.writeFile (folder </> name) bs
-                    hPutStrLn stderr ("Got " <> show url)
+                    hPutStrLn stderr ("Got " <> show uri)
                     loop
 
     concurrently_

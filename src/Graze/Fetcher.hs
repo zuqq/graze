@@ -6,9 +6,7 @@ module Graze.Fetcher (fetch) where
 
 import Control.Concurrent.STM
 import Control.Exception (try)
-
-import qualified Data.ByteString.Lazy as Lazy
-import qualified Data.Text.Encoding as Text
+import Data.Text (Text)
 
 import Graze.HTML
 import Graze.Http
@@ -29,14 +27,12 @@ fetch recvJob sendReport = loop
         case mjob of
             Nothing           -> pure ()
             Just job@Job {..} -> do
-                eresponse :: Either HttpException Response <- try $ get url
-                case eresponse of
-                    Left _                  -> atomically . sendReport $ Failure
-                    Right (contentType, bs) -> do
-                        let links = case contentType of
-                                TextHtml -> case Text.decodeUtf8' . Lazy.toStrict $ bs of
-                                    Left _  -> mempty
-                                    Right s -> parseLinks url s
-                                _        -> mempty
-                        atomically . sendReport $ Success job links bs
+                response :: Either HttpException (Maybe Text) <-
+                    try (get ("text" // "html") "graze" uri)
+                case response of
+                    Left _         -> atomically . sendReport $ Failure
+                    Right (Just s) -> atomically . sendReport $
+                        Success job (parseLinks uri s)
+                    Right _        -> atomically . sendReport $
+                        Success job mempty
                 loop

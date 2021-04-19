@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE LambdaCase          #-}
 {-# LANGUAGE RecordWildCards     #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
@@ -8,7 +9,7 @@ import Control.Concurrent.Async (concurrently_)
 import Control.Concurrent.STM
 import Control.Concurrent.STM.TBMQueue
 import Control.Exception (try)
-import Data.Text (Text)
+import Data.Functor ((<&>))
 import Options.Applicative (Parser, ParserInfo)
 import System.Directory (createDirectoryIfMissing)
 import System.FilePath ((<.>), (</>))
@@ -69,21 +70,20 @@ main = do
 
     putStrLn ("Crawling " <> show base)
 
-    response :: Either HttpException (Maybe Text)
-        <- try (get ("text" // "plain") "graze" base {uriPath = "/robots.txt"})
-    let legal =
-            case response of
+    robots
+        <-  try (get ("text" // "plain") "graze" base {uriPath = "/robots.txt"})
+        <&> \case
+                Left (_ :: HttpException) -> const True
                 Right (Just s) -> parseRobots "graze" s
-                _              -> const True
+                _ -> const True
 
-    results <- newTBMQueueIO threads
+    recordQueue <- newTBMQueueIO threads
 
-    createDirectoryIfMissing True (folder </> "records")
+    createDirectoryIfMissing True folder
 
-    let loop = do
-            mresult <- atomically (readTBMQueue results)
-            case mresult of
-                Nothing                 -> pure ()
+    let loop =
+            atomically (readTBMQueue recordQueue) >>= \case
+                Nothing -> pure ()
                 Just record@Record {..} -> do
                     let name
                             = Char8.unpack
@@ -100,11 +100,11 @@ main = do
 
     concurrently_
         (crawl
-            results
+            recordQueue
             base
             (\uri ->
                     uriAuthority uri == uriAuthority base
-                &&  legal (uriPath uri))
+                &&  robots (uriPath uri))
             depth
             threads)
         loop

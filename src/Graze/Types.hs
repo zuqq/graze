@@ -1,5 +1,6 @@
-{-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE RecordWildCards       #-}
 
 -- | Messages that are passed between threads.
 module Graze.Types
@@ -10,8 +11,8 @@ module Graze.Types
     where
 
 import Data.Aeson
+import Data.Foldable (toList)
 import Data.Set (Set)
-import GHC.Generics (Generic)
 
 import Graze.URI
 
@@ -21,6 +22,7 @@ data Job = Job
     , uri    :: !URI
     , depth  :: !Int  -- ^ Remaining depth of the search.
     }
+    deriving (Eq, Ord)
 
 -- | The result that a fetcher passes back to the crawler.
 data Report = Failure | Success !Job !(Set URI)
@@ -29,9 +31,19 @@ data Report = Failure | Success !Job !(Set URI)
 data Record = Record
     { origin :: !URI
     , uri    :: !URI
-    , links  :: ![URI]
+    , links  :: !(Set URI)
     }
-    deriving Generic
 
 instance ToJSON Record where
-    toEncoding = genericToEncoding defaultOptions
+    toJSON Record {..}     =
+        object
+            [ "origin" .= origin
+            , "uri"    .= uri
+            , "links"  .= toList links
+            ]
+    toEncoding Record {..} =
+        pairs
+            (   "origin" .= origin
+            <>  "uri"    .= uri
+            <>  "links"  .= toList links
+            )

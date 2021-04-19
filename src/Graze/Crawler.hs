@@ -1,4 +1,3 @@
-{-# LANGUAGE BangPatterns    #-}
 {-# LANGUAGE RecordWildCards #-}
 
 module Graze.Crawler (crawl) where
@@ -7,48 +6,14 @@ import Control.Concurrent.Async (concurrently_, replicateConcurrently_)
 import Control.Concurrent.STM
 import Control.Concurrent.STM.TBMQueue
 import Control.Concurrent.STM.TMQueue
-import Control.Monad (unless)
-import Control.Monad.IO.Class (liftIO)
-import Control.Monad.Trans.State.Strict (evalStateT)
-import Data.Foldable (foldl', traverse_)
+import Data.Foldable (traverse_)
 import Data.Set (Set)
-import Lens.Micro (Lens')
-import Lens.Micro.Mtl ((+=), (-=), (.=), use)
 
 import qualified Data.Set as Set
 
 import Graze.Types
 import Graze.URI
 import Graze.Fetcher
-
-data CrawlerState = CrawlerState
-    !(Set URI)  -- ^ Set of seen URLs.
-    !Int            -- ^ Number of open jobs.
-
--- | Set of seen URLs.
-seen :: Lens' CrawlerState (Set URI)
-seen p (CrawlerState s i) = fmap (`CrawlerState` i) (p s)
-
--- | Number of open jobs.
-open :: Lens' CrawlerState Int
-open q (CrawlerState s i) = fmap (s `CrawlerState`) (q i)
-
--- | Process a list of links in a single pass.
-process
-    :: Set URI    -- Set of seen URLs before.
-    -> [URI]          -- List of URLs to process.
-    -> ( Set URI  -- Set of seen URLs after.
-       , Int          -- Number of new URLs.
-       , [URI]        -- List of new URLs.
-       )
-process s xs = done $ foldl' step (s, 0, id) xs
-  where
-    -- The third component of the accumulator is a difference list containing
-    -- the new links; it is converted to an ordinary list by @done@.
-    step (!s', !i, !ys) x = if x `Set.member` s'
-        then (s', i, ys)
-        else (x `Set.insert` s', i + 1, ys . (x :))
-    done (!s', !i, !ys)   = (s', i, ys [])
 
 -- | Crawler thread.
 --
@@ -65,38 +30,44 @@ crawl
     -> Int              -- ^ Depth of the search.
     -> Int              -- ^ Number of threads.
     -> IO ()
-crawl records base legal depth_ threads = do
-    reports <- newTBQueueIO (fromIntegral threads)
+crawl recordQueue base robots depth_ threads = do
+    reportQueue <- newTBQueueIO (fromIntegral threads)
 
-    jobs <- newTMQueueIO
-    atomically (writeTMQueue jobs (Job base base depth_))
+    jobQueue <- newTMQueueIO
+    atomically (writeTMQueue jobQueue (Job base base depth_))
 
-    let loop = do
-            report <- liftIO . atomically . readTBQueue $ reports
+    let makeJobs :: Set URI -> Report -> (Set Job, Set URI)
+        makeJobs seen Failure                  = (mempty, seen)
+        makeJobs seen (Success Job {..} links) =
+            if depth <= 0
+                then (mempty, seen)
+                else (jobs, seen')
+          where
+            links' = Set.difference (Set.filter robots links) seen
+            jobs   = Set.map (\link -> Job uri link (depth - 1)) links'
+            seen'  = Set.union seen links'
+
+    let loop seen open = do
+            report <- atomically (readTBQueue reportQueue)
             case report of
-                Failure                 -> pure ()
-                Success Job {..} links_ -> do
-                    let links = Set.toList links_
-                    unless (depth <= 0) $ do
-                        s <- use seen
-                        let (s', i, links') = process s . filter legal $ links
-                        traverse_
-                            (liftIO . atomically . writeTMQueue jobs)
-                            [Job uri link (depth - 1) | link <- links']
-                        seen .= s'
-                        open += i
-                    liftIO . atomically . writeTBMQueue records $
-                        Record origin uri links
-            open -= 1
-            n <- use open
-            if n <= 0
-                then liftIO . atomically . closeTMQueue $ jobs
-                else loop
+                Failure -> mempty
+                Success Job {..} links ->
+                      atomically
+                    . writeTBMQueue recordQueue
+                    $ Record origin uri links
+            let (jobs, seen') = makeJobs seen report
+            traverse_ (atomically . writeTMQueue jobQueue) jobs
+            let open' = open - 1 + Set.size jobs
+            if open' <= 0
+                then atomically (closeTMQueue jobQueue)
+                else loop seen' open'
 
     concurrently_
         (replicateConcurrently_
             threads
-            (fetch (readTMQueue jobs) (writeTBQueue reports)))
-        (evalStateT loop (CrawlerState (Set.singleton base) 1))
+            (fetch
+                (atomically (readTMQueue jobQueue))
+                (atomically . writeTBQueue reportQueue)))
+        (loop (Set.singleton base) 1)
 
-    atomically (closeTBMQueue records)
+    atomically (closeTBMQueue recordQueue)

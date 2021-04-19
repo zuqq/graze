@@ -14,11 +14,11 @@ Follow the usual [stack](https://www.haskellstack.org) workflow.
 **Example:**
 
 ```
-$ stack run -- https://www.iana.org download --depth=1
-Crawling https://www.iana.org/
-Got https://www.iana.org/
-Got https://www.iana.org/domains
-Got https://www.iana.org/protocols/apply
+$ stack run -- https://www.iana.org records --depth=1
+Crawling https://www.iana.org
+Got https://www.iana.org
+Got https://www.iana.org/about
+Got https://www.iana.org/domains/root
 ...
 Got https://www.iana.org/reports
 Got https://www.iana.org/domains/idn-tables
@@ -45,21 +45,15 @@ Available options:
 The example above creates the following file tree:
 
 ```
-download
-├── 13f601567450c419c77c2771594753b6dc2add5e
-├── 21238e043428d8a778463fb7ce0dc54370b1a028
+records
+├── 13f601567450c419c77c2771594753b6dc2add5e.json
+├── 21238e043428d8a778463fb7ce0dc54370b1a028.json
 ...
-├── fec01f0f176e22939d47435cc1d5a63b02030d9b
-└── records
-    ├── 13f601567450c419c77c2771594753b6dc2add5e.json
-    ├── 21238e043428d8a778463fb7ce0dc54370b1a028.json
-    ...
-    └── fec01f0f176e22939d47435cc1d5a63b02030d9b.json
+└── fec01f0f176e22939d47435cc1d5a63b02030d9b.json
 ```
 
-For every visited URL we store two things: a file containing the response body
-and a JSON-encoded record that contains information about the corresponding node
-in the crawl graph.
+For every visited URL we store a JSON-encoded record that contains information
+about the corresponding node in the crawl graph.
 
 The file names are derived from the URL's SHA-1 digest; for example,
 
@@ -70,5 +64,5 @@ https://www.iana.org/protocols/apply
 becomes
 
 ```
-13f601567450c419c77c2771594753b6dc2add5e
+13f601567450c419c77c2771594753b6dc2add5e.json
 ```

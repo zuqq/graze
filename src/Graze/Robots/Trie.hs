@@ -1,75 +1,42 @@
--- | A generic trie implementation for lists of totally ordered values.
 module Graze.Robots.Trie
     (
     -- * Trie type
       Trie
     -- * Construction
     , empty
-    , fromList
     -- * Insertion
     , insert
     -- * Query
-    , completes
+    , findMostSpecific
     )
     where
 
-import Data.Foldable (foldl')
 import Data.Map.Strict (Map)
+import Data.Monoid (Last (..))
 
 import qualified Data.Map.Strict as Map
 
--- | A trie @t :: Trie a@ stores lists @xs :: [a]@ as paths in a tree, where
--- the elements of @xs@ label the edges on the path. Every node carries a
--- boolean flag that indicates whether it marks the end of a list.
---
--- A trie lets us efficiently determine whether one of the lists it stores is a
--- prefix of a given list @ys :: [a]@.
-data Trie a = Trie !Bool !(Map a (Trie a))
+data Trie a b = Trie !(Map a (Trie a b)) !(Maybe b)
 
 -- | The empty trie.
---
--- ==== __Properties__
---
--- prop> fmap (`completes` empty) (xs :: [String]) == fmap (const False) xs
-empty :: Trie a
-empty = Trie False Map.empty
+empty :: (Ord a, Semigroup b) => Trie a b
+empty = Trie mempty mempty
 
--- | Insert an item into the trie.
-insert :: Ord a => [a] -> Trie a -> Trie a
-insert [] (Trie _ ts)          = Trie True ts
-insert (x : xs) (Trie flag ts) = Trie flag (Map.insert x t ts)
+-- | Insert a key-value pair into the trie.
+--
+-- Inserting the value @u@ into the trie replaces the old value stored at the
+-- given key by @u <> Just value@.
+insert :: (Ord a, Semigroup b) => [a] -> b -> Trie a b -> Trie a b
+insert [] value (Trie ts u)       = Trie ts (u <> Just value)
+insert (x : xs) value (Trie ts u) = Trie (Map.insert x t ts) u
   where
-    t = insert xs (Map.findWithDefault empty x ts)
+    t = insert xs value (Map.findWithDefault empty x ts)
 
--- | Build a trie from a list of items.
-fromList :: Ord a => [[a]] -> Trie a
-fromList = foldl' (flip insert) empty
-
--- | @xs \`completes\` t@ if and only if @t@ contains a prefix of @xs@.
---
--- ==== __Examples__
---
--- >>> t = fromList ["to", "tea", "ted", "ten", "inn"]
--- >>> "too" `completes` t
--- True
--- >>> "teapot" `completes` t
--- True
--- >>> "tan" `completes` t
--- False
--- >>> "xavier" `completes` t
--- False
--- >>> "nanoparticle" `completes` t
--- False
--- >>> t' = insert "nano" t
--- >>> "nanoparticle" `completes` t'
--- True
---
--- ==== __Properties__
---
--- prop> fmap (`completes` fromList xs) (xs :: [String]) == fmap (const True) xs
-completes :: Ord a => [a] -> Trie a -> Bool
-completes _ (Trie True _)       = True
-completes [] _                  = False
-completes (x : xs) (Trie _ ts)
-    | Just t <- Map.lookup x ts = xs `completes` t
-    | otherwise                 = False
+-- | @findMostSpecific xs t@ returns the value associated with the maximal
+-- prefix of @xs@ that is stored in @t@.
+findMostSpecific :: Ord a  => [a] -> Trie a b -> Maybe b
+findMostSpecific xs_ = getLast . go (Last Nothing) xs_
+  where
+    go result (x : xs) (Trie ts u)
+        | Just t <- Map.lookup x ts = go (result <> Last u) xs t
+    go result _ (Trie _ u)          = result <> Last u

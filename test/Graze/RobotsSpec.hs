@@ -22,6 +22,12 @@ parseRobotsSpec = do
         it "parses rules for googlebot correctly" do
             fmap (parseRobots "googlebot" s) paths
                 `shouldBe` [False, False, True, False, True]
+        it "applies the most specific rule" do
+            let robots = parseRobots "googlebot" s
+            robots "/org"
+                `shouldBe` False
+            robots "/org/"
+                `shouldBe` True
   where
     s = "# /robots.txt for http://www.fict.org/\n\
         \# comments to webmaster@fict.org      \n\

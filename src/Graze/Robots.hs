@@ -21,8 +21,9 @@ import qualified Data.Text as Text
 
 import Graze.Robots.Parser
 import Graze.Robots.Trie
+import Graze.Robots.Types
 
-groupLines :: [Line] -> [(Set UserAgent, [Rule])]
+groupLines :: [Either UserAgent Rule] -> [(Set UserAgent, [Rule])]
 groupLines []     = []
 groupLines lines_ =
     (Set.fromList (lefts userAgents), rights rules) : groupLines lines''
@@ -38,31 +39,28 @@ findGroup userAgent groups =
         lookupBy (userAgent `Set.member`) groups
     <|> lookupBy ("*" `Set.member`) groups
 
-combineRules :: [Rule] -> (Trie Char, Trie Char)
-combineRules = foldl' step (empty, empty)
+combineRules :: [Rule] -> Trie Char RuleType
+combineRules = foldl' step empty
   where
-    step (disallows, allows) rule =
-        case rule of
-            Disallow "" -> (disallows, allows)
-            Disallow d  -> (insert (Text.unpack d) disallows, allows)
-            Allow a     -> (disallows, insert (Text.unpack a) allows)
+    step t (Rule ruleType s) =
+        if not (Text.null s)
+            then insert (Text.unpack s) ruleType t
+            else t
 
-parseRules :: UserAgent -> Text -> (Trie Char, Trie Char)
-parseRules userAgent
-    = maybe (empty, empty) combineRules
+parseRules :: UserAgent -> Text -> Trie Char RuleType
+parseRules userAgent =
+      maybe empty combineRules
     . findGroup userAgent
     . groupLines
     . rights
     . fmap parseLine
     . Text.lines
 
--- | If we fix our user agent, then a robots.txt file amounts to a predicate
--- that is @True@ for paths that we are allowed to crawl and @False@ for the
--- others.
-type Robots = String -> Bool
-
 -- | @parseRobots userAgent s@ is the predicate corresponding to the robots.txt
 -- file @s@, with respect to the user agent @userAgent@.
 parseRobots :: UserAgent -> Text -> Robots
-parseRobots userAgent s = let (disallows, allows) = parseRules userAgent s in
-    \path -> not (path `completes` disallows) || path `completes` allows
+parseRobots userAgent s = let t = parseRules userAgent s in
+    \path ->
+        case findMostSpecific path t of
+            Just Disallow -> False
+            _             -> True

@@ -1,6 +1,5 @@
 {-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards   #-}
 
 module Graze.CrawlerSpec (spec) where
 

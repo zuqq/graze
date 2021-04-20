@@ -20,7 +20,7 @@ import Test.Hspec
 import qualified Data.Set as Set
 
 import Graze.Crawler
-import Graze.Types
+import Graze.Record
 import Graze.URI
 
 crawl_ :: URI -> IO (Set Record)
@@ -53,10 +53,12 @@ crawl_ base = do
 
     withAsync serve (\server -> do
         takeMVar serverStarted
-        withAsync (crawl recordQueue base (const True) 1 1) (\crawler -> do
-            records <- loop mempty
-            cancel server
-            pure records))
+        withAsync
+            (crawl recordQueue base (const True) 1 1)
+            (\crawler -> do
+                records <- loop mempty
+                cancel server
+                pure records))
 
 crawlSpec :: Spec
 crawlSpec =

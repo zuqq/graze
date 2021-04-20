@@ -24,12 +24,12 @@ import qualified Options.Applicative as Options
 
 import Graze.Crawler
 import Graze.Http
+import Graze.Record
 import Graze.Robots
-import Graze.Types
 import Graze.URI
 
 data Options = Options
-    { base    :: URI       -- ^ URL to start at.
+    { base    :: URI       -- ^ URI to start at.
     , folder  :: FilePath  -- ^ Download folder.
     , depth   :: Int       -- ^ Depth of the search.
     , threads :: Int       -- ^ Number of threads.
@@ -40,7 +40,7 @@ parser =
         Options
     <$> Options.argument
             (Options.maybeReader parseURI)
-            (Options.metavar "<URL>" <> Options.help "URL to start at")
+            (Options.metavar "<URI>" <> Options.help "URI to start at")
     <*> Options.argument
             Options.str
             (Options.metavar "<folder>" <> Options.help "Download folder")
@@ -84,7 +84,7 @@ main = do
     let loop =
             atomically (readTBMQueue recordQueue) >>= \case
                 Nothing -> pure ()
-                Just record@Record {..} -> do
+                Just record@(Record _ uri _) -> do
                     let name =
                               Char8.unpack
                             . Base16.encode

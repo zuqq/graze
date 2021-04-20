@@ -1,3 +1,4 @@
+{-# LANGUAGE BlockArguments    #-}
 {-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE OverloadedStrings #-}
 
@@ -22,21 +23,8 @@ import Graze.Crawler
 import Graze.Types
 import Graze.URI
 
-base :: URI
-base = fromJust (parseURI "http://127.0.0.1:8080/index.html")
-
-link :: URI
-link = base {uriPath = "/a.html"}
-
-expected :: Set Record
-expected =
-    Set.fromList
-        [ Record base base (Set.singleton link)
-        , Record base link mempty
-        ]
-
-crawl_ :: IO (Set Record)
-crawl_ = do
+crawl_ :: URI -> IO (Set Record)
+crawl_ base = do
     -- This MVar is used to tell the parent thread that the server has bound to
     -- the socket. If we don't do this, then bad interleaving can cause the
     -- test to fail.
@@ -71,7 +59,18 @@ crawl_ = do
             pure records))
 
 crawlSpec :: Spec
-crawlSpec = it "crawls the example correctly" (crawl_ `shouldReturn` expected)
+crawlSpec =
+    it "crawls the example correctly" do
+        crawl_ base
+            `shouldReturn` expected
+  where
+    base = fromJust (parseURI "http://127.0.0.1:8080/index.html")
+    link = base {uriPath = "/a.html"}
+    expected =
+        Set.fromList
+            [ Record base base (Set.singleton link)
+            , Record base link mempty
+            ]
 
 spec :: Spec
 spec = describe "crawl" crawlSpec

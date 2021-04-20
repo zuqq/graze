@@ -42,9 +42,9 @@ decodeUtf8 bs =
 parseCharset :: ByteString -> Maybe (Lazy.ByteString -> Maybe Text)
 parseCharset = mapContentCharset [("iso-8859-1", decodeLatin1)]
 
-addRequestHeader :: CI ByteString -> ByteString -> Request -> Request
-addRequestHeader key value request =
-    request {requestHeaders = (key, value) : requestHeaders request}
+addRequestHeaders :: [(CI ByteString, ByteString)] -> Request -> Request
+addRequestHeaders headers request =
+    request {requestHeaders = headers <> requestHeaders request}
 
 getResponseHeader :: CI ByteString -> Response a -> [ByteString]
 getResponseHeader name response =
@@ -67,9 +67,10 @@ parseResponse expected response = do
 get :: MediaType -> ByteString -> URI -> IO (Maybe Text)
 get expected userAgent uri = do
     request <-
-            -- Some hosts will not serve us without a "User-Agent".
-            addRequestHeader "User-Agent" userAgent
-        .   addRequestHeader "Accept" (renderHeader expected)
+            addRequestHeaders
+                -- Add "Accept" in order to be a good citizen of the WWW; add
+                -- "User-Agent" because some hosts will not serve us otherwise.
+                [("Accept", renderHeader expected), ("User-Agent", userAgent)]
         <$> requestFromURI uri
     manager <- getGlobalManager
     parseResponse expected <$> httpLbs request manager

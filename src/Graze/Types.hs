@@ -36,12 +36,13 @@ data Record = Record
     deriving (Eq, Ord, Show)
 
 instance ToJSON Record where
-    toJSON Record {..}     =
+    toJSON Record {..} =
         object
             [ "origin" .= origin
             , "uri"    .= uri
             , "links"  .= toList links
             ]
+
     toEncoding Record {..} =
         pairs
             (   "origin" .= origin

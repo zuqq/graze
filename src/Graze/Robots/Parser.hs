@@ -6,18 +6,17 @@ import Control.Applicative ((<|>))
 import Data.Text (Text)
 
 import qualified Data.Attoparsec.Text as Attoparsec
-import qualified Data.CaseInsensitive as CI
 
 import Graze.Robots.Types
 
 nonSpecial :: Char -> Bool
 nonSpecial c = not (Attoparsec.isHorizontalSpace c) && c /= '#'
 
-userAgent :: Attoparsec.Parser UserAgent
+userAgent :: Attoparsec.Parser Text
 userAgent =
         Attoparsec.asciiCI "User-agent:"
     *>  Attoparsec.skipSpace
-    *>  (CI.mk <$> Attoparsec.takeWhile1 nonSpecial)
+    *>  Attoparsec.takeWhile1 nonSpecial
 
 disallow :: Attoparsec.Parser Rule
 disallow =
@@ -31,6 +30,6 @@ allow =
     *>  Attoparsec.skipSpace
     *>  (Rule Allow <$> Attoparsec.takeWhile nonSpecial)
 
-parseLine :: Text -> Either String (Either UserAgent Rule)
+parseLine :: Text -> Either String (Either Text Rule)
 parseLine =
     Attoparsec.parseOnly (Attoparsec.eitherP userAgent (disallow <|> allow))

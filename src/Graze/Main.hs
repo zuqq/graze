@@ -74,7 +74,7 @@ main = do
             try (get ("text" // "plain") "graze" base {uriPath = "/robots.txt"})
         <&> \case
                 Left (_ :: HttpException) -> const True
-                Right (Just s) -> parseRobots "graze" s
+                Right (Just s) -> parseRobots s
                 _ -> const True
 
     recordQueue <- newTBMQueueIO threads

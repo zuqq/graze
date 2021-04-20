@@ -27,15 +27,21 @@ empty = Trie mempty mempty
 -- Inserting the value @u@ into the trie replaces the old value stored at the
 -- given key by @u <> Just value@.
 insert :: (Ord a, Semigroup b) => [a] -> b -> Trie a b -> Trie a b
-insert [] value (Trie ts u)       = Trie ts (u <> Just value)
-insert (x : xs) value (Trie ts u) = Trie (Map.insert x t ts) u
+insert key value = go key
   where
-    t = insert xs value (Map.findWithDefault empty x ts)
+    go [] (Trie ts u)       = Trie ts (u <> Just value)
+    go (x : xs) (Trie ts u) =
+        Trie
+            (Map.insert
+                x
+                (go xs (Map.findWithDefault empty x ts))
+                ts)
+            u
 
 -- | @findMostSpecific xs t@ returns the value associated with the maximal
 -- prefix of @xs@ that is stored in @t@.
 findMostSpecific :: Ord a  => [a] -> Trie a b -> Maybe b
-findMostSpecific xs_ = getLast . go (Last Nothing) xs_
+findMostSpecific key = getLast . go (Last Nothing) key
   where
     go result (x : xs) (Trie ts u)
         | Just t <- Map.lookup x ts = go (result <> Last u) xs t

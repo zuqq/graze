@@ -9,25 +9,15 @@ import Graze.Robots
 
 parseRobotsSpec :: Spec
 parseRobotsSpec = do
-    describe "valid example" do
-        it "parses rules for unhipbot correctly" do
-            or (fmap (parseRobots "unhipbot" s) paths)
-                `shouldBe` False
-        it "parses rules for webcrawler correctly" do
-            and (fmap (parseRobots "webcrawler" s) paths)
-                `shouldBe` True
-        it "parses rules for excite correctly" do
-            and (fmap (parseRobots "excite" s) paths)
-                `shouldBe` True
-        it "parses rules for googlebot correctly" do
-            fmap (parseRobots "googlebot" s) paths
-                `shouldBe` [False, False, True, False, True]
-        it "applies the most specific rule" do
-            let robots = parseRobots "googlebot" s
-            robots "/org"
-                `shouldBe` False
-            robots "/org/"
-                `shouldBe` True
+    it "parses rules for \"*\" correctly" do
+        fmap (parseRobots s) paths
+            `shouldBe` expected
+    it "applies the most specific rule" do
+        let robots = parseRobots s
+        robots "/org"
+            `shouldBe` False
+        robots "/org/"
+            `shouldBe` True
   where
     s = "# /robots.txt for http://www.fict.org/\n\
         \# comments to webmaster@fict.org      \n\
@@ -41,9 +31,23 @@ parseRobotsSpec = do
         \                                      \n\
         \User-agent: *                         \n\
         \Disallow: /                           \n\
+        \Disallow: /org/plans.html             \n\
         \Allow: /org/                          \n\
-        \Allow: /serv                          \n"
-    paths = ["/", "/index.html", "/services/fast.html", "/orgo.gif", "/org/about.html"]
+        \Allow: /serv                          \n\
+        \Allow: /~mak                          \n"
+    paths =
+        [ "/"
+        , "/index.html"
+        , "/server.html"
+        , "/services/fast.html"
+        , "/services/slow.html"
+        , "/orgo.gif"
+        , "/org/about.html"
+        , "/org/plans.html"
+        , "/~jim/mak.html"
+        , "/~mak/jim.html"
+        ]
+    expected = [False, False, True, True, True, False, True, False, False, True]
 
 spec :: Spec
 spec = describe "parseRobots" parseRobotsSpec

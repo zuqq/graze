@@ -1,6 +1,7 @@
 {-# LANGUAGE BlockArguments    #-}
 {-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards   #-}
 
 module Graze.CrawlerSpec (spec) where
 
@@ -23,7 +24,7 @@ import Graze.Record
 import Graze.URI
 
 crawlSpec :: Spec
-crawlSpec =
+crawlSpec = do
     it "crawls the example correctly" do
         example
             `shouldReturn` expected
@@ -38,6 +39,9 @@ crawlSpec =
             , Record a b (Set.singleton a)
             ]
     example = do
+        let threads = 10
+            depth   = 3
+
         -- This MVar is used to tell the parent thread that the server has
         -- bound to 8080. If we don't do this, then bad interleaving can cause
         -- the test to fail.
@@ -57,7 +61,7 @@ crawlSpec =
                             putMVar serverStarted ()
                             runSettingsSocket settings socket application))
 
-        recordQueue <- newTBMQueueIO 10
+        recordQueue <- newTBMQueueIO threads
 
         let loop records =
                 atomically (readTBMQueue recordQueue) >>= \case
@@ -68,11 +72,11 @@ crawlSpec =
             takeMVar serverStarted
             withAsync
                 (crawl
-                    recordQueue
-                    base
-                    (\uri -> uriAuthority uri == uriAuthority base)
-                    3
-                    10)
+                    CrawlerOptions
+                        { crawlable =
+                            (\uri -> uriAuthority uri == uriAuthority base)
+                        , ..
+                        })
                 (\crawler -> do
                     records <- loop mempty
                     cancel server

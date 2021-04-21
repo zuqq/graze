@@ -8,7 +8,6 @@ allows efficient querying of the resulting rules.
 
 Follow the usual [stack](https://www.haskellstack.org) workflow.
 
-
 ## Usage
 
 **Example:**
@@ -29,20 +28,19 @@ Done
 
 ```
 $ stack run -- --help
-Usage: graze-exe <URL> <folder> [--depth <depth>] [--threads <threads>]
+Usage: graze-exe <base> <folder> [--depth <depth>] [--threads <threads>]
 
 Available options:
   -h,--help                Show this help text
-  <URL>                    URL to start at
+  <base>                   URL to start at
   <folder>                 Download folder
   --depth <depth>          Depth of the search (default: 3)
-  --threads <threads>      Number of threads (default: 10)
+  --threads <threads>      Size of the thread pool (default: 10)
 ```
-
 
 ## Storage model
 
-The example above creates the following file tree:
+The example above produces the following file tree:
 
 ```
 records
@@ -52,8 +50,8 @@ records
 └── fec01f0f176e22939d47435cc1d5a63b02030d9b.json
 ```
 
-For every visited URL we store a JSON-encoded record that contains information
-about the corresponding node in the crawl graph.
+For every visited URL the crawler created a JSON-encoded record that represents
+the corresponding node in the crawl tree.
 
 The record's name is derived from the URL's SHA-1 digest; for example,
 

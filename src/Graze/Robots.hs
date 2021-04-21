@@ -1,7 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
--- | This module contains a lenient parser for the original robots.txt
--- <https://www.robotstxt.org/norobots-rfc.txt standard>.
+-- | A lenient parser for robots.txt files.
 module Graze.Robots (Robots, parseRobots) where
 
 import Data.Either (isLeft, isRight, rights)
@@ -14,7 +13,7 @@ import Graze.Robots.Parser
 import Graze.Robots.Trie
 
 -- | If we fix our user agent, then a robots.txt file amounts to a predicate
--- that is @True@ for paths that we are allowed to crawl and @False@ for the
+-- that is @True@ for paths that we are allowed to crawl and @False@ for all
 -- others.
 type Robots = String -> Bool
 
@@ -41,8 +40,7 @@ parseRules userAgent =
     . fmap parseLine
     . Text.lines
 
--- | @parseRobots s@ is the predicate corresponding to the robots.txt file @s@,
--- with respect to the user agent @\"*\"@.
+-- | Parse a robots.txt file with respect to the generic user agent @*@.
 parseRobots :: Text -> Robots
 parseRobots s =
     \path ->

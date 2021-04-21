@@ -1,10 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 
--- | Functions for making GET requests, based on "Network.HTTP.Client".
+-- | Functions for making GET requests, based on "Network.HTTP.Client" and
+-- "Network.HTTP.Media".
 module Graze.Http
-    (
-    -- Performing requests
-      get
+    ( get
     -- * Reexports
     , (//)
     , HttpException
@@ -64,7 +63,16 @@ parseResponse expected response = do
         then decode (responseBody response)
         else Nothing
 
-get :: MediaType -> ByteString -> URI -> IO (Maybe Text)
+-- | Send a GET request with custom @Accept@ and @UserAgent@ headers.
+--
+-- Throws 'HttpException' if the given 'URI' is invalid or the request failed.
+--
+-- Returns 'Nothing' if the response is of the wrong 'MediaType' or encoding.
+get
+    :: MediaType
+    -> ByteString  -- ^ User agent.
+    -> URI
+    -> IO (Maybe Text)
 get expected userAgent uri = do
     request <-
             addRequestHeaders

@@ -13,6 +13,8 @@ import qualified Data.Text as Text
 
 import Graze.URI
 
+-- | Parse the @\"href\"@ attributes of all @<a>@ elements, relative to the
+-- given 'URI'.
 parseLinks :: URI -> Text -> Set URI
 parseLinks base = foldl' step mempty . parseTokens
   where

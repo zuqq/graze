@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
+-- | Exports the 'Record' type that 'Graze.Crawler.crawl' outputs.
 module Graze.Record (Record (..)) where
 
 import Data.Aeson
@@ -8,7 +9,7 @@ import Data.Set (Set)
 
 import Graze.URI
 
--- | Metadata for a visited page.
+-- | A node in the crawl tree.
 data Record = Record
     !URI        -- ^ URI of the parent node.
     !URI        -- ^ URI of this node.

@@ -28,19 +28,19 @@ import Graze.Record
 import Graze.Robots
 import Graze.URI
 
-data Options = Options
+data MainOptions = MainOptions
     { base    :: URI       -- ^ URL to start at.
     , folder  :: FilePath  -- ^ Download folder.
     , depth   :: Int       -- ^ Depth of the search.
-    , threads :: Int       -- ^ Number of threads.
+    , threads :: Int       -- ^ Size of the thread pool.
     }
 
-parser :: Parser Options
-parser =
-        Options
+mainOptionsParser :: Parser MainOptions
+mainOptionsParser =
+        MainOptions
     <$> Options.argument
             (Options.maybeReader parseURI)
-            (Options.metavar "<URL>" <> Options.help "URL to start at")
+            (Options.metavar "<base>" <> Options.help "URL to start at")
     <*> Options.argument
             Options.str
             (Options.metavar "<folder>" <> Options.help "Download folder")
@@ -58,15 +58,16 @@ parser =
             <>  Options.metavar "<threads>"
             <>  Options.value 10
             <>  Options.showDefault
-            <>  Options.help "Number of threads"
+            <>  Options.help "Size of the thread pool"
             )
 
-parserInfo :: ParserInfo Options
-parserInfo = Options.info (Options.helper <*> parser) Options.fullDesc
+mainOptionsParserInfo :: ParserInfo MainOptions
+mainOptionsParserInfo =
+    Options.info (Options.helper <*> mainOptionsParser) Options.fullDesc
 
 main :: IO ()
 main = do
-    Options {..} <- Options.execParser parserInfo
+    MainOptions {..} <- Options.execParser mainOptionsParserInfo
 
     putStrLn ("Crawling " <> show base)
 
@@ -100,13 +101,13 @@ main = do
 
     concurrently_
         (crawl
-            recordQueue
-            base
-            (\uri ->
-                    uriAuthority uri == uriAuthority base
-                &&  robots (uriPath uri))
-            depth
-            threads)
+            CrawlerOptions
+                { crawlable =
+                    \uri ->
+                            uriAuthority uri == uriAuthority base
+                        &&  robots (uriPath uri)
+                , ..
+                })
         loop
 
     putStrLn "Done"

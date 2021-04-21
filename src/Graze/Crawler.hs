@@ -3,7 +3,15 @@
 {-# LANGUAGE RecordWildCards     #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Graze.Crawler (crawl) where
+-- | A web crawler, using a pool of lightweight threads for concurrent crawling.
+--
+-- The crawler follows links in breadth-first order, starting with 'base'. The
+-- 'crawlable' predicate constrains the links that are followed (e.g., only
+-- those that stay on the same host and respect the robots.txt file). The
+-- maximal depth of the traversal is specified by 'depth'. The crawler makes
+-- sure not to visit the same URL twice; it creates a 'Record' for every
+-- visited URL and writes it to the 'recordQueue' that was passed in.
+module Graze.Crawler (CrawlerOptions (..), crawl) where
 
 import Control.Concurrent.Async (concurrently_, replicateConcurrently_)
 import Control.Concurrent.STM
@@ -20,7 +28,6 @@ import Graze.Http
 import Graze.Record
 import Graze.URI
 
--- | A job for a fetcher.
 data Job = Job
     { jobOrigin :: !URI
     , jobTarget :: !URI
@@ -28,7 +35,6 @@ data Job = Job
     }
     deriving (Eq, Ord, Show)
 
--- | The report that the fetcher sends back to the crawler.
 data JobReport
     = Failure
     | Success
@@ -36,10 +42,6 @@ data JobReport
         !(Set URI)  -- ^ Outgoing links.
     deriving (Eq, Ord, Show)
 
--- | Fetcher thread.
---
--- A unit of work for a fetcher consists of downloading and parsing a page;
--- it then passes the result back to the crawler.
 fetch
     :: IO (Maybe Job)        -- ^ Receive a 'Job'.
     -> (JobReport -> IO ())  -- ^ Send a 'JobReport' to the crawler.
@@ -57,20 +59,19 @@ fetch receive send = loop
                     Right _ -> send (Success job mempty)
                 loop
 
--- | Crawler thread.
+data CrawlerOptions = CrawlerOptions
+    { base        :: URI              -- ^ URL to start at.
+    , crawlable   :: URI -> Bool      -- ^ Selects links to follow.
+    , depth       :: Int              -- ^ Depth of the search.
+    , threads     :: Int              -- ^ Size of the thread pool.
+    , recordQueue :: TBMQueue Record  -- ^ Output queue.
+    }
+
+-- | Run the crawler. 
 --
--- The crawler creates 'Job's for the fetchers to complete. It keeps track of
--- the set of seen URIs and the number of open jobs. When the number of open
--- jobs hits zero, the crawler thread closes the result queue, shuts down the
--- fetchers, and exits.
-crawl
-    :: TBMQueue Record  -- ^ Output queue.
-    -> URI              -- ^ URI to start at.
-    -> (URI -> Bool)    -- ^ Selects URIs to visit.
-    -> Int              -- ^ Depth of the search.
-    -> Int              -- ^ Number of threads.
-    -> IO ()
-crawl recordQueue base crawlable depth threads = do
+-- Returns when there are no more URLs to visit.
+crawl :: CrawlerOptions -> IO ()
+crawl CrawlerOptions {..} = do
     jobReportQueue <- newTBQueueIO (fromIntegral threads)
 
     jobQueue <- newTMQueueIO

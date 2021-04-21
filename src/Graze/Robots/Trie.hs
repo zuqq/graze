@@ -1,6 +1,6 @@
 module Graze.Robots.Trie
     (
-    -- * Trie type
+    -- * Type
       Trie
     -- * Construction
     , empty
@@ -16,6 +16,7 @@ import Data.Monoid (Last (..))
 
 import qualified Data.Map.Strict as Map
 
+-- | A generic map.
 data Trie a b = Trie !(Map a (Trie a b)) !(Maybe b)
 
 -- | The empty trie.
@@ -24,8 +25,7 @@ empty = Trie mempty mempty
 
 -- | Insert a key-value pair into the trie.
 --
--- Inserting the value @u@ into the trie replaces the old value stored at the
--- given key by @u <> Just value@.
+-- Replaces the value @u@ previously stored at the key by @u <> Just value@.
 insert :: (Ord a, Semigroup b) => [a] -> b -> Trie a b -> Trie a b
 insert key value = go key
   where
@@ -38,8 +38,8 @@ insert key value = go key
                 ts)
             u
 
--- | @findMostSpecific xs t@ returns the value associated with the maximal
--- prefix of @xs@ that is stored in @t@.
+-- | Find the value associated with the maximal prefix of the given key that is
+-- stored in @t@.
 findMostSpecific :: Ord a  => [a] -> Trie a b -> Maybe b
 findMostSpecific key = getLast . go (Last Nothing) key
   where

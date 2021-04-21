@@ -12,7 +12,11 @@ import qualified Data.Text as Text
 
 import Graze.Robots.Parser
 import Graze.Robots.Trie
-import Graze.Robots.Types
+
+-- | If we fix our user agent, then a robots.txt file amounts to a predicate
+-- that is @True@ for paths that we are allowed to crawl and @False@ for the
+-- others.
+type Robots = String -> Bool
 
 findRules :: Text -> [Either Text Rule] -> [Rule]
 findRules userAgent =

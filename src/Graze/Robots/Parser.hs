@@ -1,13 +1,21 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Graze.Robots.Parser (parseLine) where
+module Graze.Robots.Parser (Rule (..), RuleType (..), parseLine) where
 
 import Control.Applicative ((<|>))
 import Data.Text (Text)
 
 import qualified Data.Attoparsec.Text as Attoparsec
 
-import Graze.Robots.Types
+data RuleType = Disallow | Allow
+    deriving Eq
+
+instance Semigroup RuleType where
+    Allow    <> _ = Allow
+    Disallow <> x = x
+
+data Rule = Rule !RuleType !Text
+    deriving Eq
 
 nonSpecial :: Char -> Bool
 nonSpecial c = not (Attoparsec.isHorizontalSpace c) && c /= '#'

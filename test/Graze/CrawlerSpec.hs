@@ -10,7 +10,6 @@ import Control.Concurrent.STM
 import Control.Concurrent.STM.TBMQueue
 import Control.Exception (bracket)
 import Data.Maybe (fromJust)
-import Data.Set (Set)
 import Data.Streaming.Network (bindPortTCP)
 import Network.Socket (close, withSocketsDo)
 import Network.Wai.Application.Static
@@ -23,56 +22,61 @@ import Graze.Crawler
 import Graze.Record
 import Graze.URI
 
-crawl_ :: URI -> IO (Set Record)
-crawl_ base = do
-    -- This MVar is used to tell the parent thread that the server has bound to
-    -- the socket. If we don't do this, then bad interleaving can cause the
-    -- test to fail.
-    serverStarted <- newEmptyMVar
-
-    let serve = do
-            let application =
-                    staticApp (defaultFileServerSettings "./test/example")
-                settings    = setPort 8080 defaultSettings
-            -- Reimplementation of 'Network.Wai.Handler.Warp.run', except that
-            -- it doesn't set @CloseOnExit@.
-            withSocketsDo
-                (bracket
-                    (bindPortTCP (getPort settings) (getHost settings))
-                    close
-                    (\socket -> do
-                        putMVar serverStarted ()
-                        runSettingsSocket settings socket application))
-
-    recordQueue <- newTBMQueueIO 1
-
-    let loop records =
-            atomically (readTBMQueue recordQueue) >>= \case
-                Nothing -> pure records
-                Just record -> loop (Set.insert record records)
-
-    withAsync serve (\server -> do
-        takeMVar serverStarted
-        withAsync
-            (crawl recordQueue base (const True) 1 1)
-            (\crawler -> do
-                records <- loop mempty
-                cancel server
-                pure records))
-
 crawlSpec :: Spec
 crawlSpec =
     it "crawls the example correctly" do
-        crawl_ base
+        example
             `shouldReturn` expected
   where
     base = fromJust (parseURI "http://127.0.0.1:8080/index.html")
-    link = base {uriPath = "/a.html"}
+    a = base {uriPath = "/a.html"}
+    b = base {uriPath = "/b.html"}
     expected =
         Set.fromList
-            [ Record base base (Set.singleton link)
-            , Record base link mempty
+            [ Record base base (Set.singleton a)
+            , Record base a (Set.singleton b)
+            , Record a b (Set.singleton a)
             ]
+    example = do
+        -- This MVar is used to tell the parent thread that the server has
+        -- bound to 8080. If we don't do this, then bad interleaving can cause
+        -- the test to fail.
+        serverStarted <- newEmptyMVar
+
+        let serve = do
+                let application =
+                        staticApp (defaultFileServerSettings "./test/example")
+                    settings    = setPort 8080 defaultSettings
+                -- Reimplementation of 'Network.Wai.Handler.Warp.run', except
+                -- that it doesn't set @CloseOnExit@.
+                withSocketsDo
+                    (bracket
+                        (bindPortTCP (getPort settings) (getHost settings))
+                        close
+                        (\socket -> do
+                            putMVar serverStarted ()
+                            runSettingsSocket settings socket application))
+
+        recordQueue <- newTBMQueueIO 10
+
+        let loop records =
+                atomically (readTBMQueue recordQueue) >>= \case
+                    Nothing -> pure records
+                    Just record -> loop (Set.insert record records)
+
+        withAsync serve (\server -> do
+            takeMVar serverStarted
+            withAsync
+                (crawl
+                    recordQueue
+                    base
+                    (\uri -> uriAuthority uri == uriAuthority base)
+                    3
+                    10)
+                (\crawler -> do
+                    records <- loop mempty
+                    cancel server
+                    pure records))
 
 spec :: Spec
 spec = describe "crawl" crawlSpec

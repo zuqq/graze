@@ -29,7 +29,7 @@ import Graze.Robots
 import Graze.URI
 
 data Options = Options
-    { base    :: URI       -- ^ URI to start at.
+    { base    :: URI       -- ^ URL to start at.
     , folder  :: FilePath  -- ^ Download folder.
     , depth   :: Int       -- ^ Depth of the search.
     , threads :: Int       -- ^ Number of threads.
@@ -40,7 +40,7 @@ parser =
         Options
     <$> Options.argument
             (Options.maybeReader parseURI)
-            (Options.metavar "<URI>" <> Options.help "URI to start at")
+            (Options.metavar "<URL>" <> Options.help "URL to start at")
     <*> Options.argument
             Options.str
             (Options.metavar "<folder>" <> Options.help "Download folder")

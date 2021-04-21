@@ -32,11 +32,11 @@ $ stack run -- --help
 Usage: graze-exe <URL> <folder> [--depth <depth>] [--threads <threads>]
 
 Available options:
+  -h,--help                Show this help text
   <URL>                    URL to start at
   <folder>                 Download folder
   --depth <depth>          Depth of the search (default: 3)
   --threads <threads>      Number of threads (default: 10)
-  -h,--help                Show this help text
 ```
 
 
@@ -55,7 +55,7 @@ records
 For every visited URL we store a JSON-encoded record that contains information
 about the corresponding node in the crawl graph.
 
-The file names are derived from the URL's SHA-1 digest; for example,
+The record's name is derived from the URL's SHA-1 digest; for example,
 
 ```
 https://www.iana.org/protocols/apply

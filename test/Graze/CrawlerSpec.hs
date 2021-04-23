@@ -32,11 +32,12 @@ crawlSpec = do
     base = fromJust (parseURI "http://127.0.0.1:8080/index.html")
     a = base {uriPath = "/a.html"}
     b = base {uriPath = "/b.html"}
+    c = base {uriPath = "/c.html"}
     external = fromJust (parseURI "http://www.example.com")
     expected =
         Set.fromList
             [ Node base base (Set.fromList [a, external])
-            , Node base a (Set.singleton b)
+            , Node base a (Set.fromList [b, c])
             , Node a b (Set.singleton a)
             ]
     example = do

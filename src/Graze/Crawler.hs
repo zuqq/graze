@@ -31,20 +31,13 @@ import Graze.URI
 data Job = Job
     { jobOrigin :: !URI
     , jobTarget :: !URI
-    , jobDepth  :: !Int  -- ^ Remaining depth of the search.
+    , jobDepth  :: !Int
     }
     deriving (Eq, Ord, Show)
 
-data JobReport
-    = Failure
-    | Success
-        !Job
-        !(Set URI)  -- ^ Outgoing links.
-    deriving (Eq, Ord, Show)
-
 fetch
-    :: IO (Maybe Job)        -- ^ Receive a 'Job'.
-    -> (JobReport -> IO ())  -- ^ Send a 'JobReport' to the crawler.
+    :: IO (Maybe Job)
+    -> (Maybe (Job, Set URI) -> IO ())
     -> IO ()
 fetch receive send = loop
   where
@@ -53,10 +46,10 @@ fetch receive send = loop
             Nothing -> pure ()
             Just job@Job {..} -> do
                 try (get ("text" // "html") "graze" jobTarget) >>= \case
-                    Left (_ :: HttpException) -> send Failure
+                    Left (_ :: HttpException) -> send Nothing
                     Right (Just s) ->
-                        send (Success job (parseLinks jobTarget s))
-                    Right _ -> send (Success job mempty)
+                        send (Just (job, parseLinks jobTarget s))
+                    Right _ -> send (Just (job, mempty))
                 loop
 
 data CrawlerOptions = CrawlerOptions
@@ -75,32 +68,31 @@ crawl CrawlerOptions {..} = do
     jobReportQueue <- newTBQueueIO (fromIntegral threads)
 
     jobQueue <- newTMQueueIO
-    atomically (writeTMQueue jobQueue (Job base base depth))
+    atomically (writeTMQueue jobQueue (Job base base 0))
 
-    let makeJobs seen Failure                  = (mempty, seen)
-        makeJobs seen (Success Job {..} links) =
-            if jobDepth <= 0
-                then (mempty, seen)
-                else (jobs, seen')
+    let makeJobs seen Job {..} links
+            | jobDepth >= depth = (mempty, seen)
+            | otherwise         = (jobs, seen')
           where
             links' = Set.difference (Set.filter crawlable links) seen
-            jobs   = Set.map (\link -> Job jobTarget link (jobDepth - 1)) links'
+            jobs   = Set.map (\link -> Job jobTarget link (jobDepth + 1)) links'
             seen'  = Set.union seen links'
 
-    let loop seen open = do
-            report <- atomically (readTBQueue jobReportQueue)
-            case report of
-                Failure -> mempty
-                Success Job {..} links ->
-                      atomically
-                    . writeTBMQueue recordQueue
-                    $ Record jobOrigin jobTarget links
-            let (jobs, seen') = makeJobs seen report
-            traverse_ (atomically . writeTMQueue jobQueue) jobs
-            let open' = open - 1 + Set.size jobs
-            if open' <= 0
-                then atomically (closeTMQueue jobQueue)
-                else loop seen' open'
+    let loop seen open
+            | open <= 0 = atomically (closeTMQueue jobQueue)
+            | otherwise = do
+                report <- atomically (readTBQueue jobReportQueue)
+                (seen', open') <-
+                    case report of
+                        Nothing -> pure (seen, open)
+                        Just (job@Job {..}, links) -> do
+                            atomically
+                                (writeTBMQueue recordQueue
+                                    (Record jobOrigin jobTarget links))
+                            let (jobs, seen') = makeJobs seen job links
+                            traverse_ (atomically . writeTMQueue jobQueue) jobs
+                            pure (seen', open + Set.size jobs)
+                loop seen' (open' - 1)
 
     concurrently_
         (replicateConcurrently_

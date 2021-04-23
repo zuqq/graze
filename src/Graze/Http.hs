@@ -9,7 +9,7 @@ module Graze.Http
     -- * Reexports
     , (//)
     , HttpException (..)
-    , Text.UnicodeException (..)
+    , UnicodeException (..)
     )
     where
 
@@ -18,6 +18,7 @@ import Data.ByteString (ByteString)
 import Data.List (uncons)
 import Data.Maybe (fromMaybe)
 import Data.Text (Text)
+import Data.Text.Encoding.Error (UnicodeException (..))
 import Network.HTTP.Client
 import Network.HTTP.Client.TLS
 import Network.HTTP.Media
@@ -25,7 +26,6 @@ import Network.HTTP.Types
 
 import qualified Data.ByteString.Lazy as Lazy
 import qualified Data.Text.Encoding as Text
-import qualified Data.Text.Encoding.Error as Text
 
 import Graze.URI
 
@@ -34,7 +34,7 @@ parseContentType header =
         parseAccept header
     >>= matchContent ["text" // "html", "text" // "plain"]
 
-type Decoder = Lazy.ByteString -> Either Text.UnicodeException Text
+type Decoder = Lazy.ByteString -> Either UnicodeException Text
 
 decodeLatin1 :: Decoder
 decodeLatin1 = Right . Text.decodeLatin1 . Lazy.toStrict
@@ -59,7 +59,7 @@ data GrazeHttpException
     | WrongMediaType  -- ^ Received the wrong media type.
         !MediaType    -- ^ Expected media type.
         !ByteString   -- ^ Value of the @Content-Type@ response header.
-    | DecodingException !Text.UnicodeException
+    | DecodingException !UnicodeException
     -- ^ The media type in the @Content-Type@ header is not Latin-1 and the body
     -- is not valid UTF-8.
 
@@ -79,7 +79,7 @@ instance Show GrazeHttpException where
 wrapHttpException :: IO a -> IO a
 wrapHttpException m = catch @HttpException m (throwIO . RequestException)
 
-wrapUnicodeException :: Either Text.UnicodeException a -> IO a
+wrapUnicodeException :: Either UnicodeException a -> IO a
 wrapUnicodeException = either (throwIO . DecodingException) pure
 
 -- | Send a GET request with custom @Accept@ and @User-Agent@ request headers.

@@ -72,7 +72,12 @@ crawl CrawlerOptions {..} = do
             | jobDepth >= depth = (mempty, seen)
             | otherwise         = (jobs, seen')
           where
-            links' = Set.difference (Set.filter crawlable links) seen
+            links' =
+                Set.difference
+                    (Set.filter
+                        crawlable
+                        (Set.map (\link -> link {uriFragment = mempty}) links))
+                    seen
             jobs   = Set.map (\link -> Job jobTarget link (jobDepth + 1)) links'
             seen'  = Set.union seen links'
 

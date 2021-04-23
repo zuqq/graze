@@ -24,7 +24,7 @@ import qualified Options.Applicative as Options
 
 import Graze.Crawler
 import Graze.Http
-import Graze.Record
+import Graze.Node
 import Graze.Robots
 import Graze.URI
 
@@ -78,25 +78,25 @@ main = do
                 Right (Just s) -> parseRobots s
                 _ -> const True
 
-    recordQueue <- newTBMQueueIO threads
+    output <- newTBMQueueIO threads
 
     createDirectoryIfMissing True folder
 
     let loop =
-            atomically (readTBMQueue recordQueue) >>= \case
+            atomically (readTBMQueue output) >>= \case
                 Nothing -> pure ()
-                Just record@(Record _ uri _) -> do
+                Just node@(Node _ location _) -> do
                     let name =
                               Char8.unpack
                             . Base16.encode
                             . SHA1.hash
                             . Char8.pack
                             . show
-                            $ uri
+                            $ location
                     Lazy.writeFile
                         (folder </> name <.> "json")
-                        (Aeson.encode record)
-                    hPutStrLn stderr ("Got " <> show uri)
+                        (Aeson.encode node)
+                    hPutStrLn stderr ("Got " <> show location)
                     loop
 
     concurrently_

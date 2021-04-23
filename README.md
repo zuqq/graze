@@ -50,7 +50,7 @@ records
 └── fec01f0f176e22939d47435cc1d5a63b02030d9b.json
 ```
 
-For every visited URL the crawler created a JSON-encoded record that represents
+For every visited URL the crawler creates a JSON-encoded record that represents
 the corresponding node in the crawl tree.
 
 The record's name is derived from the URL's SHA-1 digest; for example,

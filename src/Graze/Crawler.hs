@@ -9,8 +9,8 @@
 -- 'crawlable' predicate constrains the links that are followed (e.g., only
 -- those that stay on the same host and respect the robots.txt file). The
 -- maximal depth of the traversal is specified by 'depth'. The crawler makes
--- sure not to visit the same URL twice; it creates a 'Record' for every
--- visited URL and writes it to the 'recordQueue' that was passed in.
+-- sure not to visit the same URL twice; it creates a 'Node' for every visited
+-- URL and writes it to the 'output' queue that was passed in.
 module Graze.Crawler (CrawlerOptions (..), crawl) where
 
 import Control.Concurrent.Async (concurrently_, replicateConcurrently_)
@@ -25,7 +25,7 @@ import qualified Data.Set as Set
 
 import Graze.HTML
 import Graze.Http
-import Graze.Record
+import Graze.Node
 import Graze.URI
 
 data Job = Job
@@ -53,11 +53,11 @@ fetch receive send = loop
                 loop
 
 data CrawlerOptions = CrawlerOptions
-    { base        :: URI              -- ^ URL to start at.
-    , crawlable   :: URI -> Bool      -- ^ Selects links to follow.
-    , depth       :: Int              -- ^ Depth of the search.
-    , threads     :: Int              -- ^ Size of the thread pool.
-    , recordQueue :: TBMQueue Record  -- ^ Output queue.
+    { base      :: URI            -- ^ URL to start at.
+    , crawlable :: URI -> Bool    -- ^ Selects links to follow.
+    , depth     :: Int            -- ^ Depth of the search.
+    , threads   :: Int            -- ^ Size of the thread pool.
+    , output    :: TBMQueue Node  -- ^ Output queue.
     }
 
 -- | Run the crawler. 
@@ -65,10 +65,10 @@ data CrawlerOptions = CrawlerOptions
 -- Returns when there are no more URLs to visit.
 crawl :: CrawlerOptions -> IO ()
 crawl CrawlerOptions {..} = do
-    jobReportQueue <- newTBQueueIO (fromIntegral threads)
+    fetchOutput <- newTBQueueIO (fromIntegral threads)
 
-    jobQueue <- newTMQueueIO
-    atomically (writeTMQueue jobQueue (Job base base 0))
+    fetchInput <- newTMQueueIO
+    atomically (writeTMQueue fetchInput (Job base base 0))
 
     let makeJobs seen Job {..} links
             | jobDepth >= depth = (mempty, seen)
@@ -79,18 +79,20 @@ crawl CrawlerOptions {..} = do
             seen'  = Set.union seen links'
 
     let loop seen open
-            | open <= 0 = atomically (closeTMQueue jobQueue)
+            | open <= 0 = atomically (closeTMQueue fetchInput)
             | otherwise = do
-                report <- atomically (readTBQueue jobReportQueue)
+                report <- atomically (readTBQueue fetchOutput)
                 (seen', open') <-
                     case report of
                         Nothing -> pure (seen, open)
                         Just (job@Job {..}, links) -> do
                             atomically
-                                (writeTBMQueue recordQueue
-                                    (Record jobOrigin jobTarget links))
+                                (writeTBMQueue output
+                                    (Node jobOrigin jobTarget links))
                             let (jobs, seen') = makeJobs seen job links
-                            traverse_ (atomically . writeTMQueue jobQueue) jobs
+                            traverse_
+                                (atomically . writeTMQueue fetchInput)
+                                jobs
                             pure (seen', open + Set.size jobs)
                 loop seen' (open' - 1)
 
@@ -98,8 +100,8 @@ crawl CrawlerOptions {..} = do
         (replicateConcurrently_
             threads
             (fetch
-                (atomically (readTMQueue jobQueue))
-                (atomically . writeTBQueue jobReportQueue)))
+                (atomically (readTMQueue fetchInput))
+                (atomically . writeTBQueue fetchOutput)))
         (loop (Set.singleton base) 1)
 
-    atomically (closeTBMQueue recordQueue)
+    atomically (closeTBMQueue output)

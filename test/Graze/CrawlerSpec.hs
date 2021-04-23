@@ -20,7 +20,7 @@ import Test.Hspec
 import qualified Data.Set as Set
 
 import Graze.Crawler
-import Graze.Record
+import Graze.Node
 import Graze.URI
 
 crawlSpec :: Spec
@@ -34,9 +34,9 @@ crawlSpec = do
     b = base {uriPath = "/b.html"}
     expected =
         Set.fromList
-            [ Record base base (Set.singleton a)
-            , Record base a (Set.singleton b)
-            , Record a b (Set.singleton a)
+            [ Node base base (Set.singleton a)
+            , Node base a (Set.singleton b)
+            , Node a b (Set.singleton a)
             ]
     example = do
         let threads = 10
@@ -61,12 +61,12 @@ crawlSpec = do
                             putMVar serverStarted ()
                             runSettingsSocket settings socket application))
 
-        recordQueue <- newTBMQueueIO threads
+        output <- newTBMQueueIO threads
 
-        let loop records =
-                atomically (readTBMQueue recordQueue) >>= \case
-                    Nothing -> pure records
-                    Just record -> loop (Set.insert record records)
+        let loop nodes =
+                atomically (readTBMQueue output) >>= \case
+                    Nothing -> pure nodes
+                    Just node -> loop (Set.insert node nodes)
 
         withAsync serve (\server -> do
             takeMVar serverStarted
@@ -74,13 +74,13 @@ crawlSpec = do
                 (crawl
                     CrawlerOptions
                         { crawlable =
-                            (\uri -> uriAuthority uri == uriAuthority base)
+                            \uri -> uriAuthority uri == uriAuthority base
                         , ..
                         })
                 (\crawler -> do
-                    records <- loop mempty
+                    nodes <- loop mempty
                     cancel server
-                    pure records))
+                    pure nodes))
 
 spec :: Spec
 spec = describe "crawl" crawlSpec

@@ -22,6 +22,7 @@ dependencies:
 - http-client
 - http-client-tls
 - http-media
+- http-types
 - network-uri
 - optparse-applicative
 - stm

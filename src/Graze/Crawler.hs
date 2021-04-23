@@ -46,10 +46,8 @@ fetch receive send = loop
             Nothing -> pure ()
             Just job@Job {..} -> do
                 try (get ("text" // "html") "graze" jobTarget) >>= \case
-                    Left (_ :: HttpException) -> send Nothing
-                    Right (Just s) ->
-                        send (Just (job, parseLinks jobTarget s))
-                    Right _ -> send (Just (job, mempty))
+                    Left (_ :: GrazeHttpException) -> send Nothing
+                    Right s -> send (Just (job, parseLinks jobTarget s))
                 loop
 
 data CrawlerOptions = CrawlerOptions

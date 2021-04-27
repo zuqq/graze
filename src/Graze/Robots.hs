@@ -27,10 +27,9 @@ findRules userAgent =
 combineRules :: [Rule] -> Trie Char RuleType
 combineRules = foldl' step empty
   where
-    step t (Rule ruleType s) =
-        if not (Text.null s)
-            then insert (Text.unpack s) ruleType t
-            else t
+    step t (Rule ruleType s)
+        | Text.null s = t
+        | otherwise   = insert (Text.unpack s) ruleType t
 
 parseRules :: Text -> Text -> Trie Char RuleType
 parseRules userAgent =

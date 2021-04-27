@@ -58,6 +58,21 @@ data CrawlerOptions = CrawlerOptions
     , output    :: TBMQueue Node  -- ^ Output queue.
     }
 
+-- | A wrapper around 'URI' for defining custom 'Eq' and 'Ord' instances.
+newtype SeenURI = SeenURI URI
+
+-- | Extract authority, path, and query.
+extractRelevant :: SeenURI -> (Maybe URIAuth, String, String)
+extractRelevant (SeenURI uri) = (uriAuthority uri, uriPath uri, uriQuery uri)
+
+-- | Ignores 'uriScheme' and 'uriFragment'.
+instance Eq SeenURI where
+    x == y = extractRelevant x == extractRelevant y
+
+-- | Ignores 'uriScheme' and 'uriFragment'.
+instance Ord SeenURI where
+    x <= y = extractRelevant x <= extractRelevant y
+
 -- | Run the crawler. 
 --
 -- Returns when there are no more URLs to visit.
@@ -74,11 +89,11 @@ crawl CrawlerOptions {..} = do
           where
             links' =
                 Set.difference
-                    (Set.filter
-                        crawlable
-                        (Set.map (\link -> link {uriFragment = mempty}) links))
+                    (Set.map SeenURI (Set.filter crawlable links))
                     seen
-            jobs   = Set.map (\link -> Job jobTarget link (jobDepth + 1)) links'
+            jobs   =
+                Set.map
+                    (\(SeenURI uri) -> Job jobTarget uri (jobDepth + 1)) links'
             seen'  = Set.union seen links'
 
     let loop seen open
@@ -105,6 +120,6 @@ crawl CrawlerOptions {..} = do
             (fetch
                 (atomically (readTMQueue fetchInput))
                 (atomically . writeTBQueue fetchOutput)))
-        (loop (Set.singleton base) 1)
+        (loop (Set.singleton (SeenURI base)) 1)
 
     atomically (closeTBMQueue output)

@@ -38,7 +38,11 @@ crawlSpec = do
         Set.fromList
             [ Node base base (Set.fromList [a, external])
             , Node base a (Set.fromList [b, c])
-            , Node a b (Set.singleton a)
+            , Node
+                a
+                b
+                (Set.fromList
+                    [a, a {uriFragment = "#top"}, a {uriScheme = "https:"}])
             ]
     example = do
         let threads = 10

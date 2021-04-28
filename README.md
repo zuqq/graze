@@ -33,7 +33,7 @@ Usage: graze-exe <base> <folder> [--depth <depth>] [--threads <threads>]
 Available options:
   -h,--help                Show this help text
   <base>                   URL to start at
-  <folder>                 Download folder
+  <folder>                 Record folder
   --depth <depth>          Depth of the search (default: 3)
   --threads <threads>      Size of the thread pool (default: 10)
 ```

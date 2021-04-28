@@ -30,7 +30,7 @@ import Graze.URI
 
 data MainOptions = MainOptions
     { base    :: URI       -- ^ URL to start at.
-    , folder  :: FilePath  -- ^ Download folder.
+    , folder  :: FilePath  -- ^ Record folder.
     , depth   :: Int       -- ^ Depth of the search.
     , threads :: Int       -- ^ Size of the thread pool.
     }
@@ -43,7 +43,7 @@ mainOptionsParser =
             (Options.metavar "<base>" <> Options.help "URL to start at")
     <*> Options.argument
             Options.str
-            (Options.metavar "<folder>" <> Options.help "Download folder")
+            (Options.metavar "<folder>" <> Options.help "Record folder")
     <*> Options.option
             Options.auto
             (   Options.long "depth"

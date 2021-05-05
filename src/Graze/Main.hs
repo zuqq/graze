@@ -72,7 +72,7 @@ main = do
     putStrLn ("Crawling " <> show base)
 
     robots <-
-            try (get ("text" // "plain") "graze" base {uriPath = "/robots.txt"})
+            try (getTextPlain base {uriPath = "/robots.txt"})
         <&> \case
                 Left (_ :: GrazeHttpException) -> const True
                 Right s -> parseRobots s

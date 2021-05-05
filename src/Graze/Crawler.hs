@@ -45,7 +45,7 @@ fetch receive send = loop
         receive >>= \case
             Nothing -> pure ()
             Just job@Job {..} -> do
-                try (get ("text" // "html") "graze" jobTarget) >>= \case
+                try (getTextHtml jobTarget) >>= \case
                     Left (_ :: GrazeHttpException) -> send Nothing
                     Right s -> send (Just (job, parseLinks jobTarget s))
                 loop
@@ -105,7 +105,8 @@ crawl CrawlerOptions {..} = do
                         Nothing -> pure (seen, open)
                         Just (job@Job {..}, links) -> do
                             atomically
-                                (writeTBMQueue output
+                                (writeTBMQueue
+                                    output
                                     (Node jobOrigin jobTarget links))
                             let (jobs, seen') = makeJobs seen job links
                             traverse_

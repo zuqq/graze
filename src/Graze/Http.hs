@@ -3,17 +3,21 @@
 
 -- | Functions for making GET requests, based on "Network.HTTP.Client",
 -- "Network.HTTP.Media", and "Network.HTTP.Types".
+--
+-- Because this module uses 'Network.HTTP.Client.TLS.getGlobalManager', it
+-- supports HTTPS out of the box.
 module Graze.Http
     ( GrazeHttpException (..)
-    , get
+    , getTextHtml
+    , getTextPlain
     -- * Reexports
-    , (//)
     , HttpException (..)
     , UnicodeException (..)
     )
     where
 
 import Control.Exception (Exception, catch, throwIO)
+import Control.Monad ((>=>))
 import Data.ByteString (ByteString)
 import Data.List (uncons)
 import Data.Maybe (fromMaybe)
@@ -45,14 +49,15 @@ decodeUtf8 = Text.decodeUtf8' . Lazy.toStrict
 parseCharset :: ByteString -> Maybe Decoder
 parseCharset = mapContentCharset [("iso-8859-1", decodeLatin1)]
 
-addRequestHeaders :: RequestHeaders -> Request -> Request
-addRequestHeaders headers request =
-    request {requestHeaders = headers <> requestHeaders request}
+addRequestHeader :: Header -> Request -> Request
+addRequestHeader header request =
+    request {requestHeaders = header : requestHeaders request}
 
 getResponseHeader :: HeaderName -> Response a -> [ByteString]
 getResponseHeader name response =
     [value | (key, value) <- responseHeaders response, key == name]
 
+-- | HTTP request failure modes.
 data GrazeHttpException
     = RequestException !HttpException
     | NoContentType   -- ^ No @Content-Type@ response header.
@@ -66,15 +71,16 @@ data GrazeHttpException
 instance Exception GrazeHttpException
 
 instance Show GrazeHttpException where
-    show (RequestException e)             = show e
-    show NoContentType                    = "No Content-Type response header."
-    show (WrongMediaType expected header) =
+    show (RequestException e)                = show e
+    show NoContentType                       =
+        "No Content-Type response header."
+    show (WrongMediaType accept contentType) =
             "Expected "
-        <>  show expected
+        <>  show accept
         <>  " but got the non-matching "
-        <>  show header
+        <>  show contentType
         <>  "."
-    show (DecodingException e)            = show e
+    show (DecodingException e)               = show e
 
 wrapHttpException :: IO a -> IO a
 wrapHttpException m = catch @HttpException m (throwIO . RequestException)
@@ -82,37 +88,50 @@ wrapHttpException m = catch @HttpException m (throwIO . RequestException)
 wrapUnicodeException :: Either UnicodeException a -> IO a
 wrapUnicodeException = either (throwIO . DecodingException) pure
 
--- | Send a GET request with custom @Accept@ and @User-Agent@ request headers.
---
--- Throws 'GrazeHttpException' if something goes wrong.
-get
-    :: MediaType   -- ^ Expected media type.
-    -> ByteString  -- ^ User agent.
-    -> URI         -- ^ URL to request.
-    -> IO Text
-get expected userAgent uri = do
+requestFromURI' :: URI -> IO Request
+requestFromURI' = wrapHttpException . requestFromURI
+
+httpLbs' :: Request -> IO (Response Lazy.ByteString)
+httpLbs' request = getGlobalManager >>= wrapHttpException . httpLbs request'
+  where
     -- Note that we need to set the @User-Agent@ header because some hosts will
     -- not serve us otherwise.
-    let headers = [(hAccept, renderHeader expected), (hUserAgent, userAgent)]
-    response <- wrapHttpException (do
-        request <-
-                setRequestCheckStatus . addRequestHeaders headers
-            <$> requestFromURI uri
-        manager <- getGlobalManager
-        httpLbs request manager)
+    request' = addRequestHeader (hUserAgent, "graze") request
 
+getContentType :: Response a -> IO ByteString
+getContentType response =
     -- There should be at most one @Content-Type@ response header, so we take
     -- the first one (if it exists). Responses with no @Content-Type@ cause a
     -- 'NoContentType' exception.
-    header <-
-        case uncons (getResponseHeader hContentType response) of
-            Nothing -> throwIO NoContentType
-            Just (header, _) -> pure header
+    case uncons (getResponseHeader hContentType response) of
+        Nothing -> throwIO NoContentType
+        Just (header, _) -> pure header
 
-    case parseContentType header of
+getOnly :: MediaType -> URI -> IO (Response Lazy.ByteString)
+getOnly accept uri = do
+    request <- requestFromURI' uri
+    let request' = addRequestHeader (hAccept, renderHeader accept) request
+    response <- httpLbs' request'
+    contentType <- getContentType response
+    case parseContentType contentType of
         Just mediaType
-            | mediaType == expected -> pure ()
-        _ -> throwIO (WrongMediaType expected header)
+            | mediaType == accept -> pure response
+        _ -> throwIO (WrongMediaType accept contentType)
 
-    let decode = fromMaybe decodeUtf8 (parseCharset header)
+decodeResponse ::  Response Lazy.ByteString -> IO Text
+decodeResponse response = do
+    contentType <- getContentType response
+    let decode = fromMaybe decodeUtf8 (parseCharset contentType)
     wrapUnicodeException (decode (responseBody response))
+
+-- | Send a GET request for the given 'URI', accepting only @text/html@.
+--
+-- Throws 'GrazeHttpException'.
+getTextHtml :: URI -> IO Text
+getTextHtml = getOnly ("text" // "html") >=> decodeResponse
+
+-- | Send a GET request for the given 'URI', accepting only @text/plain@.
+--
+-- Throws 'GrazeHttpException'.
+getTextPlain :: URI -> IO Text
+getTextPlain = getOnly ("text" // "plain") >=> decodeResponse

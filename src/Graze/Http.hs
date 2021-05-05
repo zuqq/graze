@@ -33,10 +33,15 @@ import qualified Data.Text.Encoding as Text
 
 import Graze.URI
 
+textHtml :: MediaType
+textHtml = "text" // "html"
+
+textPlain :: MediaType
+textPlain = "text" // "plain"
+
 parseContentType :: ByteString -> Maybe MediaType
 parseContentType header =
-        parseAccept header
-    >>= matchContent ["text" // "html", "text" // "plain"]
+    parseAccept header >>= matchContent [textHtml, textPlain]
 
 type Decoder = Lazy.ByteString -> Either UnicodeException Text
 
@@ -128,10 +133,10 @@ decodeResponse response = do
 --
 -- Throws 'GrazeHttpException'.
 getTextHtml :: URI -> IO Text
-getTextHtml = getOnly ("text" // "html") >=> decodeResponse
+getTextHtml = getOnly textHtml >=> decodeResponse
 
 -- | Send a GET request for the given 'URI', accepting only @text/plain@.
 --
 -- Throws 'GrazeHttpException'.
 getTextPlain :: URI -> IO Text
-getTextPlain = getOnly ("text" // "plain") >=> decodeResponse
+getTextPlain = getOnly textPlain >=> decodeResponse

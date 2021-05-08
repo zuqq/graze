@@ -9,8 +9,16 @@ module Graze.URI
     )
     where
 
-import Data.Aeson (ToJSON (..))
+import Data.Aeson
 import Network.URI
+
+orFail :: MonadFail m => Maybe a -> String -> m a
+orFail x e = maybe (fail e) pure x
+
+instance FromJSON URI where
+    parseJSON v = do
+        s <- parseJSON v
+        parseURI s `orFail` "Invalid URI."
 
 instance ToJSON URI where
     toJSON = toJSON . show

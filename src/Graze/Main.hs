@@ -86,18 +86,18 @@ main = do
     let loop =
             atomically (readTBMQueue output) >>= \case
                 Nothing -> pure ()
-                Just node@(Node _ location _) -> do
+                Just node@Node {..} -> do
                     let name =
                               Char8.unpack
                             . Base16.encode
                             . SHA1.hash
                             . Char8.pack
                             . show
-                            $ location
+                            $ nodeLocation
                     Lazy.writeFile
                         (folder </> name <.> "json")
                         (Aeson.encode node)
-                    hPutStrLn stderr ("Got " <> show location)
+                    hPutStrLn stderr ("Got " <> show nodeLocation)
                     loop
 
     concurrently_

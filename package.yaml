@@ -23,6 +23,7 @@ dependencies:
 - http-client-tls
 - http-media
 - http-types
+- language-dot
 - network-uri
 - optparse-applicative
 - stm
@@ -42,6 +43,16 @@ executables:
   graze-exe:
     main: Main.hs
     source-dirs: app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - graze
+
+  graze-graph:
+    main: Main.hs
+    source-dirs: graph
     ghc-options:
     - -threaded
     - -rtsopts

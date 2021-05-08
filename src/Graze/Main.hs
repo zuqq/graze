@@ -30,9 +30,9 @@ import Graze.URI
 
 data MainOptions = MainOptions
     { base    :: URI       -- ^ URL to start at.
-    , folder  :: FilePath  -- ^ Record folder.
+    , folder  :: FilePath  -- ^ Folder to store the nodes in.
     , depth   :: Int       -- ^ Depth of the search.
-    , threads :: Int       -- ^ Size of the thread pool.
+    , threads :: Int       -- ^ Number of threads.
     }
 
 mainOptionsParser :: Parser MainOptions
@@ -40,17 +40,19 @@ mainOptionsParser =
         MainOptions
     <$> Options.argument
             (Options.maybeReader parseURI)
-            (Options.metavar "<base>" <> Options.help "URL to start at")
+            (Options.metavar "<base>" <> Options.help "URL to start at.")
     <*> Options.argument
             Options.str
-            (Options.metavar "<folder>" <> Options.help "Record folder")
+            (   Options.metavar "<folder>"
+            <>  Options.help "Folder to store the nodes in."
+            )
     <*> Options.option
             Options.auto
             (   Options.long "depth"
             <>  Options.metavar "<depth>"
             <>  Options.value 3
             <>  Options.showDefault
-            <>  Options.help "Depth of the search"
+            <>  Options.help "Depth of the search."
             )
     <*> Options.option
             Options.auto
@@ -58,7 +60,7 @@ mainOptionsParser =
             <>  Options.metavar "<threads>"
             <>  Options.value 10
             <>  Options.showDefault
-            <>  Options.help "Size of the thread pool"
+            <>  Options.help "Number of threads."
             )
 
 mainOptionsParserInfo :: ParserInfo MainOptions

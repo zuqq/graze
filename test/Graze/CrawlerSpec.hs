@@ -5,7 +5,7 @@
 
 module Graze.CrawlerSpec (spec) where
 
-import Control.Concurrent.Async (cancel, withAsync)
+import Control.Concurrent.Async (cancel, concurrently, withAsync)
 import Control.Concurrent.MVar
 import Control.Concurrent.STM
 import Control.Concurrent.STM.TBMQueue
@@ -76,17 +76,17 @@ crawlSpec = do
 
         withAsync serve (\server -> do
             takeMVar serverStarted
-            withAsync
-                (crawl
-                    CrawlerOptions
-                        { crawlable =
-                            \uri -> uriAuthority uri == uriAuthority base
-                        , ..
-                        })
-                (\crawler -> do
-                    nodes <- loop mempty
-                    cancel server
-                    pure nodes))
+            (_, nodes) <-
+                concurrently
+                    (crawl
+                        CrawlerOptions
+                            { crawlable =
+                                \uri -> uriAuthority uri == uriAuthority base
+                            , ..
+                            })
+                    (loop mempty)
+            cancel server
+            pure nodes)
 
 spec :: Spec
 spec = describe "crawl" crawlSpec

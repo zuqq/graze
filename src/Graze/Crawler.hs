@@ -29,9 +29,9 @@ import Graze.Node
 import Graze.URI
 
 data Job = Job
-    { jobOrigin :: !URI
-    , jobTarget :: !URI
-    , jobDepth  :: !Int
+    { jobParent   :: !URI
+    , jobLocation :: !URI
+    , jobDepth    :: !Int
     }
     deriving (Eq, Ord, Show)
 
@@ -44,12 +44,12 @@ fetch receive send = loop
         receive >>= \case
             Nothing -> pure ()
             Just job@Job {..} ->
-                    try (   getOnly ("text" // "html") jobTarget
+                    try (   getOnly ("text" // "html") jobLocation
                         >>= decodeResponse
                         )
                 >>= \case
                         Left (_ :: GrazeHttpException) -> send Failure
-                        Right s -> send (Success job (parseLinks jobTarget s))
+                        Right s -> send (Success job (parseLinks jobLocation s))
                 >>  loop
 
 data CrawlerOptions = CrawlerOptions
@@ -80,12 +80,7 @@ instance Ord SeenURI where
 -- Returns when there are no more URLs to visit.
 crawl :: CrawlerOptions -> IO ()
 crawl CrawlerOptions {..} = do
-    fetchOutput <- newTBQueueIO (fromIntegral threads)
-
-    fetchInput <- newTMQueueIO
-    atomically (writeTMQueue fetchInput (Job base base 0))
-
-    let makeJobs seen Job {..} links
+    let makeJobs Job {..} links seen
             | jobDepth >= depth = (mempty, seen)
             | otherwise         = (jobs, seen')
           where
@@ -95,8 +90,15 @@ crawl CrawlerOptions {..} = do
                     seen
             jobs   =
                 Set.map
-                    (\(SeenURI uri) -> Job jobTarget uri (jobDepth + 1)) links'
+                    (\(SeenURI uri) -> Job jobLocation uri (jobDepth + 1))
+                    links'
             seen'  = Set.union seen links'
+
+    fetchOutput <- newTBQueueIO (fromIntegral threads)
+
+    fetchInput <- newTMQueueIO
+
+    let sendJob = atomically . writeTMQueue fetchInput
 
     let loop seen open
             | open <= 0 = atomically (closeTMQueue fetchInput)
@@ -109,13 +111,13 @@ crawl CrawlerOptions {..} = do
                             atomically
                                 (writeTBMQueue
                                     output
-                                    (Node jobOrigin jobTarget links))
-                            let (jobs, seen') = makeJobs seen job links
-                            traverse_
-                                (atomically . writeTMQueue fetchInput)
-                                jobs
+                                    (Node jobParent jobLocation links))
+                            let (jobs, seen') = makeJobs job links seen
+                            traverse_ sendJob jobs
                             pure (seen', open + Set.size jobs)
                 loop seen' (open' - 1)
+
+    sendJob (Job base base 0)
 
     concurrently_
         (replicateConcurrently_

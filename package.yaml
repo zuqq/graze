@@ -69,7 +69,6 @@ tests:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - QuickCheck
     - doctest
     - graze
 

@@ -40,6 +40,15 @@ insert key value = go key
 
 -- | Find the value associated with the maximal prefix of the given key that is
 -- stored in @t@.
+--
+-- ==== __Examples__
+--
+-- >>> let t = insert "ab" "y" (insert "a" "x" empty)
+-- >>> findMostSpecific "abc" t
+-- Just "y"
+-- >>> let t' = insert "ab" "0" t
+-- >>> findMostSpecific "abc" t'
+-- Just "y0"
 findMostSpecific :: Ord a  => [a] -> Trie a b -> Maybe b
 findMostSpecific key = getLast . go (Last Nothing) key
   where

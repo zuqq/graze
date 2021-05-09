@@ -44,11 +44,14 @@ fetch receive send = loop
     loop =
         receive >>= \case
             Nothing -> pure ()
-            Just job@Job {..} -> do
-                try (getTextHtml jobTarget) >>= \case
-                    Left (_ :: GrazeHttpException) -> send Nothing
-                    Right s -> send (Just (job, parseLinks jobTarget s))
-                loop
+            Just job@Job {..} ->
+                    try (   getOnly ("text" // "html") jobTarget
+                        >>= decodeResponse
+                        )
+                >>= \case
+                        Left (_ :: GrazeHttpException) -> send Nothing
+                        Right s -> send (Just (job, parseLinks jobTarget s))
+                >>  loop
 
 data CrawlerOptions = CrawlerOptions
     { base      :: URI            -- ^ URL to start at.

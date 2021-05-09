@@ -8,16 +8,16 @@
 -- supports HTTPS out of the box.
 module Graze.Http
     ( GrazeHttpException (..)
-    , getTextHtml
-    , getTextPlain
+    , decodeResponse
+    , getOnly
     -- * Reexports
+    , (//)
     , HttpException (..)
     , UnicodeException (..)
     )
     where
 
 import Control.Exception (Exception, catch, throwIO)
-import Control.Monad ((>=>))
 import Data.ByteString (ByteString)
 import Data.List (uncons)
 import Data.Maybe (fromMaybe)
@@ -32,35 +32,6 @@ import qualified Data.ByteString.Lazy as Lazy
 import qualified Data.Text.Encoding as Text
 
 import Graze.URI
-
-textHtml :: MediaType
-textHtml = "text" // "html"
-
-textPlain :: MediaType
-textPlain = "text" // "plain"
-
-parseContentType :: ByteString -> Maybe MediaType
-parseContentType header =
-    parseAccept header >>= matchContent [textHtml, textPlain]
-
-type Decoder = Lazy.ByteString -> Either UnicodeException Text
-
-decodeLatin1 :: Decoder
-decodeLatin1 = Right . Text.decodeLatin1 . Lazy.toStrict
-
-decodeUtf8 :: Decoder
-decodeUtf8 = Text.decodeUtf8' . Lazy.toStrict
-
-parseCharset :: ByteString -> Maybe Decoder
-parseCharset = mapContentCharset [("iso-8859-1", decodeLatin1)]
-
-addRequestHeader :: Header -> Request -> Request
-addRequestHeader header request =
-    request {requestHeaders = header : requestHeaders request}
-
-getResponseHeader :: HeaderName -> Response a -> [ByteString]
-getResponseHeader name response =
-    [value | (key, value) <- responseHeaders response, key == name]
 
 -- | HTTP request failure modes.
 data GrazeHttpException
@@ -93,50 +64,68 @@ wrapHttpException m = catch @HttpException m (throwIO . RequestException)
 wrapUnicodeException :: Either UnicodeException a -> IO a
 wrapUnicodeException = either (throwIO . DecodingException) pure
 
+decodeLatin1 :: Lazy.ByteString -> Either UnicodeException Text
+decodeLatin1 = Right . Text.decodeLatin1 . Lazy.toStrict
+
+decodeUtf8 :: Lazy.ByteString -> Either UnicodeException Text
+decodeUtf8 = Text.decodeUtf8' . Lazy.toStrict
+
+decode :: ByteString -> Lazy.ByteString -> Either UnicodeException Text
+decode contentType =
+    fromMaybe
+        decodeUtf8
+        (mapContentCharset [("iso-8859-1", decodeLatin1)] contentType)
+
+-- | Decode a 'Response'. The supported charsets are Latin-1 and anything that
+-- is a subset of UTF-8.
+--
+-- Throws 'GrazeHttpException' if decoding fails.
+decodeResponse :: Response Lazy.ByteString -> IO Text
+decodeResponse response = do
+    contentType <- getContentType response
+    wrapUnicodeException (decode contentType (responseBody response))
+
+addRequestHeader :: Header -> Request -> Request
+addRequestHeader header request =
+    request {requestHeaders = header : requestHeaders request}
+
+getResponseHeader :: HeaderName -> Response a -> [ByteString]
+getResponseHeader name response =
+    [value | (key, value) <- responseHeaders response, key == name]
+
 requestFromURI' :: URI -> IO Request
 requestFromURI' = wrapHttpException . requestFromURI
 
-httpLbs' :: Request -> IO (Response Lazy.ByteString)
-httpLbs' request = getGlobalManager >>= wrapHttpException . httpLbs request'
-  where
-    -- Note that we need to set the @User-Agent@ header because some hosts will
-    -- not serve us otherwise.
-    request' = addRequestHeader (hUserAgent, "graze") request
+httpLbs' :: Request -> Manager -> IO (Response Lazy.ByteString)
+httpLbs' request manager = do
+    -- We need to set the @User-Agent@ header because some hosts will not serve
+    -- us otherwise.
+    let request' = addRequestHeader (hUserAgent, "graze") request
+    wrapHttpException (httpLbs request' manager)
 
 getContentType :: Response a -> IO ByteString
 getContentType response =
     -- There should be at most one @Content-Type@ response header, so we take
-    -- the first one (if it exists). Responses with no @Content-Type@ cause a
-    -- 'NoContentType' exception.
+    -- the first one (if it exists).
     case uncons (getResponseHeader hContentType response) of
         Nothing -> throwIO NoContentType
-        Just (header, _) -> pure header
+        Just (contentType, _) -> pure contentType
 
+checkContentType :: MediaType -> Response a -> IO (Response a)
+checkContentType accept response = do
+    contentType <- getContentType response
+    case matchContent [accept] contentType of
+        Nothing -> throwIO (WrongMediaType accept contentType)
+        Just _ -> pure response
+
+-- | Request the given 'URI', setting the @Accept@ request header to the given
+-- 'MediaType' and checking that the @Content-Type@ response header matches.
+--
+-- Throws 'GrazeHttpException' if the request fails.
 getOnly :: MediaType -> URI -> IO (Response Lazy.ByteString)
 getOnly accept uri = do
     request <- requestFromURI' uri
     let request' = addRequestHeader (hAccept, renderHeader accept) request
-    response <- httpLbs' request'
-    contentType <- getContentType response
-    case parseContentType contentType of
-        Just mediaType
-            | mediaType == accept -> pure response
-        _ -> throwIO (WrongMediaType accept contentType)
-
-decodeResponse ::  Response Lazy.ByteString -> IO Text
-decodeResponse response = do
-    contentType <- getContentType response
-    let decode = fromMaybe decodeUtf8 (parseCharset contentType)
-    wrapUnicodeException (decode (responseBody response))
-
--- | Send a GET request for the given 'URI', accepting only @text/html@.
---
--- Throws 'GrazeHttpException'.
-getTextHtml :: URI -> IO Text
-getTextHtml = getOnly textHtml >=> decodeResponse
-
--- | Send a GET request for the given 'URI', accepting only @text/plain@.
---
--- Throws 'GrazeHttpException'.
-getTextPlain :: URI -> IO Text
-getTextPlain = getOnly textPlain >=> decodeResponse
+    manager <- getGlobalManager
+    response <- httpLbs' request' manager
+    checkContentType accept response

@@ -1,5 +1,6 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
+-- | A wrapper around "Network.URI".
 module Graze.URI
     ( parseURIRelativeTo
     -- * Reexports

@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
+-- | Parse HTML links; based on "Text.HTML.Parser".
 module Graze.HTML (parseLinks) where
 
 import Data.Foldable (find, foldl')

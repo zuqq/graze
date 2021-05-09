@@ -35,10 +35,9 @@ data Job = Job
     }
     deriving (Eq, Ord, Show)
 
-fetch
-    :: IO (Maybe Job)
-    -> (Maybe (Job, Set URI) -> IO ())
-    -> IO ()
+data Report = Failure | Success !Job !(Set URI)
+
+fetch :: IO (Maybe Job) -> (Report -> IO ()) -> IO ()
 fetch receive send = loop
   where
     loop =
@@ -49,8 +48,8 @@ fetch receive send = loop
                         >>= decodeResponse
                         )
                 >>= \case
-                        Left (_ :: GrazeHttpException) -> send Nothing
-                        Right s -> send (Just (job, parseLinks jobTarget s))
+                        Left (_ :: GrazeHttpException) -> send Failure
+                        Right s -> send (Success job (parseLinks jobTarget s))
                 >>  loop
 
 data CrawlerOptions = CrawlerOptions
@@ -105,8 +104,8 @@ crawl CrawlerOptions {..} = do
                 report <- atomically (readTBQueue fetchOutput)
                 (seen', open') <-
                     case report of
-                        Nothing -> pure (seen, open)
-                        Just (job@Job {..}, links) -> do
+                        Failure -> pure (seen, open)
+                        Success job@Job {..} links -> do
                             atomically
                                 (writeTBMQueue
                                     output

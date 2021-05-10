@@ -2,6 +2,7 @@
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE RecordWildCards     #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE ViewPatterns        #-}
 
 -- | A web crawler, using a pool of lightweight threads for concurrent crawling.
 --
@@ -35,6 +36,12 @@ data Job = Job
     }
     deriving (Eq, Ord, Show)
 
+makeNode :: Job -> Set URI -> Node
+makeNode Job {..} links = Node jobParent jobLocation links
+
+makeChildJob :: Job -> URI -> Job
+makeChildJob Job {..} uri = Job jobLocation uri (jobDepth + 1)
+
 data Report = Failure | Success !Job !(Set URI)
 
 fetch :: IO (Maybe Job) -> (Report -> IO ()) -> IO ()
@@ -63,11 +70,11 @@ data CrawlerOptions = CrawlerOptions
     }
 
 -- | A wrapper around 'URI' for defining custom 'Eq' and 'Ord' instances.
-newtype SeenURI = SeenURI URI
+newtype SeenURI = SeenURI {getSeenURI :: URI}
 
 -- | Extract authority, path, and query.
 extractRelevant :: SeenURI -> (Maybe URIAuth, String, String)
-extractRelevant (SeenURI uri) = (uriAuthority uri, uriPath uri, uriQuery uri)
+extractRelevant (SeenURI URI {..}) = (uriAuthority, uriPath, uriQuery)
 
 -- | Ignores 'uriScheme' and 'uriFragment'.
 instance Eq SeenURI where
@@ -77,25 +84,17 @@ instance Eq SeenURI where
 instance Ord SeenURI where
     x <= y = extractRelevant x <= extractRelevant y
 
+difference :: Set URI -> Set SeenURI -> (Set URI, Set SeenURI)
+difference (Set.map SeenURI -> links) seen = (links', seen')
+  where
+    links' = Set.map getSeenURI (links `Set.difference` seen)
+    seen'  = links `Set.union` seen
+
 -- | Run the crawler. 
 --
 -- Returns when there are no more URLs to visit.
 crawl :: CrawlerOptions -> IO ()
 crawl CrawlerOptions {..} = do
-    let makeJobs Job {..} links seen
-            | jobDepth >= depth = (mempty, seen)
-            | otherwise         = (jobs, seen')
-          where
-            links' =
-                Set.difference
-                    (Set.map SeenURI (Set.filter crawlable links))
-                    seen
-            jobs   =
-                Set.map
-                    (\(SeenURI uri) -> Job jobLocation uri (jobDepth + 1))
-                    links'
-            seen'  = Set.union seen links'
-
     fetchOutput <- newTBQueueIO (fromIntegral threads)
 
     fetchInput <- newTMQueueIO
@@ -103,19 +102,24 @@ crawl CrawlerOptions {..} = do
     let sendJob = atomically . writeTMQueue fetchInput
 
     let loop seen open
+            -- We need to close @fetchInput@ inside of @loop@ because we are
+            -- joining on all threads below.
             | open <= 0 = atomically (closeTMQueue fetchInput)
-            | otherwise = do
+            | otherwise =
                     atomically (readTBQueue fetchOutput)
                 >>= \case
                         Failure -> loop seen (open - 1)
                         Success job@Job {..} links -> do
                             atomically
-                                (writeTBMQueue
-                                    output
-                                    (Node jobParent jobLocation links))
-                            let (jobs, seen') = makeJobs job links seen
-                            traverse_ sendJob jobs
-                            loop seen' (open - 1 + Set.size jobs)
+                                (writeTBMQueue output (makeNode job links))
+                            if jobDepth >= depth then
+                                loop seen (open - 1)
+                            else do
+                                let (links', seen') =
+                                        Set.filter crawlable links
+                                            `difference` seen
+                                traverse_ (sendJob . makeChildJob job) links'
+                                loop seen' (open - 1 + Set.size links')
 
     sendJob (Job base base 0)
 

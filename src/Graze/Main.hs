@@ -84,15 +84,15 @@ main = do
     createDirectoryIfMissing True folder
 
     let loop =
-            atomically (readTBMQueue output) >>= \case
-                Nothing -> pure ()
-                Just node@Node {..} -> do
-                    let name = hash (show nodeLocation)
-                    Lazy.writeFile
-                        (folder </> name <.> "json")
-                        (Aeson.encode node)
-                    hPutStrLn stderr ("Got " <> show nodeLocation)
-                    loop
+                atomically (readTBMQueue output)
+            >>= \case
+                    Nothing -> pure ()
+                    Just node@Node {..} -> do
+                        Lazy.writeFile
+                            (folder </> hash (show nodeLocation) <.> "json")
+                            (Aeson.encode node)
+                        hPutStrLn stderr ("Got " <> show nodeLocation)
+                        loop
 
     concurrently_
         (crawl

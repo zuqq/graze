@@ -41,16 +41,18 @@ fetch :: IO (Maybe Job) -> (Report -> IO ()) -> IO ()
 fetch receive send = loop
   where
     loop =
-        receive >>= \case
-            Nothing -> pure ()
-            Just job@Job {..} ->
-                    try (   getOnly ("text" // "html") jobLocation
-                        >>= decodeResponse
-                        )
-                >>= \case
-                        Left (_ :: GrazeHttpException) -> send Failure
-                        Right s -> send (Success job (parseLinks jobLocation s))
-                >>  loop
+            receive
+        >>= \case
+                Nothing -> pure ()
+                Just job@Job {..} ->
+                        try (   getOnly ("text" // "html") jobLocation
+                            >>= decodeResponse
+                            )
+                    >>= \case
+                            Left (_ :: GrazeHttpException) -> send Failure
+                            Right s ->
+                                send (Success job (parseLinks jobLocation s))
+                    >>  loop
 
 data CrawlerOptions = CrawlerOptions
     { base      :: URI            -- ^ URL to start at.
@@ -103,10 +105,9 @@ crawl CrawlerOptions {..} = do
     let loop seen open
             | open <= 0 = atomically (closeTMQueue fetchInput)
             | otherwise = do
-                report <- atomically (readTBQueue fetchOutput)
-                (seen', open') <-
-                    case report of
-                        Failure -> pure (seen, open)
+                    atomically (readTBQueue fetchOutput)
+                >>= \case
+                        Failure -> loop seen (open - 1)
                         Success job@Job {..} links -> do
                             atomically
                                 (writeTBMQueue
@@ -114,8 +115,7 @@ crawl CrawlerOptions {..} = do
                                     (Node jobParent jobLocation links))
                             let (jobs, seen') = makeJobs job links seen
                             traverse_ sendJob jobs
-                            pure (seen', open + Set.size jobs)
-                loop seen' (open' - 1)
+                            loop seen' (open - 1 + Set.size jobs)
 
     sendJob (Job base base 0)
 

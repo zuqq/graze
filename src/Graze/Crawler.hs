@@ -37,7 +37,7 @@ data Job = Job
     deriving (Eq, Ord, Show)
 
 makeNode :: Job -> Set URI -> Node
-makeNode Job {..} links = Node jobParent jobLocation links
+makeNode Job {..} = Node jobParent jobLocation
 
 makeChildJob :: Job -> URI -> Job
 makeChildJob Job {..} uri = Job jobLocation uri (jobDepth + 1)

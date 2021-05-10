@@ -1,5 +1,4 @@
-{-# LANGUAGE DeriveGeneric     #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DeriveGeneric #-}
 
 -- | Exports the 'Node' type that 'Graze.Crawler.crawl' outputs.
 module Graze.Node (Node (..)) where

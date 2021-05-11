@@ -11,8 +11,10 @@ import Control.Concurrent.STM
 import Control.Concurrent.STM.TBMQueue
 import Control.Exception (bracket)
 import Data.Maybe (fromJust)
+import Data.Set (Set)
 import Data.Streaming.Network (bindPortTCP)
 import Network.Socket (close, withSocketsDo)
+import Network.Wai
 import Network.Wai.Application.Static
 import Network.Wai.Handler.Warp
 import Test.Hspec
@@ -23,70 +25,75 @@ import Graze.Crawler
 import Graze.Node
 import Graze.URI
 
+-- The @MVar ()@ is used to tell the caller that the server has bound to the
+-- port. If we don't do this, then bad interleaving can cause the test to fail.
+run' :: MVar () -> Settings -> Application -> IO ()
+run' serverStarted settings application =
+    -- Derived from 'Network.Wai.Handler.Warp.run'; doesn't set @CloseOnExit@.
+    withSocketsDo
+        (bracket
+            (bindPortTCP (getPort settings) (getHost settings))
+            close
+            \socket -> do
+                putMVar serverStarted ()
+                runSettingsSocket settings socket application)
+
+unfoldM :: Monad m => m (Maybe a) -> m [a]
+unfoldM f = go
+  where
+    go = do
+        u <- f
+        case u of
+            Nothing -> pure []
+            Just x -> do
+                xs <- go
+                pure (x : xs)
+
 crawlSpec :: Spec
 crawlSpec = do
+    let base = fromJust (parseURI "http://127.0.0.1:8080/index.html")
+
+    let crawlable uri = uriAuthority uri == uriAuthority base
+
+    let depth = 3
+
+    let threads = 10
+
+    let example = do
+            serverStarted <- newEmptyMVar
+
+            output <- newTBMQueueIO threads
+
+            withAsync
+                (run'
+                    serverStarted
+                    (setPort 8080 defaultSettings)
+                    (staticApp (defaultFileServerSettings "./test/example")))
+                \server -> do
+                    takeMVar serverStarted
+                    (_, nodes) <-
+                        concurrently
+                            (crawl CrawlerOptions {..})
+                            (unfoldM (atomically (readTBMQueue output)))
+                    cancel server
+                    pure nodes
+
+    let a = base {uriPath = "/a.html"}
+        e = fromJust (parseURI "http://www.example.com")
+        b = base {uriPath = "/b.html"}
+        c = base {uriPath = "/c.html"}
+        x = a {uriFragment = "#top"}
+        y = a {uriScheme = "https:"}
+
+    let expected =
+            Set.fromList
+                [ Node base base (Set.fromList [a, e])
+                , Node base a (Set.fromList [b, c])
+                , Node a b (Set.fromList [a, x, y])
+                ]
+
     it "crawls the example correctly" do
-        example
-            `shouldReturn` expected
-  where
-    base = fromJust (parseURI "http://127.0.0.1:8080/index.html")
-    a = base {uriPath = "/a.html"}
-    b = base {uriPath = "/b.html"}
-    c = base {uriPath = "/c.html"}
-    external = fromJust (parseURI "http://www.example.com")
-    expected =
-        Set.fromList
-            [ Node base base (Set.fromList [a, external])
-            , Node base a (Set.fromList [b, c])
-            , Node
-                a
-                b
-                (Set.fromList
-                    [a, a {uriFragment = "#top"}, a {uriScheme = "https:"}])
-            ]
-    example = do
-        let threads = 10
-            depth   = 3
-
-        -- This MVar is used to tell the parent thread that the server has
-        -- bound to 8080. If we don't do this, then bad interleaving can cause
-        -- the test to fail.
-        serverStarted <- newEmptyMVar
-
-        let serve = do
-                let application =
-                        staticApp (defaultFileServerSettings "./test/example")
-                    settings    = setPort 8080 defaultSettings
-                -- Reimplementation of 'Network.Wai.Handler.Warp.run', except
-                -- that it doesn't set @CloseOnExit@.
-                withSocketsDo
-                    (bracket
-                        (bindPortTCP (getPort settings) (getHost settings))
-                        close
-                        (\socket -> do
-                            putMVar serverStarted ()
-                            runSettingsSocket settings socket application))
-
-        output <- newTBMQueueIO threads
-
-        let loop nodes =
-                atomically (readTBMQueue output) >>= \case
-                    Nothing -> pure nodes
-                    Just node -> loop (Set.insert node nodes)
-
-        withAsync serve (\server -> do
-            takeMVar serverStarted
-            (_, nodes) <-
-                concurrently
-                    (crawl
-                        CrawlerOptions
-                            { crawlable =
-                                \uri -> uriAuthority uri == uriAuthority base
-                            , ..
-                            })
-                    (loop mempty)
-            cancel server
-            pure nodes)
+        fmap Set.fromList example `shouldReturn` expected
 
 spec :: Spec
 spec = describe "crawl" crawlSpec

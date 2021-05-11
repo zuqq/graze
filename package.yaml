@@ -85,5 +85,6 @@ tests:
     - hspec
     - network
     - streaming-commons
+    - wai
     - wai-app-static
     - warp

@@ -79,17 +79,23 @@ crawlSpec = do
                     pure nodes
 
     let a = base {uriPath = "/a.html"}
-        e = fromJust (parseURI "http://www.example.com")
-        b = base {uriPath = "/b.html"}
-        c = base {uriPath = "/c.html"}
-        x = a {uriFragment = "#top"}
-        y = a {uriScheme = "https:"}
+        o = fromJust (parseURI "http://www.example.com")
+
+    let b = base {uriPath = "/b.html"}
+        u = base {uriPath = "/u.html"}
+
+    let c = base {uriPath = "/c.html"}
+        s = a {uriScheme = "https:"}
+        t = a {uriFragment = "#top"}
+
+    let d = base {uriPath = "/d.html"}
 
     let expected =
             Set.fromList
-                [ Node base base (Set.fromList [a, e])
-                , Node base a (Set.fromList [b, c])
-                , Node a b (Set.fromList [a, x, y])
+                [ Node base base (Set.fromList [a, o])
+                , Node base a (Set.fromList [b, u])
+                , Node a b (Set.fromList [c, s, t])
+                , Node b c (Set.fromList [c, d])
                 ]
 
     it "crawls the example correctly" do

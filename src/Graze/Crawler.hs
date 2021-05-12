@@ -30,9 +30,9 @@ import Graze.Node
 import Graze.URI
 
 data Job = Job
-    { jobParent   :: !URI
+    { jobDepth    :: !Int
+    , jobParent   :: !URI
     , jobLocation :: !URI
-    , jobDepth    :: !Int
     }
     deriving (Eq, Ord, Show)
 
@@ -40,7 +40,7 @@ makeNode :: Job -> Set URI -> Node
 makeNode Job {..} = Node jobParent jobLocation
 
 makeChildJob :: Job -> URI -> Job
-makeChildJob Job {..} uri = Job jobLocation uri (jobDepth + 1)
+makeChildJob Job {..} = Job (jobDepth + 1) jobLocation
 
 data Report = Failure | Success !Job !(Set URI)
 
@@ -121,7 +121,7 @@ crawl CrawlerOptions {..} = do
                                 traverse_ (sendJob . makeChildJob job) links'
                                 loop seen' (open - 1 + Set.size links')
 
-    sendJob (Job base base 0)
+    sendJob (Job 0 base base)
 
     concurrently_
         (replicateConcurrently_

@@ -25,17 +25,17 @@ import Graze.Crawler
 import Graze.Node
 import Graze.URI
 
--- The @MVar ()@ is used to tell the caller that the server has bound to the
--- port. If we don't do this, then bad interleaving can cause the test to fail.
-run' :: MVar () -> Settings -> Application -> IO ()
-run' serverStarted settings application =
-    -- Derived from 'Network.Wai.Handler.Warp.run'; doesn't set @CloseOnExit@.
+-- Running the @IO ()@ action tells the caller that the server has started.
+runSettingsStarted :: Settings -> IO () -> Application -> IO ()
+runSettingsStarted settings started application =
+    -- Derived from 'Network.Wai.Handler.Warp.runSettings'; doesn't set the
+    -- @CloseOnExec@ flag on the socket.
     withSocketsDo
         (bracket
             (bindPortTCP (getPort settings) (getHost settings))
             close
             \socket -> do
-                putMVar serverStarted ()
+                started
                 runSettingsSocket settings socket application)
 
 unfoldM :: Monad m => m (Maybe a) -> m [a]
@@ -65,9 +65,9 @@ crawlSpec = do
             output <- newTBMQueueIO threads
 
             withAsync
-                (run'
-                    serverStarted
+                (runSettingsStarted
                     (setPort 8080 defaultSettings)
+                    (putMVar serverStarted ())
                     (staticApp (defaultFileServerSettings "./test/example")))
                 \server -> do
                     takeMVar serverStarted

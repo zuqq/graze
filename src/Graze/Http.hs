@@ -71,10 +71,7 @@ decodeUtf8 :: Lazy.ByteString -> Either UnicodeException Text
 decodeUtf8 = Text.decodeUtf8' . Lazy.toStrict
 
 decode :: ByteString -> Lazy.ByteString -> Either UnicodeException Text
-decode contentType =
-    fromMaybe
-        decodeUtf8
-        (mapContentCharset [("iso-8859-1", decodeLatin1)] contentType)
+decode = fromMaybe decodeUtf8 . mapContentCharset [("iso-8859-1", decodeLatin1)]
 
 -- | Decode a 'Response'. The supported charsets are Latin-1 and anything that
 -- is a subset of UTF-8.

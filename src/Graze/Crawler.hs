@@ -84,8 +84,8 @@ instance Eq SeenURI where
 instance Ord SeenURI where
     x <= y = extractRelevant x <= extractRelevant y
 
-difference :: Set URI -> Set SeenURI -> (Set URI, Set SeenURI)
-difference (Set.map SeenURI -> links) seen = (links', seen')
+newURIs :: Set URI -> Set SeenURI -> (Set URI, Set SeenURI)
+newURIs (Set.map SeenURI -> links) seen = (links', seen')
   where
     links' = Set.map getSeenURI (links `Set.difference` seen)
     seen'  = links `Set.union` seen
@@ -116,8 +116,9 @@ crawl CrawlerOptions {..} = do
                                 loop seen (open - 1)
                             else do
                                 let (links', seen') =
-                                        Set.filter crawlable links
-                                            `difference` seen
+                                        newURIs
+                                            (Set.filter crawlable links)
+                                            seen
                                 traverse_ (sendJob . makeChildJob job) links'
                                 loop seen' (open - 1 + Set.size links')
 

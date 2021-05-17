@@ -108,13 +108,6 @@ getContentType response =
         Nothing -> throwIO NoContentType
         Just (contentType, _) -> pure contentType
 
-checkContentType :: MediaType -> Response a -> IO (Response a)
-checkContentType accept response = do
-    contentType <- getContentType response
-    case matchContent [accept] contentType of
-        Nothing -> throwIO (WrongMediaType accept contentType)
-        Just _ -> pure response
-
 -- | Request the given 'URI', setting the @Accept@ request header to the given
 -- 'MediaType' and checking that the @Content-Type@ response header matches.
 --
@@ -125,4 +118,7 @@ getOnly accept uri = do
     let request' = addRequestHeader (hAccept, renderHeader accept) request
     manager <- getGlobalManager
     response <- httpLbs' request' manager
-    checkContentType accept response
+    contentType <- getContentType response
+    case matchContent [accept] contentType of
+        Nothing -> throwIO (WrongMediaType accept contentType)
+        Just _ -> pure response

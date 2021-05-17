@@ -70,24 +70,24 @@ data CrawlerOptions = CrawlerOptions
     }
 
 -- | A wrapper around 'URI' for defining custom 'Eq' and 'Ord' instances.
-newtype SeenURI = SeenURI {getSeenURI :: URI}
+newtype SeenURI = SeenURI URI
 
 -- | Extract authority, path, and query.
-extractRelevant :: SeenURI -> (Maybe URIAuth, String, String)
-extractRelevant (SeenURI URI {..}) = (uriAuthority, uriPath, uriQuery)
+extractSeenURI :: SeenURI -> (Maybe URIAuth, String, String)
+extractSeenURI (SeenURI URI {..}) = (uriAuthority, uriPath, uriQuery)
 
 -- | Ignores 'uriScheme' and 'uriFragment'.
 instance Eq SeenURI where
-    x == y = extractRelevant x == extractRelevant y
+    x == y = extractSeenURI x == extractSeenURI y
 
 -- | Ignores 'uriScheme' and 'uriFragment'.
 instance Ord SeenURI where
-    x <= y = extractRelevant x <= extractRelevant y
+    x <= y = extractSeenURI x <= extractSeenURI y
 
 newURIs :: Set URI -> Set SeenURI -> (Set URI, Set SeenURI)
 newURIs (Set.map SeenURI -> links) seen = (links', seen')
   where
-    links' = Set.map getSeenURI (links `Set.difference` seen)
+    links' = Set.map (\(SeenURI uri) -> uri) (links `Set.difference` seen)
     seen'  = links `Set.union` seen
 
 -- | Run the crawler. 

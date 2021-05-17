@@ -82,12 +82,7 @@ makeNode Node {..} =
     sameAuthority uri = uriAuthority uri == uriAuthority nodeLocation
 
 makeGraph :: [Node] -> Graph
-makeGraph nodes =
-    Graph
-        UnstrictGraph
-        DirectedGraph
-        Nothing
-        (concatMap makeNode nodes)
+makeGraph = Graph UnstrictGraph DirectedGraph Nothing . concatMap makeNode
 
 main :: IO ()
 main = do

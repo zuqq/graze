@@ -4,7 +4,7 @@
 
 module Graze.CrawlerSpec (spec) where
 
-import Control.Concurrent.Async (cancel, concurrently, withAsync)
+import Control.Concurrent.Async (wait, withAsync)
 import Control.Concurrent.MVar
 import Control.Concurrent.STM
 import Control.Concurrent.STM.TBMQueue
@@ -61,21 +61,21 @@ crawlSpec = do
     let example = do
             serverStarted <- newEmptyMVar
 
+            let serve =
+                    runSettingsStarted
+                        (setPort 8080 defaultSettings)
+                        (putMVar serverStarted ())
+                        (staticApp (defaultFileServerSettings "./test/example"))
+
             output <- newTBMQueueIO threads
 
-            withAsync
-                (runSettingsStarted
-                    (setPort 8080 defaultSettings)
-                    (putMVar serverStarted ())
-                    (staticApp (defaultFileServerSettings "./test/example")))
-                \server -> do
+            let consume = unfoldM (atomically (readTBMQueue output))
+
+            withAsync serve \_ ->
+                withAsync consume \consumer -> do
                     takeMVar serverStarted
-                    (_, nodes) <-
-                        concurrently
-                            (crawl CrawlerOptions {..})
-                            (unfoldM (atomically (readTBMQueue output)))
-                    cancel server
-                    pure nodes
+                    crawl CrawlerOptions {..}
+                    wait consumer
 
     let a = base {uriPath = "/a.html"}
         o = fromJust (parseURI "http://www.example.com")

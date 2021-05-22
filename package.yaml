@@ -18,6 +18,7 @@ dependencies:
 - cryptohash-sha1
 - directory
 - filepath
+- html-entity
 - html-parse
 - http-client
 - http-client-tls

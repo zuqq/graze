@@ -8,10 +8,8 @@
 -- supports HTTPS out of the box.
 module Graze.Http
     ( GrazeHttpException (..)
-    , decodeResponse
-    , getOnly
+    , getText
     -- * Reexports
-    , (//)
     , HttpException (..)
     , UnicodeException (..)
     )
@@ -33,30 +31,13 @@ import qualified Data.Text.Encoding as Text
 
 import Graze.URI
 
--- | HTTP request failure modes.
 data GrazeHttpException
     = RequestException !HttpException
-    | NoContentType   -- ^ No @Content-Type@ response header.
-    | WrongMediaType  -- ^ Received the wrong media type.
-        !MediaType    -- ^ Expected media type.
-        !ByteString   -- ^ Value of the @Content-Type@ response header.
+    | ContentException !(Maybe ByteString)
     | DecodingException !UnicodeException
-    -- ^ The media type in the @Content-Type@ header is not Latin-1 and the body
-    -- is not valid UTF-8.
+    deriving Show
 
 instance Exception GrazeHttpException
-
-instance Show GrazeHttpException where
-    show (RequestException e)                = show e
-    show NoContentType                       =
-        "No Content-Type response header."
-    show (WrongMediaType accept contentType) =
-            "Expected "
-        <>  show accept
-        <>  " but got the non-matching "
-        <>  show contentType
-        <>  "."
-    show (DecodingException e)               = show e
 
 wrapHttpException :: IO a -> IO a
 wrapHttpException m = catch @HttpException m (throwIO . RequestException)
@@ -73,15 +54,6 @@ decodeUtf8 = Text.decodeUtf8' . Lazy.toStrict
 decode :: ByteString -> Lazy.ByteString -> Either UnicodeException Text
 decode = fromMaybe decodeUtf8 . mapContentCharset [("iso-8859-1", decodeLatin1)]
 
--- | Decode a 'Response'. The supported charsets are Latin-1 and anything that
--- is a subset of UTF-8.
---
--- Throws 'GrazeHttpException' if decoding fails.
-decodeResponse :: Response Lazy.ByteString -> IO Text
-decodeResponse response = do
-    contentType <- getContentType response
-    wrapUnicodeException (decode contentType (responseBody response))
-
 addRequestHeader :: Header -> Request -> Request
 addRequestHeader header request =
     request {requestHeaders = header : requestHeaders request}
@@ -91,7 +63,10 @@ getResponseHeader name response =
     [value | (key, value) <- responseHeaders response, key == name]
 
 requestFromURI' :: URI -> IO Request
-requestFromURI' = wrapHttpException . requestFromURI
+requestFromURI' uri = do
+    request <- wrapHttpException (requestFromURI uri)
+    -- See 'parseUrlThrow'.
+    pure (request {checkResponse = throwErrorStatusCodes})
 
 httpLbs' :: Request -> Manager -> IO (Response Lazy.ByteString)
 httpLbs' request manager = do
@@ -105,20 +80,19 @@ getContentType response =
     -- There should be at most one @Content-Type@ response header, so we take
     -- the first one (if it exists).
     case uncons (getResponseHeader hContentType response) of
-        Nothing -> throwIO NoContentType
+        Nothing -> throwIO (ContentException Nothing)
         Just (contentType, _) -> pure contentType
 
--- | Request the given 'URI', setting the @Accept@ request header to the given
--- 'MediaType' and checking that the @Content-Type@ response header matches.
+-- | Request the given 'URI' and decode the response.
 --
 -- Throws 'GrazeHttpException' if the request fails.
-getOnly :: MediaType -> URI -> IO (Response Lazy.ByteString)
-getOnly accept uri = do
+getText :: URI -> IO Text
+getText uri = do
     request <- requestFromURI' uri
-    let request' = addRequestHeader (hAccept, renderHeader accept) request
     manager <- getGlobalManager
-    response <- httpLbs' request' manager
+    response <- httpLbs' request manager
     contentType <- getContentType response
-    case matchContent [accept] contentType of
-        Nothing -> throwIO (WrongMediaType accept contentType)
-        Just _ -> pure response
+    case matchContent ["text" // "html", "text" // "plain"] contentType of
+        Nothing -> throwIO (ContentException (Just contentType))
+        Just _ ->
+            wrapUnicodeException (decode contentType (responseBody response))

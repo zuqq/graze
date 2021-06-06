@@ -52,9 +52,7 @@ fetch receive send = loop
         >>= \case
                 Nothing -> pure ()
                 Just job@Job {..} ->
-                        try (   getOnly ("text" // "html") jobLocation
-                            >>= decodeResponse
-                            )
+                        try (getText jobLocation)
                     >>= \case
                             Left (_ :: GrazeHttpException) -> send Failure
                             Right s ->

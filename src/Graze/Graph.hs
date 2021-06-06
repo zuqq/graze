@@ -39,16 +39,12 @@ graphOptionsParserInfo :: ParserInfo GraphOptions
 graphOptionsParserInfo =
     Options.info (Options.helper <*> graphOptionsParser) Options.fullDesc
 
-data NodeReadException
+data GrazeGraphException
     = NodeReadException IOException
     | NodeParseException FilePath String
+    deriving Show
 
-instance Exception NodeReadException
-
-instance Show NodeReadException where
-    show (NodeReadException e)       = "Failed to read node: " <> show e
-    show (NodeParseException file s) =
-        "Failed to parse node " <> file <> ": " <> s
+instance Exception GrazeGraphException
 
 wrapIOException :: IO a -> IO a
 wrapIOException m = catch @IOException m (throwIO . NodeReadException)

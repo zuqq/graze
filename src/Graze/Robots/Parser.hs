@@ -11,7 +11,7 @@ data RuleType = Disallow | Allow
     deriving Eq
 
 instance Semigroup RuleType where
-    Allow    <> _ = Allow
+    Allow <> _    = Allow
     Disallow <> x = x
 
 data Rule = Rule !RuleType !Text

@@ -1,8 +1,6 @@
-{-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 {-# LANGUAGE TypeApplications  #-}
-{-# LANGUAGE ViewPatterns      #-}
 
 -- | A web crawler, using a pool of lightweight threads for concurrent crawling.
 --
@@ -17,9 +15,13 @@ module Graze.Crawler (CrawlerOptions (..), crawl) where
 import Control.Concurrent.Async (replicateConcurrently_, withAsync)
 import Control.Concurrent.STM
 import Control.Exception (try)
-import Control.Monad (forever)
+import Control.Monad (forever, when)
+import Control.Monad.IO.Class (liftIO)
+import Control.Monad.Trans.State.Strict (evalStateT)
 import Data.Foldable (traverse_)
 import Data.Set (Set)
+import Lens.Micro (Lens')
+import Lens.Micro.Mtl ((+=), (-=), (.=), use)
 
 import qualified Data.Set as Set
 
@@ -59,8 +61,18 @@ data CrawlerOptions = CrawlerOptions
     , output    :: Node -> IO ()  -- ^ Output a result.
     }
 
+data CrawlerState = CrawlerState !(Set SeenURI) Int
+
+-- | Set of seen URLs.
+seen :: Lens' CrawlerState (Set SeenURI)
+seen p (CrawlerState s i) = fmap (`CrawlerState` i) (p s)
+
+-- | Number of open jobs.
+open :: Lens' CrawlerState Int
+open q (CrawlerState s i) = fmap (s `CrawlerState`) (q i)
+
 -- | A wrapper around 'URI' for defining custom 'Eq' and 'Ord' instances.
-newtype SeenURI = SeenURI URI
+newtype SeenURI = SeenURI {getURI :: URI}
 
 -- | Extract authority, path, and query.
 extractSeenURI :: SeenURI -> (Maybe URIAuth, String, String)
@@ -74,12 +86,6 @@ instance Eq SeenURI where
 instance Ord SeenURI where
     x <= y = extractSeenURI x <= extractSeenURI y
 
-newURIs :: Set URI -> Set SeenURI -> (Set URI, Set SeenURI)
-newURIs (Set.map SeenURI -> links) seen = (links', seen')
-  where
-    links' = Set.map (\(SeenURI uri) -> uri) (links `Set.difference` seen)
-    seen'  = links `Set.union` seen
-
 -- | Run the crawler. 
 --
 -- Returns when there are no more URLs to visit.
@@ -91,23 +97,23 @@ crawl CrawlerOptions {..} = do
 
     let sendJob = atomically . writeTQueue fetchInput
 
-    let loop seen open
-            | open <= 0 = pure ()
-            | otherwise =
-                    atomically (readTBQueue fetchOutput)
-                >>= \case
-                        Failure -> loop seen (open - 1)
-                        Success job@Job {..} links -> do
-                            output (makeNode job links)
-                            if jobDepth >= depth then
-                                loop seen (open - 1)
-                            else do
-                                let (links', seen') =
-                                        newURIs
-                                            (Set.filter crawlable links)
-                                            seen
-                                traverse_ (sendJob . makeChildJob job) links'
-                                loop seen' (open - 1 + Set.size links')
+    let loop = do
+            report <- liftIO (atomically (readTBQueue fetchOutput))
+            open -= 1
+            case report of
+                Failure -> pure ()
+                Success job@Job {..} links -> do
+                    liftIO (output (makeNode job links))
+                    when (jobDepth < depth) (do
+                        let links' =
+                                Set.map SeenURI (Set.filter crawlable links)
+                        s <- use seen
+                        seen .= s `Set.union` links'
+                        let newURIs = Set.map getURI (links' `Set.difference` s)
+                        liftIO (traverse_ (sendJob . makeChildJob job) newURIs)
+                        open += Set.size newURIs)
+            n <- use open
+            when (n > 0) loop
 
     let receiveJob = atomically (readTQueue fetchInput)
 
@@ -117,4 +123,4 @@ crawl CrawlerOptions {..} = do
 
     withAsync fetchPool (\_ -> do
         sendJob (Job 0 base base)
-        loop (Set.singleton (SeenURI base)) 1)
+        evalStateT loop (CrawlerState (Set.singleton (SeenURI base)) 1))

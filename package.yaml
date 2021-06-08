@@ -25,11 +25,14 @@ dependencies:
 - http-media
 - http-types
 - language-dot
+- microlens
+- microlens-mtl
 - network-uri
 - optparse-applicative
 - stm
 - stm-chans
 - text
+- transformers
 
 library:
   source-dirs: src

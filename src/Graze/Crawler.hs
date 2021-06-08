@@ -61,7 +61,7 @@ data CrawlerOptions = CrawlerOptions
     , output    :: Node -> IO ()  -- ^ Output a result.
     }
 
-data CrawlerState = CrawlerState !(Set SeenURI) Int
+data CrawlerState = CrawlerState !(Set SeenURI) !Int
 
 -- | Set of seen URLs.
 seen :: Lens' CrawlerState (Set SeenURI)

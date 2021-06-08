@@ -1,11 +1,11 @@
-{-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE LambdaCase          #-}
-{-# LANGUAGE RecordWildCards     #-}
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE LambdaCase        #-}
+{-# LANGUAGE RecordWildCards   #-}
+{-# LANGUAGE TypeApplications  #-}
 
 module Graze.Main (main) where
 
-import Control.Concurrent.Async (concurrently_)
+import Control.Concurrent.Async (wait, withAsync)
 import Control.Concurrent.STM
 import Control.Concurrent.STM.TBMQueue
 import Control.Exception (try)
@@ -72,17 +72,17 @@ main = do
     putStrLn ("Crawling " <> show base)
 
     robots <-
-            try (getText base {uriPath = "/robots.txt"})
+            try @GrazeHttpException (getText base {uriPath = "/robots.txt"})
         <&> \case
-                Left (_ :: GrazeHttpException) -> const True
+                Left _ -> const True
                 Right s -> parseRobots s
 
-    output <- newTBMQueueIO threads
+    crawlOutput <- newTBMQueueIO threads
 
     createDirectoryIfMissing True folder
 
-    let loop =
-                atomically (readTBMQueue output)
+    let consume =
+                atomically (readTBMQueue crawlOutput)
             >>= \case
                     Nothing -> pure ()
                     Just node@Node {..} -> do
@@ -90,17 +90,19 @@ main = do
                             (folder </> hash (show nodeLocation) <.> "json")
                             (Aeson.encode node)
                         hPutStrLn stderr ("Got " <> show nodeLocation)
-                        loop
+                        consume
 
-    concurrently_
+    withAsync consume (\consumer -> do
         (crawl
             CrawlerOptions
                 { crawlable =
                     \uri ->
                             uriAuthority uri == uriAuthority base
                         &&  robots (uriPath uri)
+                , output    = atomically . writeTBMQueue crawlOutput
                 , ..
                 })
-        loop
+        atomically (closeTBMQueue crawlOutput)
+        wait consumer)
 
     putStrLn "Done"

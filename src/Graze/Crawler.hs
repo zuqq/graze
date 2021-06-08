@@ -1,8 +1,8 @@
-{-# LANGUAGE LambdaCase          #-}
-{-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE RecordWildCards     #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE ViewPatterns        #-}
+{-# LANGUAGE LambdaCase        #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards   #-}
+{-# LANGUAGE TypeApplications  #-}
+{-# LANGUAGE ViewPatterns      #-}
 
 -- | A web crawler, using a pool of lightweight threads for concurrent crawling.
 --
@@ -14,11 +14,10 @@
 -- URL and writes it to the 'output' queue that was passed in.
 module Graze.Crawler (CrawlerOptions (..), crawl) where
 
-import Control.Concurrent.Async (concurrently_, replicateConcurrently_)
+import Control.Concurrent.Async (replicateConcurrently_, withAsync)
 import Control.Concurrent.STM
-import Control.Concurrent.STM.TBMQueue
-import Control.Concurrent.STM.TMQueue
 import Control.Exception (try)
+import Control.Monad (forever)
 import Data.Foldable (traverse_)
 import Data.Set (Set)
 
@@ -44,27 +43,20 @@ makeChildJob Job {..} = Job (jobDepth + 1) jobLocation
 
 data Report = Failure | Success !Job !(Set URI)
 
-fetch :: IO (Maybe Job) -> (Report -> IO ()) -> IO ()
-fetch receive send = loop
-  where
-    loop =
-            receive
-        >>= \case
-                Nothing -> pure ()
-                Just job@Job {..} ->
-                        try (getText jobLocation)
-                    >>= \case
-                            Left (_ :: GrazeHttpException) -> send Failure
-                            Right s ->
-                                send (Success job (parseLinks jobLocation s))
-                    >>  loop
+fetch :: IO Job -> (Report -> IO ()) -> IO ()
+fetch receiveJob sendReport = forever (do
+    job@Job {..} <- receiveJob
+    result <- try @GrazeHttpException (getText jobLocation)
+    case result of
+        Left _ -> sendReport Failure
+        Right s -> sendReport (Success job (parseLinks jobLocation s)))
 
 data CrawlerOptions = CrawlerOptions
     { base      :: URI            -- ^ URL to start at.
     , crawlable :: URI -> Bool    -- ^ Selects links to follow.
     , depth     :: Int            -- ^ Depth of the search.
     , threads   :: Int            -- ^ Size of the thread pool.
-    , output    :: TBMQueue Node  -- ^ Output queue.
+    , output    :: Node -> IO ()  -- ^ Output a result.
     }
 
 -- | A wrapper around 'URI' for defining custom 'Eq' and 'Ord' instances.
@@ -93,23 +85,20 @@ newURIs (Set.map SeenURI -> links) seen = (links', seen')
 -- Returns when there are no more URLs to visit.
 crawl :: CrawlerOptions -> IO ()
 crawl CrawlerOptions {..} = do
+    fetchInput <- newTQueueIO
+
     fetchOutput <- newTBQueueIO (fromIntegral threads)
 
-    fetchInput <- newTMQueueIO
-
-    let sendJob = atomically . writeTMQueue fetchInput
+    let sendJob = atomically . writeTQueue fetchInput
 
     let loop seen open
-            -- We need to close @fetchInput@ inside of @loop@ because we are
-            -- joining on all threads below.
-            | open <= 0 = atomically (closeTMQueue fetchInput)
+            | open <= 0 = pure ()
             | otherwise =
                     atomically (readTBQueue fetchOutput)
                 >>= \case
                         Failure -> loop seen (open - 1)
                         Success job@Job {..} links -> do
-                            atomically
-                                (writeTBMQueue output (makeNode job links))
+                            output (makeNode job links)
                             if jobDepth >= depth then
                                 loop seen (open - 1)
                             else do
@@ -120,14 +109,12 @@ crawl CrawlerOptions {..} = do
                                 traverse_ (sendJob . makeChildJob job) links'
                                 loop seen' (open - 1 + Set.size links')
 
-    sendJob (Job 0 base base)
+    let receiveJob = atomically (readTQueue fetchInput)
 
-    concurrently_
-        (replicateConcurrently_
-            threads
-            (fetch
-                (atomically (readTMQueue fetchInput))
-                (atomically . writeTBQueue fetchOutput)))
-        (loop (Set.singleton (SeenURI base)) 1)
+    let sendReport = atomically . writeTBQueue fetchOutput
 
-    atomically (closeTBMQueue output)
+    let fetchPool = replicateConcurrently_ threads (fetch receiveJob sendReport)
+
+    withAsync fetchPool (\_ -> do
+        sendJob (Job 0 base base)
+        loop (Set.singleton (SeenURI base)) 1)

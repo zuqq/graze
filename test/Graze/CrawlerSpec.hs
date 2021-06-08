@@ -67,14 +67,17 @@ crawlSpec = do
                         (putMVar serverStarted ())
                         (staticApp (defaultFileServerSettings "./test/example"))
 
-            output <- newTBMQueueIO threads
+            crawlOutput <- newTBMQueueIO threads
 
-            let consume = unfoldM (atomically (readTBMQueue output))
+            let consume = unfoldM (atomically (readTBMQueue crawlOutput))
+
+            let output = atomically . writeTBMQueue crawlOutput
 
             withAsync serve \_ ->
                 withAsync consume \consumer -> do
                     takeMVar serverStarted
                     crawl CrawlerOptions {..}
+                    atomically (closeTBMQueue crawlOutput)
                     wait consumer
 
     let a = base {uriPath = "/a.html"}

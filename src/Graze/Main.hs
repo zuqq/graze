@@ -93,7 +93,7 @@ main = do
                         consume
 
     withAsync consume (\consumer -> do
-        (crawl
+        crawl
             CrawlerOptions
                 { crawlable =
                     \uri ->
@@ -101,7 +101,7 @@ main = do
                         &&  robots (uriPath uri)
                 , output    = atomically . writeTBMQueue crawlOutput
                 , ..
-                })
+                }
         atomically (closeTBMQueue crawlOutput)
         wait consumer)
 

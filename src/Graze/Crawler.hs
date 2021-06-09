@@ -61,16 +61,6 @@ data CrawlerOptions = CrawlerOptions
     , output    :: Node -> IO ()  -- ^ Output a result.
     }
 
-data CrawlerState = CrawlerState !(Set SeenURI) !Int
-
--- | Set of seen URLs.
-seen :: Lens' CrawlerState (Set SeenURI)
-seen p (CrawlerState s i) = fmap (`CrawlerState` i) (p s)
-
--- | Number of open jobs.
-open :: Lens' CrawlerState Int
-open q (CrawlerState s i) = fmap (s `CrawlerState`) (q i)
-
 -- | A wrapper around 'URI' for defining custom 'Eq' and 'Ord' instances.
 newtype SeenURI = SeenURI {getURI :: URI}
 
@@ -85,6 +75,16 @@ instance Eq SeenURI where
 -- | Ignores 'uriScheme' and 'uriFragment'.
 instance Ord SeenURI where
     x <= y = extractSeenURI x <= extractSeenURI y
+
+data CrawlerState = CrawlerState !(Set SeenURI) !Int
+
+-- | Set of seen URLs.
+seen :: Lens' CrawlerState (Set SeenURI)
+seen p (CrawlerState s i) = fmap (`CrawlerState` i) (p s)
+
+-- | Number of open jobs.
+open :: Lens' CrawlerState Int
+open q (CrawlerState s i) = fmap (s `CrawlerState`) (q i)
 
 -- | Run the crawler. 
 --

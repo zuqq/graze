@@ -49,9 +49,10 @@ fetch :: IO Job -> (Report -> IO ()) -> IO ()
 fetch receiveJob sendReport = forever (do
     job@Job {..} <- receiveJob
     result <- try @GrazeHttpException (getText jobLocation)
-    case result of
-        Left _ -> sendReport Failure
-        Right s -> sendReport (Success job (parseLinks jobLocation s)))
+    sendReport
+        (case result of
+            Left _ -> Failure
+            Right s -> Success job (parseLinks jobLocation s)))
 
 data CrawlerOptions = CrawlerOptions
     { base      :: URI            -- ^ URL to start at.

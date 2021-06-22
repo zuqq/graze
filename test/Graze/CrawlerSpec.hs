@@ -43,7 +43,7 @@ unfoldM f = go
     go = do
         u <- f
         case u of
-            Nothing -> pure []
+            Nothing -> pure mempty
             Just x -> do
                 xs <- go
                 pure (x : xs)

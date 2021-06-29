@@ -92,16 +92,13 @@ main = do
                         hPutStrLn stderr ("Got " <> show nodeLocation)
                         consume
 
+    let crawlable uri =
+            uriAuthority uri == uriAuthority base && robots (uriPath uri)
+
+    let output = atomically . writeTBMQueue crawlOutput
+
     withAsync consume (\consumer -> do
-        crawl
-            CrawlerOptions
-                { crawlable =
-                    \uri ->
-                            uriAuthority uri == uriAuthority base
-                        &&  robots (uriPath uri)
-                , output    = atomically . writeTBMQueue crawlOutput
-                , ..
-                }
+        crawl CrawlerOptions {..}
         atomically (closeTBMQueue crawlOutput)
         wait consumer)
 
